@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/Users/lordzippy/Development/Noodles/NoodlesExplorer/build-src-Desktop_Qt_5_15_2_clang_64bit-Debug/_deps/noodles-subbuild/CMakeFiles/noodles-populate"
+		},
+		{
+			"file" : "/Users/lordzippy/Development/Noodles/NoodlesExplorer/build-src-Desktop_Qt_5_15_2_clang_64bit-Debug/_deps/noodles-subbuild/CMakeFiles/noodles-populate.rule"
+		},
+		{
+			"file" : "/Users/lordzippy/Development/Noodles/NoodlesExplorer/build-src-Desktop_Qt_5_15_2_clang_64bit-Debug/_deps/noodles-subbuild/CMakeFiles/noodles-populate-complete.rule"
+		},
+		{
+			"file" : "/Users/lordzippy/Development/Noodles/NoodlesExplorer/build-src-Desktop_Qt_5_15_2_clang_64bit-Debug/_deps/noodles-subbuild/noodles-populate-prefix/src/noodles-populate-stamp/noodles-populate-install.rule"
+		},
+		{
+			"file" : "/Users/lordzippy/Development/Noodles/NoodlesExplorer/build-src-Desktop_Qt_5_15_2_clang_64bit-Debug/_deps/noodles-subbuild/noodles-populate-prefix/src/noodles-populate-stamp/noodles-populate-mkdir.rule"
+		},
+		{
+			"file" : "/Users/lordzippy/Development/Noodles/NoodlesExplorer/build-src-Desktop_Qt_5_15_2_clang_64bit-Debug/_deps/noodles-subbuild/noodles-populate-prefix/src/noodles-populate-stamp/noodles-populate-download.rule"
+		},
+		{
+			"file" : "/Users/lordzippy/Development/Noodles/NoodlesExplorer/build-src-Desktop_Qt_5_15_2_clang_64bit-Debug/_deps/noodles-subbuild/noodles-populate-prefix/src/noodles-populate-stamp/noodles-populate-update.rule"
+		},
+		{
+			"file" : "/Users/lordzippy/Development/Noodles/NoodlesExplorer/build-src-Desktop_Qt_5_15_2_clang_64bit-Debug/_deps/noodles-subbuild/noodles-populate-prefix/src/noodles-populate-stamp/noodles-populate-patch.rule"
+		},
+		{
+			"file" : "/Users/lordzippy/Development/Noodles/NoodlesExplorer/build-src-Desktop_Qt_5_15_2_clang_64bit-Debug/_deps/noodles-subbuild/noodles-populate-prefix/src/noodles-populate-stamp/noodles-populate-configure.rule"
+		},
+		{
+			"file" : "/Users/lordzippy/Development/Noodles/NoodlesExplorer/build-src-Desktop_Qt_5_15_2_clang_64bit-Debug/_deps/noodles-subbuild/noodles-populate-prefix/src/noodles-populate-stamp/noodles-populate-build.rule"
+		},
+		{
+			"file" : "/Users/lordzippy/Development/Noodles/NoodlesExplorer/build-src-Desktop_Qt_5_15_2_clang_64bit-Debug/_deps/noodles-subbuild/noodles-populate-prefix/src/noodles-populate-stamp/noodles-populate-test.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"noodles-populate"
+		],
+		"name" : "noodles-populate"
+	}
+}

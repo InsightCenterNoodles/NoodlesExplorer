@@ -1,0 +1,32 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>qtquickcontrols2.conf</file>
+        <file>SideDrawer.qml</file>
+        <file>DrawerContent.qml</file>
+        <file>img/test.png</file>
+        <file>MethodCallUI.qml</file>
+        <file>fa-solid-900.ttf</file>
+        <file>fa-regular-400.ttf</file>
+        <file>Roboto-Regular.ttf</file>
+        <file>instance_material/shaders/es3/coordinatesystems.inc</file>
+        <file>instance_material/shaders/es3/default.vert</file>
+        <file>instance_material/shaders/es3/light.inc.frag</file>
+        <file>instance_material/shaders/es3/metalrough.inc.frag</file>
+        <file>instance_material/shaders/gl3/coordinatesystems.inc</file>
+        <file>instance_material/shaders/gl3/default.vert</file>
+        <file>instance_material/shaders/gl3/light.inc.frag</file>
+        <file>instance_material/shaders/gl3/metalrough.inc.frag</file>
+        <file>instance_material/shaders/graphs/metalrough.frag.json</file>
+        <file>instance_material/shaders/rhi/coordinatesystems.inc</file>
+        <file>instance_material/shaders/rhi/default.vert</file>
+        <file>instance_material/shaders/rhi/defaultuniforms.inc</file>
+        <file>instance_material/shaders/rhi/light.inc.frag</file>
+        <file>instance_material/shaders/rhi/metalrough.inc.frag</file>
+        <file>InspectorPopup.qml</file>
+        <file>HeaderTable.qml</file>
+        <file>SceneViewComponent.qml</file>
+        <file>SettingsPopup.qml</file>
+        <file>ColorPicker.qml</file>
+    </qresource>
+</RCC>
