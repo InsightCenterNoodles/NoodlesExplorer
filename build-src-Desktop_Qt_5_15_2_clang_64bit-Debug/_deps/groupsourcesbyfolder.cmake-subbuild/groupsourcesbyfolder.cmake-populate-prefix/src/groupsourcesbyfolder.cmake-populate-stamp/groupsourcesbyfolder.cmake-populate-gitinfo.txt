@@ -1,3 +1,0 @@
-repository='https://github.com/TheLartians/GroupSourcesByFolder.cmake.git'
-module=''
-tag='origin'
