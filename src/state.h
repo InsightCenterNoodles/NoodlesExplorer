@@ -92,4 +92,15 @@ public:
     ~EntityShim();
 };
 
+class NormalizeStringReply : public nooc::PendingMethodReply {
+    Q_OBJECT
+
+public:
+    using PendingMethodReply::PendingMethodReply;
+
+    void interpret() override;
+signals:
+    void recv(QString);
+};
+
 #endif // STATE_H

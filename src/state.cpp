@@ -1,6 +1,7 @@
 #include "state.h"
 
 #include "noo_client_interface.h"
+#include "noo_common.h"
 #include "variant_tools.h"
 
 #include <QHostInfo>
@@ -266,19 +267,17 @@ void State::invoke_doc_method() {
             VCASE(QString) { avlist.push_back({}); });
     }
 
-    auto* r = m_current_doc->attached_methods()
-                  .new_call_by_delegate<nooc::translators::GetStringReply>(
-                      m_current_doc_method);
+    auto* r =
+        m_current_doc->attached_methods()
+            .new_call_by_delegate<NormalizeStringReply>(m_current_doc_method);
 
     if (!r) return;
 
-    connect(r,
-            &nooc::translators::GetStringReply::recv,
-            this,
-            &State::method_result_recieved);
+    connect(
+        r, &NormalizeStringReply::recv, this, &State::method_result_recieved);
 
     connect(r,
-            &nooc::translators::GetStringReply::recv_fail,
+            &NormalizeStringReply::recv_fail,
             this,
             &State::method_error_recieved);
 
@@ -358,4 +357,12 @@ EntityShim::EntityShim(Qt3DCore::QNode* n) : Qt3DCore::QEntity(n) {
 
 EntityShim::~EntityShim() {
     qDebug() << Q_FUNC_INFO;
+}
+
+// =============================================================================
+
+void NormalizeStringReply::interpret() {
+    auto str = m_var.dump_string();
+
+    emit recv(noo::to_qstring(str));
 }
