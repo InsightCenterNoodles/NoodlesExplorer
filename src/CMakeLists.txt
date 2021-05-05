@@ -27,7 +27,7 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG 73949fbf4ff4f107827da84415baa32346d44c2d
+    GIT_TAG 16e769b13d0d9938287277cacc8aeae93a798dea
 )
 
 find_package(Qt5 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick)
@@ -76,4 +76,8 @@ PRIVATE
     instance_material/qinstancedmetalroughmaterial.h
     attachedmethodlistmodel.cpp
     attachedmethodlistmodel.h
+    tabledata.cpp
+    tabledata.h
+    tableviewer.cpp
+    tableviewer.h
 )

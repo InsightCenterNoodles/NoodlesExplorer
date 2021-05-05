@@ -1,7 +1,7 @@
 #include "state.h"
 
+#include <QApplication>
 #include <QFontDatabase>
-#include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QSurfaceFormat>
@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setOrganizationDomain("nrel.gov");
     QCoreApplication::setApplicationName("NoodlesViewer");
 
-    QGuiApplication app(argc, argv);
+    QApplication app(argc, argv);
 
     QFontDatabase::addApplicationFont(":/Roboto-Regular.ttf");
 

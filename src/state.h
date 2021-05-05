@@ -69,10 +69,13 @@ public slots:
 
     void exec_debug();
 
+    void launch_table_view(int);
+
 private slots:
     void handle_connect();
     void handle_disconnect();
     void handle_document_updated();
+
 
 signals:
     void connection_state_changed(int connection_state);

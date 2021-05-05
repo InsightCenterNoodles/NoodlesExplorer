@@ -2,6 +2,7 @@
 
 #include "noo_client_interface.h"
 #include "noo_common.h"
+#include "tableviewer.h"
 #include "variant_tools.h"
 
 #include <QHostInfo>
@@ -309,6 +310,28 @@ void State::handle_document_updated() {
     if (!d) return;
 
     m_document_methods.set(d->attached_methods().list());
+}
+
+void State::launch_table_view(int i) {
+    auto* p = m_table_list->get_item(i);
+
+    if (!p) return;
+
+    auto slot = p->get_id();
+    auto gen  = p->get_id_gen();
+
+    auto id = noo::TableID(slot, gen);
+
+    auto tbl_ptr = m_client_conn->get(id);
+
+    if (!tbl_ptr) return;
+
+    auto del_ptr = std::dynamic_pointer_cast<ExTable>(tbl_ptr);
+
+    if (!del_ptr) return;
+
+
+    new TableViewer(del_ptr, this);
 }
 
 
