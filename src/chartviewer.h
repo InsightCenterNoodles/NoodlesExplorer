@@ -22,10 +22,10 @@ class QValueAxis;
 
 struct ChartSeriesPart {
     QString name;
-    QString type;
-    QColor  color;
+    int     type  = -1;
     int     a_col = -1;
     int     b_col = -1;
+    QColor  color;
 
     QtCharts::QAbstractSeries* series;
     glm::vec2                  mins;
@@ -64,6 +64,9 @@ public:
     void clear();
     void rebuild_all();
     void recompute_bounds();
+
+    void add_new();
+    void del_at(int);
 };
 
 class ChartViewer : public QObject {

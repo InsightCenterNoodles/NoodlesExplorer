@@ -8,7 +8,9 @@
 #include <QtCharts/QScatterSeries>
 #include <QtCharts/QValueAxis>
 
+#include <QColorDialog>
 #include <QDataWidgetMapper>
+#include <QStyledItemDelegate>
 
 using namespace QtCharts;
 
@@ -48,7 +50,7 @@ void ChartSeriesPart::rebuild(ChartViewer& chart_view) {
     }
 
 
-    if (type == series_types[0]) {
+    if (type == 0) { // ick
         auto* ns = new QLineSeries;
         series   = ns;
         ns->setName(name);
@@ -59,7 +61,7 @@ void ChartSeriesPart::rebuild(ChartViewer& chart_view) {
         ns->attachAxis(y_axis);
         ns->setColor(color);
         ns->replace(points);
-    } else if (type == series_types[1]) {
+    } else if (type == 1) {
         auto ns = new QScatterSeries;
         series  = ns;
         ns->setName(name);
@@ -76,6 +78,44 @@ void ChartSeriesPart::rebuild(ChartViewer& chart_view) {
 }
 
 // =============================================================================
+
+class ColorDelegate : public QStyledItemDelegate {
+
+
+    // QAbstractItemDelegate interface
+public:
+    QWidget* createEditor(QWidget*                    parent,
+                          const QStyleOptionViewItem& option,
+                          const QModelIndex&          index) const override {
+        return new QColorDialog(parent);
+    }
+
+    void setEditorData(QWidget*           editor,
+                       const QModelIndex& index) const override {
+        auto*  m = index.model();
+        QColor c = m->data(index).value<QColor>();
+
+        auto* dialog = qobject_cast<QColorDialog*>(editor);
+
+        if (!dialog) return;
+
+        dialog->setCurrentColor(c);
+    }
+
+    void setModelData(QWidget*            editor,
+                      QAbstractItemModel* model,
+                      const QModelIndex&  index) const override {
+
+        auto* dialog = qobject_cast<QColorDialog*>(editor);
+
+        if (!dialog) return;
+
+        auto c = dialog->currentColor();
+
+        model->setData(index, c);
+    }
+};
+
 
 static const QStringList series_table_header = { "Name",
                                                  "Type",
@@ -132,8 +172,8 @@ QVariant SeriesTable::data(QModelIndex const& index, int role) const {
     switch (index.column()) {
     case 0: return item.name; break;
     case 1: return item.type; break;
-    case 2: return col_id_to_name(item.a_col); break;
-    case 3: return col_id_to_name(item.b_col); break;
+    case 2: return item.a_col; break;
+    case 3: return item.b_col; break;
     case 4: return item.color; break;
     }
 
@@ -149,10 +189,10 @@ bool SeriesTable::setData(QModelIndex const& index,
 
     switch (index.column()) {
     case 0: item.name = value.toString(); break;
-    case 1: item.type = value.toString(); break;
+    case 1: item.type = value.toInt(); break;
     case 2: item.a_col = value.toInt(); break;
     case 3: item.b_col = value.toInt(); break;
-    case 4: item.color = QColor(value.toString()); break;
+    case 4: item.color = value.value<QColor>(); break;
     }
 
     item.rebuild(*m_host);
@@ -213,6 +253,24 @@ void SeriesTable::recompute_bounds() {
     }
 }
 
+void SeriesTable::add_new() {
+    beginInsertRows({}, rowCount(), rowCount());
+    m_active_series.emplace_back();
+    endInsertRows();
+
+    // no rebuild?
+}
+void SeriesTable::del_at(int i) {
+    if (i < 0 or i >= m_active_series.size()) return;
+
+    beginRemoveRows({}, i, i);
+    m_active_series[i].series->deleteLater();
+    m_active_series.erase(m_active_series.begin() + i);
+    endRemoveRows();
+
+    recompute_bounds();
+}
+
 
 // =============================================================================
 
@@ -244,6 +302,7 @@ ChartViewer::ChartViewer(std::shared_ptr<ExTable> t, QObject* parent)
 
     m_ui_root->stackedWidget->setCurrentIndex(0);
 
+    // set up edit page
 
     connect(m_ui_root->editButton, &QToolButton::toggled, [this](bool checked) {
         m_ui_root->stackedWidget->setCurrentIndex(checked);
@@ -255,14 +314,33 @@ ChartViewer::ChartViewer(std::shared_ptr<ExTable> t, QObject* parent)
 
     connect(m_ui_root->seriesListView->selectionModel(),
             &QItemSelectionModel::currentRowChanged,
-            mapper,
+            data_mapper,
             &QDataWidgetMapper::setCurrentModelIndex);
 
-    data_mapper->set
+    m_ui_root->typeComboBox->addItems(series_types);
+    m_ui_root->xColumn->addItems(m_data->column_names());
+    m_ui_root->yColumn->addItems(m_data->column_names());
 
-        // set up charts
+    data_mapper->addMapping(m_ui_root->nameLineEdit, 0);
+    data_mapper->addMapping(m_ui_root->typeComboBox, 1, "currentIndex");
+    data_mapper->addMapping(m_ui_root->xColumn, 2, "currentIndex");
+    data_mapper->addMapping(m_ui_root->yColumn, 3, "currentIndex");
+    // data_mapper->addMapping(m_ui_root->c, 3);
 
-        auto cview = new QChartView();
+    connect(m_ui_root->addSeries, &QToolButton::clicked, [this]() {
+        m_series_table.add_new();
+    });
+
+    connect(m_ui_root->delSeries, &QToolButton::clicked, [this]() {
+        auto* sel_m = m_ui_root->seriesListView->selectionModel();
+        auto  index = sel_m->currentIndex();
+        if (!index.isValid()) return;
+        m_series_table.del_at(index.row());
+    });
+
+    // set up charts
+
+    auto cview = new QChartView();
 
     m_ui_root->chartHolder->layout()->addWidget(cview);
 
