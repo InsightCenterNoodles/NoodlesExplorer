@@ -4,6 +4,8 @@
 #include <QFontDatabase>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QStyle>
+#include <QStyleFactory>
 #include <QSurfaceFormat>
 
 #include <tuple>
@@ -28,7 +30,10 @@ int main(int argc, char* argv[]) {
 
     QApplication app(argc, argv);
 
+    app.setStyle(QStyleFactory::create("Fusion"));
+
     QFontDatabase::addApplicationFont(":/Roboto-Regular.ttf");
+    QFontDatabase::addApplicationFont(":/fa-solid-900.ttf");
 
     // Create models
 
@@ -55,6 +60,8 @@ int main(int argc, char* argv[]) {
 
 
     engine.load(url);
+
+    qDebug() << "Setup complete, running...";
 
     return app.exec();
 }

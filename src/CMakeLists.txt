@@ -30,7 +30,7 @@ CPMAddPackage(
     GIT_TAG 16e769b13d0d9938287277cacc8aeae93a798dea
 )
 
-find_package(Qt5 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick)
+find_package(Qt5 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts)
 
 # Options ======================================================================
 
@@ -55,7 +55,7 @@ target_link_libraries(NoodlesExplorer PRIVATE noodles)
 target_link_libraries(NoodlesExplorer PUBLIC
     Qt::Gui Qt::Widgets Qt::Core
     Qt::3DCore Qt::3DExtras Qt::3DRender
-    Qt::Quick
+    Qt::Quick Qt::Charts
 )
 
 target_sources(NoodlesExplorer
@@ -80,4 +80,8 @@ PRIVATE
     tabledata.h
     tableviewer.cpp
     tableviewer.h
+    tableviewer.ui
+    chartviewer.cpp
+    chartviewer.h
+    chartviewer.ui
 )

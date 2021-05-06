@@ -32,6 +32,9 @@ public:
 
 public:
     QStringList column_names() const;
+    auto const& column(int i) const { return m_columns.at(i); }
+    auto        column_count() const { return m_columns.size(); }
+
 
 public:
     QVariant headerData(int             section,

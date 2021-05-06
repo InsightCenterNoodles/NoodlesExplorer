@@ -181,6 +181,16 @@ void RemoteTableData::on_table_selection_updated(std::string_view         key,
     m_selections[std::string(key)] = sel.to_selection();
 }
 
+QStringList RemoteTableData::column_names() const {
+    QStringList ret;
+
+    for (auto const& m : m_columns) {
+        ret << QString::fromStdString(m.name);
+    }
+
+    return ret;
+}
+
 
 QVariant RemoteTableData::headerData(int             section,
                                      Qt::Orientation orientation,
