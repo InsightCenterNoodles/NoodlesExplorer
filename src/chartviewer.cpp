@@ -14,6 +14,31 @@
 
 using namespace QtCharts;
 
+ColorWell::ColorWell(QWidget* parent) : QPushButton(parent) {
+    this->setFlat(true);
+    setColor(Qt::black);
+
+    connect(this, &QPushButton::clicked, [this]() {
+        auto c = QColorDialog::getColor(color(), this, "Pick Color");
+
+        if (c.isValid()) this->setColor(c);
+    });
+}
+
+void ColorWell::setColor(QColor color) {
+    if (m_color == color) return;
+
+    static const QString style_sheet =
+        "QPushButton { color: black; background-color: %1; border-style: "
+        "solid; border-color: black; border-width: 1px; border-radius:5px; }";
+
+    this->setStyleSheet(style_sheet.arg(color.name()));
+    m_color = color;
+    emit colorChanged(m_color);
+}
+
+// =============================================================================
+
 static const QStringList series_types = { "Line", "Scatter" };
 
 
@@ -123,18 +148,6 @@ static const QStringList series_table_header = { "Name",
                                                  "Y",
                                                  "Color" };
 
-QString SeriesTable::col_id_to_name(int i) const {
-    auto* p = m_host->current_data();
-
-    if (!p) return {};
-    if (i < 0) return {};
-    if (p->column_count() >= i) return {};
-
-    auto l = p->column_names();
-
-    return l[i];
-}
-
 SeriesTable::SeriesTable(ChartViewer* v) : m_host(v) { }
 
 QVariant SeriesTable::headerData(int             section,
@@ -143,7 +156,6 @@ QVariant SeriesTable::headerData(int             section,
     if (role != Qt::DisplayRole) return {};
 
     if (orientation != Qt::Orientation::Horizontal) return {};
-    // return m_active_series.at(section)->name;
 
     return series_table_header[section];
 }
@@ -161,20 +173,21 @@ int SeriesTable::columnCount(QModelIndex const& parent) const {
 
 
 QVariant SeriesTable::data(QModelIndex const& index, int role) const {
-    // qDebug() << index << m_columns.size();
+    qDebug() << Q_FUNC_INFO << index << role;
     if (!index.isValid()) return {};
     if (index.row() >= m_active_series.size()) return {};
 
     if (role != Qt::DisplayRole and role != Qt::EditRole) return {};
 
+
     auto& item = m_active_series[index.row()];
 
     switch (index.column()) {
-    case 0: return item.name; break;
-    case 1: return item.type; break;
-    case 2: return item.a_col; break;
-    case 3: return item.b_col; break;
-    case 4: return item.color; break;
+    case 0: return item.name;
+    case 1: return item.type;
+    case 2: return item.a_col;
+    case 3: return item.b_col;
+    case 4: return item.color;
     }
 
     return {};
@@ -183,6 +196,7 @@ QVariant SeriesTable::data(QModelIndex const& index, int role) const {
 bool SeriesTable::setData(QModelIndex const& index,
                           QVariant const&    value,
                           int                role) {
+    qDebug() << Q_FUNC_INFO << index << value;
     if (data(index, role) == value) return false;
 
     auto& item = m_active_series[index.row()];
@@ -197,14 +211,15 @@ bool SeriesTable::setData(QModelIndex const& index,
 
     item.rebuild(*m_host);
 
-    emit dataChanged(index, index, QVector<int>() << role);
+    emit dataChanged(index, index);
     return true;
 }
 
 Qt::ItemFlags SeriesTable::flags(QModelIndex const& index) const {
+    //    qDebug() << Q_FUNC_INFO << index;
     if (!index.isValid()) return Qt::NoItemFlags;
 
-    return Qt::ItemIsEditable;
+    return Qt::ItemIsEditable | Qt::ItemIsSelectable | Qt::ItemIsEnabled;
 }
 
 void SeriesTable::clear() {
@@ -254,6 +269,8 @@ void SeriesTable::recompute_bounds() {
 }
 
 void SeriesTable::add_new() {
+    qDebug() << Q_FUNC_INFO;
+
     beginInsertRows({}, rowCount(), rowCount());
     m_active_series.emplace_back();
     endInsertRows();
@@ -261,6 +278,8 @@ void SeriesTable::add_new() {
     // no rebuild?
 }
 void SeriesTable::del_at(int i) {
+    qDebug() << Q_FUNC_INFO;
+
     if (i < 0 or i >= m_active_series.size()) return;
 
     beginRemoveRows({}, i, i);
@@ -274,39 +293,47 @@ void SeriesTable::del_at(int i) {
 
 // =============================================================================
 
-
-ChartViewer::ChartViewer(std::shared_ptr<ExTable> t, QObject* parent)
-    : QObject(parent),
-      m_attached_table(t),
-      m_data(t->table_data()),
-      m_series_table(this) {
-
-    connect(t.get(), &ExTable::fetch_new_remote_table_data, [this]() {
-        m_data = m_attached_table->table_data();
-        connect_table();
-    });
+void ChartViewer::setup_root() {
+    connect(m_attached_table.get(),
+            &ExTable::fetch_new_remote_table_data,
+            [this]() {
+                m_data = m_attached_table->table_data();
+                connect_table();
+            });
 
     m_widget = new QWidget;
-    m_widget->setObjectName(t->get_name());
-    m_widget->setWindowTitle(t->get_name());
     m_widget->setAttribute(Qt::WA_DeleteOnClose);
 
     m_ui_root = std::make_unique<Ui::ChartRoot>();
     m_ui_root->setupUi(m_widget);
 
-    m_widget->setWindowTitle(t->get_name());
+    // set this up after the setupUI call, as it would be overwritten
+    m_widget->setWindowTitle(m_attached_table->get_name());
 
     connect(m_widget.data(), &QWidget::destroyed, [this](QObject*) {
         this->deleteLater();
     });
 
     m_ui_root->stackedWidget->setCurrentIndex(0);
+}
 
-    // set up edit page
+void ChartViewer::setup_edit_page() {
+
+    auto* color_b_layout = new QVBoxLayout();
+    color_b_layout->setMargin(0);
+
+    auto* color_well = new ColorWell();
+
+    color_b_layout->addWidget(color_well);
+
+    m_ui_root->colorWidget->setLayout(color_b_layout);
 
     connect(m_ui_root->editButton, &QToolButton::toggled, [this](bool checked) {
         m_ui_root->stackedWidget->setCurrentIndex(checked);
     });
+
+    m_ui_root->seriesListView->setModel(&m_series_table);
+    m_ui_root->seriesListView->setModelColumn(0);
 
     auto* data_mapper = new QDataWidgetMapper(this);
 
@@ -321,11 +348,22 @@ ChartViewer::ChartViewer(std::shared_ptr<ExTable> t, QObject* parent)
     m_ui_root->xColumn->addItems(m_data->column_names());
     m_ui_root->yColumn->addItems(m_data->column_names());
 
+    // Bug fix for OS X platforms and focus
+    m_ui_root->typeComboBox->setFocusPolicy(Qt::StrongFocus);
+    m_ui_root->xColumn->setFocusPolicy(Qt::StrongFocus);
+    m_ui_root->yColumn->setFocusPolicy(Qt::StrongFocus);
+
     data_mapper->addMapping(m_ui_root->nameLineEdit, 0);
     data_mapper->addMapping(m_ui_root->typeComboBox, 1, "currentIndex");
     data_mapper->addMapping(m_ui_root->xColumn, 2, "currentIndex");
     data_mapper->addMapping(m_ui_root->yColumn, 3, "currentIndex");
-    // data_mapper->addMapping(m_ui_root->c, 3);
+    data_mapper->addMapping(color_well, 4, "color");
+
+
+    connect(color_well, &ColorWell::colorChanged, [data_mapper](auto) {
+        data_mapper->submit();
+    });
+
 
     connect(m_ui_root->addSeries, &QToolButton::clicked, [this]() {
         m_series_table.add_new();
@@ -337,7 +375,9 @@ ChartViewer::ChartViewer(std::shared_ptr<ExTable> t, QObject* parent)
         if (!index.isValid()) return;
         m_series_table.del_at(index.row());
     });
+}
 
+void ChartViewer::setup_chart_page() {
     // set up charts
 
     auto cview = new QChartView();
@@ -368,6 +408,18 @@ ChartViewer::ChartViewer(std::shared_ptr<ExTable> t, QObject* parent)
 
     cview->setChart(m_chart);
     cview->setRenderHint(QPainter::Antialiasing);
+}
+
+ChartViewer::ChartViewer(std::shared_ptr<ExTable> t, QObject* parent)
+    : QObject(parent),
+      m_attached_table(t),
+      m_data(t->table_data()),
+      m_series_table(this) {
+
+    setup_root();
+    setup_edit_page();
+    setup_chart_page();
+
 
     connect_table();
 
@@ -398,6 +450,7 @@ void ChartViewer::connect_table() {
     add_link(&RemoteTableData::modelReset);
     add_link(&RemoteTableData::dataChanged);
 }
+
 
 void ChartViewer::on_table_changed() {
     qDebug() << Q_FUNC_INFO << m_series_table.rowCount();

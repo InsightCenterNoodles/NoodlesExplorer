@@ -7,6 +7,7 @@
 
 #include <QAbstractTableModel>
 #include <QPointer>
+#include <QPushButton>
 #include <QWidget>
 
 class ExTable;
@@ -20,12 +21,29 @@ class QValueAxis;
 } // namespace QtCharts
 
 
+class ColorWell : public QPushButton {
+    Q_OBJECT
+
+    Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged);
+
+    QColor m_color;
+
+public:
+    ColorWell(QWidget* parent = nullptr);
+
+    QColor color() const { return m_color; }
+public slots:
+    void setColor(QColor color);
+signals:
+    void colorChanged(QColor color);
+};
+
 struct ChartSeriesPart {
-    QString name;
+    QString name  = "Unnamed";
     int     type  = -1;
     int     a_col = -1;
     int     b_col = -1;
-    QColor  color;
+    QColor  color = Qt::black;
 
     QtCharts::QAbstractSeries* series;
     glm::vec2                  mins;
@@ -37,8 +55,6 @@ struct ChartSeriesPart {
 class SeriesTable : public QAbstractTableModel {
     ChartViewer*                 m_host;
     std::vector<ChartSeriesPart> m_active_series;
-
-    QString col_id_to_name(int) const;
 
 public:
     explicit SeriesTable(ChartViewer*);
@@ -86,6 +102,9 @@ class ChartViewer : public QObject {
 
     SeriesTable m_series_table;
 
+    void setup_root();
+    void setup_edit_page();
+    void setup_chart_page();
 
 public:
     explicit ChartViewer(std::shared_ptr<ExTable>, QObject* parent = nullptr);
