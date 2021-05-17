@@ -1,8 +1,9 @@
 #include "delegates.h"
 
-#include <glm/gtc/type_ptr.hpp>
-
 #include "instance_material/qinstancedmetalroughmaterial.h"
+#include "tabledata.h"
+
+#include <glm/gtc/type_ptr.hpp>
 
 #include <QColor>
 #include <QDebug>
@@ -81,6 +82,9 @@ ExMethod::~ExMethod() = default;
 int ExMethod::get_id() const {
     return this->id().id_slot;
 }
+int ExMethod::get_id_gen() const {
+    return this->id().id_gen;
+}
 QString ExMethod::get_name() const {
     return to_qstring(this->name());
 }
@@ -118,6 +122,9 @@ ExSignal::~ExSignal() = default;
 
 int ExSignal::get_id() const {
     return this->id().id_slot;
+}
+int ExSignal::get_id_gen() const {
+    return this->id().id_gen;
 }
 QString ExSignal::get_name() const {
     return to_qstring(this->name());
@@ -173,6 +180,9 @@ ExBuffer::~ExBuffer() = default;
 
 int ExBuffer::get_id() const {
     return this->id().id_slot;
+}
+int ExBuffer::get_id_gen() const {
+    return this->id().id_gen;
 }
 QString ExBuffer::get_name() const {
     return id().to_qstring();
@@ -245,6 +255,9 @@ ExTexture::~ExTexture() = default;
 int ExTexture::get_id() const {
     return this->id().id_slot;
 }
+int ExTexture::get_id_gen() const {
+    return this->id().id_gen;
+}
 QString ExTexture::get_name() const {
     return id().to_qstring();
 }
@@ -292,6 +305,9 @@ ExMaterial::~ExMaterial() = default;
 
 int ExMaterial::get_id() const {
     return this->id().id_slot;
+}
+int ExMaterial::get_id_gen() const {
+    return this->id().id_gen;
 }
 QString ExMaterial::get_name() const {
     return id().to_qstring();
@@ -351,6 +367,9 @@ ExLight::~ExLight() = default;
 
 int ExLight::get_id() const {
     return this->id().id_slot;
+}
+int ExLight::get_id_gen() const {
+    return this->id().id_gen;
 }
 QString ExLight::get_name() const {
     return id().to_qstring();
@@ -555,21 +574,6 @@ attrib_from_idx_ref(Qt3DRender::QGeometry*                   node,
 
     qDebug() << "BF" << buff->entity()->data().size();
 
-    {
-        auto  ec = VertexTypeTrait<IndexType>::element_count;
-        auto* p  = (IndexType*)(buff->byte_array().data() + ref.start);
-
-        for (int i = 0; i < count; i++) {
-            auto* lp = (decltype(IndexType::x)*)&p[i];
-
-            qDebug() << "V:"
-                     << QString("%1 %2 %3")
-                            .arg(lp[0])
-                            .arg(ec >= 2 ? QString::number(lp[1]) : QString())
-                            .arg(ec >= 3 ? QString::number(lp[2]) : QString());
-        }
-    }
-
     return p;
 }
 
@@ -586,6 +590,9 @@ ExMesh::~ExMesh() = default;
 
 int ExMesh::get_id() const {
     return this->id().id_slot;
+}
+int ExMesh::get_id_gen() const {
+    return this->id().id_gen;
 }
 QString ExMesh::get_name() const {
     return id().to_qstring();
@@ -872,6 +879,9 @@ ExObject::~ExObject() {
 int ExObject::get_id() const {
     return this->id().id_slot;
 }
+int ExObject::get_id_gen() const {
+    return this->id().id_gen;
+}
 QString ExObject::get_name() const {
     return m_name;
 }
@@ -932,6 +942,9 @@ ExTable::~ExTable() = default;
 int ExTable::get_id() const {
     return this->id().id_slot;
 }
+int ExTable::get_id_gen() const {
+    return this->id().id_gen;
+}
 QString ExTable::get_name() const {
     return m_name;
 }
@@ -946,6 +959,52 @@ QVariant ExTable::get_column(int c) const {
 
 void ExTable::on_update(nooc::TableData const& md) {
     set_from(md);
+}
+
+void ExTable::on_table_initialize(noo::AnyVarListRef const& names,
+                                  noo::AnyVarRef            keys,
+                                  noo::AnyVarListRef const& data_cols,
+                                  noo::AnyVarListRef const& selections) {
+
+    m_subscribed = true;
+
+    qDebug() << Q_FUNC_INFO;
+
+
+    if (names.size() != data_cols.size()) return;
+    if (names.size() == 0) return;
+
+    m_data = std::make_shared<RemoteTableData>();
+
+    m_data->on_table_initialize(names, keys, data_cols, selections);
+
+    connect(m_data.get(),
+            &RemoteTableData::ask_update_row,
+            [this](int64_t key, noo::AnyVarList& l) {
+                this->request_row_update(key, std::move(l));
+            });
+
+    emit fetch_new_remote_table_data();
+}
+
+void ExTable::on_table_reset() {
+    qDebug() << Q_FUNC_INFO;
+    if (m_data) m_data->on_table_reset();
+}
+
+void ExTable::on_table_updated(noo::AnyVarRef keys, noo::AnyVarRef columns) {
+    qDebug() << Q_FUNC_INFO;
+    if (m_data) m_data->on_table_updated(keys, columns);
+}
+
+void ExTable::on_table_rows_removed(noo::AnyVarRef keys) {
+    qDebug() << Q_FUNC_INFO;
+    if (m_data) m_data->on_table_rows_removed(keys);
+}
+void ExTable::on_table_selection_updated(std::string_view         s,
+                                         noo::SelectionRef const& r) {
+    qDebug() << Q_FUNC_INFO;
+    if (m_data) m_data->on_table_selection_updated(s, r);
 }
 
 // =============================================================================

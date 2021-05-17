@@ -57,7 +57,31 @@ QVariant ComponentListModel::data(QModelIndex const& index, int role) const {
         return item->get_column(index.column());
     }
 
+    if (role >= Qt::UserRole) {
+        int index = role - Qt::UserRole;
+
+        return item->get_column(index);
+    }
+
     return QVariant();
+}
+
+QHash<int, QByteArray> ComponentListModel::roleNames() const {
+    static const auto roles = [&]() {
+        QHash<int, QByteArray> ret;
+
+        for (int i = 0; i < m_header.size(); i++) {
+            ret[Qt::UserRole + i] = m_header[i].toLower().toLocal8Bit();
+        }
+
+        return ret;
+    }();
+
+    return roles;
+}
+
+ComponentListItem* ComponentListModel::get_item(int index) const {
+    return m_items.value(index);
 }
 
 void ComponentListModel::register_item(ComponentListItem* item) {

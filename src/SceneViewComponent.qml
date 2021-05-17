@@ -51,15 +51,15 @@ Item {
 
             OrbitCameraController {
                 id: orbit_cam_controller
-                enabled: settings.orbit_cam
-                camera: camera
-            }
-            FirstPersonCameraController {
-                id: fp_cam_controller
-                enabled: !settings.orbit_cam
+                //enabled: settings.orbit_cam
                 camera: camera
             }
 
+            //            FirstPersonCameraController {
+            //                id: fp_cam_controller
+            //                enabled: !settings.orbit_cam
+            //                camera: camera
+            //            }
             EntityShim {
 
                 Entity {
