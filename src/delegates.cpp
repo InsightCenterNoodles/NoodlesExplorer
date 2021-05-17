@@ -574,21 +574,6 @@ attrib_from_idx_ref(Qt3DRender::QGeometry*                   node,
 
     qDebug() << "BF" << buff->entity()->data().size();
 
-    {
-        auto  ec = VertexTypeTrait<IndexType>::element_count;
-        auto* p  = (IndexType*)(buff->byte_array().data() + ref.start);
-
-        for (int i = 0; i < count; i++) {
-            auto* lp = (decltype(IndexType::x)*)&p[i];
-
-            qDebug() << "V:"
-                     << QString("%1 %2 %3")
-                            .arg(lp[0])
-                            .arg(ec >= 2 ? QString::number(lp[1]) : QString())
-                            .arg(ec >= 3 ? QString::number(lp[2]) : QString());
-        }
-    }
-
     return p;
 }
 
@@ -981,6 +966,8 @@ void ExTable::on_table_initialize(noo::AnyVarListRef const& names,
                                   noo::AnyVarListRef const& data_cols,
                                   noo::AnyVarListRef const& selections) {
 
+    m_subscribed = true;
+
     qDebug() << Q_FUNC_INFO;
 
 
@@ -990,6 +977,12 @@ void ExTable::on_table_initialize(noo::AnyVarListRef const& names,
     m_data = std::make_shared<RemoteTableData>();
 
     m_data->on_table_initialize(names, keys, data_cols, selections);
+
+    connect(m_data.get(),
+            &RemoteTableData::ask_update_row,
+            [this](int64_t key, noo::AnyVarList& l) {
+                this->request_row_update(key, std::move(l));
+            });
 
     emit fetch_new_remote_table_data();
 }

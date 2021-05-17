@@ -346,6 +346,8 @@ class ExTable : public nooc::TableDelegate, public ComponentListItem {
 
     void set_from(nooc::TableData const& md);
 
+    bool m_subscribed = false;
+
 public:
     static QStringList header();
 
@@ -365,6 +367,8 @@ public:
     void on_update(nooc::TableData const&) override;
 
     std::shared_ptr<RemoteTableData> table_data() const { return m_data; }
+
+    bool is_subscribed() const { return m_subscribed; }
 
 public:
     void on_table_initialize(noo::AnyVarListRef const& names,

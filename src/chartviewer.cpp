@@ -10,9 +10,23 @@
 
 #include <QColorDialog>
 #include <QDataWidgetMapper>
-#include <QStyledItemDelegate>
+
+#include <random>
 
 using namespace QtCharts;
+
+static const QStringList default_color_list = {
+    "#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462",
+    "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd", "#ccebc5", "#ffed6f",
+};
+
+QColor random_color() {
+    static auto gen = std::mt19937 { std::random_device {}() };
+    static auto b =
+        std::uniform_int_distribution(0, default_color_list.size() - 1);
+    return default_color_list.value(b(gen));
+}
+
 
 ColorWell::ColorWell(QWidget* parent) : QPushButton(parent) {
     this->setFlat(true);
@@ -74,6 +88,8 @@ void ChartSeriesPart::rebuild(ChartViewer& chart_view) {
         points << QPointF(span_a[i], span_b[i]);
     }
 
+    qDebug() << "Bound for" << name << mins.x << maxs.x << mins.y << maxs.y;
+
 
     if (type == 0) { // ick
         auto* ns = new QLineSeries;
@@ -91,7 +107,7 @@ void ChartSeriesPart::rebuild(ChartViewer& chart_view) {
         series  = ns;
         ns->setName(name);
         ns->setMarkerShape(QScatterSeries::MarkerShapeCircle);
-        ns->setMarkerSize(2);
+        ns->setMarkerSize(4);
 
         chart->addSeries(ns);
 
@@ -100,47 +116,11 @@ void ChartSeriesPart::rebuild(ChartViewer& chart_view) {
         ns->setColor(color);
         ns->replace(points);
     }
+
+    chart_view.recompute_bounds();
 }
 
 // =============================================================================
-
-class ColorDelegate : public QStyledItemDelegate {
-
-
-    // QAbstractItemDelegate interface
-public:
-    QWidget* createEditor(QWidget*                    parent,
-                          const QStyleOptionViewItem& option,
-                          const QModelIndex&          index) const override {
-        return new QColorDialog(parent);
-    }
-
-    void setEditorData(QWidget*           editor,
-                       const QModelIndex& index) const override {
-        auto*  m = index.model();
-        QColor c = m->data(index).value<QColor>();
-
-        auto* dialog = qobject_cast<QColorDialog*>(editor);
-
-        if (!dialog) return;
-
-        dialog->setCurrentColor(c);
-    }
-
-    void setModelData(QWidget*            editor,
-                      QAbstractItemModel* model,
-                      const QModelIndex&  index) const override {
-
-        auto* dialog = qobject_cast<QColorDialog*>(editor);
-
-        if (!dialog) return;
-
-        auto c = dialog->currentColor();
-
-        model->setData(index, c);
-    }
-};
-
 
 static const QStringList series_table_header = { "Name",
                                                  "Type",
@@ -173,7 +153,7 @@ int SeriesTable::columnCount(QModelIndex const& parent) const {
 
 
 QVariant SeriesTable::data(QModelIndex const& index, int role) const {
-    qDebug() << Q_FUNC_INFO << index << role;
+    // qDebug() << Q_FUNC_INFO << index << role;
     if (!index.isValid()) return {};
     if (index.row() >= m_active_series.size()) return {};
 
@@ -196,7 +176,7 @@ QVariant SeriesTable::data(QModelIndex const& index, int role) const {
 bool SeriesTable::setData(QModelIndex const& index,
                           QVariant const&    value,
                           int                role) {
-    qDebug() << Q_FUNC_INFO << index << value;
+    // qDebug() << Q_FUNC_INFO << index << value;
     if (data(index, role) == value) return false;
 
     auto& item = m_active_series[index.row()];
@@ -251,6 +231,10 @@ void SeriesTable::recompute_bounds() {
         maxs = glm::max(maxs, a.maxs);
     }
 
+    // add some margin?
+
+    qDebug() << "Totals bounds" << mins.x << maxs.x << mins.y << maxs.y;
+
     auto chart = m_host->chart();
 
     {
@@ -269,17 +253,12 @@ void SeriesTable::recompute_bounds() {
 }
 
 void SeriesTable::add_new() {
-    qDebug() << Q_FUNC_INFO;
-
     beginInsertRows({}, rowCount(), rowCount());
-    m_active_series.emplace_back();
+    auto& n = m_active_series.emplace_back();
+    n.color = random_color();
     endInsertRows();
-
-    // no rebuild?
 }
 void SeriesTable::del_at(int i) {
-    qDebug() << Q_FUNC_INFO;
-
     if (i < 0 or i >= m_active_series.size()) return;
 
     beginRemoveRows({}, i, i);
@@ -293,13 +272,8 @@ void SeriesTable::del_at(int i) {
 
 // =============================================================================
 
+
 void ChartViewer::setup_root() {
-    connect(m_attached_table.get(),
-            &ExTable::fetch_new_remote_table_data,
-            [this]() {
-                m_data = m_attached_table->table_data();
-                connect_table();
-            });
 
     m_widget = new QWidget;
     m_widget->setAttribute(Qt::WA_DeleteOnClose);
@@ -345,8 +319,6 @@ void ChartViewer::setup_edit_page() {
             &QDataWidgetMapper::setCurrentModelIndex);
 
     m_ui_root->typeComboBox->addItems(series_types);
-    m_ui_root->xColumn->addItems(m_data->column_names());
-    m_ui_root->yColumn->addItems(m_data->column_names());
 
     // Bug fix for OS X platforms and focus
     m_ui_root->typeComboBox->setFocusPolicy(Qt::StrongFocus);
@@ -359,6 +331,13 @@ void ChartViewer::setup_edit_page() {
     data_mapper->addMapping(m_ui_root->yColumn, 3, "currentIndex");
     data_mapper->addMapping(color_well, 4, "color");
 
+    on_mapper_changed(-1);
+
+    connect(data_mapper,
+            &QDataWidgetMapper::currentIndexChanged,
+            this,
+            &ChartViewer::on_mapper_changed);
+
 
     connect(color_well, &ColorWell::colorChanged, [data_mapper](auto) {
         data_mapper->submit();
@@ -367,6 +346,10 @@ void ChartViewer::setup_edit_page() {
 
     connect(m_ui_root->addSeries, &QToolButton::clicked, [this]() {
         m_series_table.add_new();
+
+        m_ui_root->seriesListView->selectionModel()->setCurrentIndex(
+            m_series_table.index(m_series_table.rowCount() - 1, 0),
+            QItemSelectionModel::Select);
     });
 
     connect(m_ui_root->delSeries, &QToolButton::clicked, [this]() {
@@ -421,26 +404,43 @@ ChartViewer::ChartViewer(std::shared_ptr<ExTable> t, QObject* parent)
     setup_chart_page();
 
 
-    connect_table();
+    connect(t.get(),
+            &ExTable::fetch_new_remote_table_data,
+            this,
+            &ChartViewer::on_table_changed);
 
-    on_table_changed();
-
+    if (!m_attached_table->is_subscribed()) {
+        m_attached_table->subscribe();
+    } else {
+        on_table_changed();
+    }
 
     m_widget->setVisible(true);
 }
 
-void ChartViewer::connect_table() {
+void ChartViewer::on_table_changed() {
+    qDebug() << Q_FUNC_INFO << m_series_table.rowCount();
+
+    m_data = m_attached_table->table_data();
+
+    m_ui_root->xColumn->clear();
+    m_ui_root->yColumn->clear();
+
+    m_ui_root->xColumn->addItems(m_data->column_names());
+    m_ui_root->yColumn->addItems(m_data->column_names());
+
     m_series_table.clear();
 
     for (auto c : m_table_obj_links) {
         disconnect(c);
     }
 
+    // reconnect table changed to re-plot functions
     m_table_obj_links.clear();
 
     auto add_link = [&](auto&& p) {
-        m_table_obj_links.push_back(
-            connect(m_data.get(), p, [this]() { on_table_changed(); }));
+        m_table_obj_links.push_back(connect(
+            m_data.get(), p, this, &ChartViewer::on_table_data_changed));
     };
 
 
@@ -449,60 +449,19 @@ void ChartViewer::connect_table() {
     add_link(&RemoteTableData::rowsRemoved);
     add_link(&RemoteTableData::modelReset);
     add_link(&RemoteTableData::dataChanged);
-}
-
-
-void ChartViewer::on_table_changed() {
-    qDebug() << Q_FUNC_INFO << m_series_table.rowCount();
 
     m_series_table.rebuild_all();
+}
 
-    //    glm::vec2 mins(std::numeric_limits<float>::max());
-    //    glm::vec2 maxs(std::numeric_limits<float>::lowest());
+void ChartViewer::on_table_data_changed() {
+    m_series_table.rebuild_all();
+}
 
-    //    for (auto const& s : m_active_series) {
-    //        qDebug() << s.a_col << s.b_col;
-    //        if (s.a_col < 0 or s.b_col < 0) continue;
+void ChartViewer::on_mapper_changed(int i) {
+    bool e = i >= 0;
 
-    //        auto& data_a = m_data->column(s.a_col);
-    //        auto& data_b = m_data->column(s.b_col);
-
-    //        qDebug() << data_a.is_string() << data_b.is_string();
-    //        if (data_a.is_string() or data_b.is_string()) continue;
-
-    //        auto span_a = data_a.as_doubles();
-    //        auto span_b = data_b.as_doubles();
-
-    //        auto common_size = std::min(span_a.size(), span_b.size());
-
-    //        QVector<QPointF> points;
-
-    //        for (size_t i = 0; i < common_size; i++) {
-    //            auto p = glm::vec2(span_a[i], span_b[i]);
-    //            mins   = glm::min(mins, p);
-    //            maxs   = glm::max(maxs, p);
-
-    //            points << QPointF(span_a[i], span_b[i]);
-    //        }
-
-    //        s.series->replace(points);
-    //    }
-
-    //    qDebug() << "Bounds";
-    //    qDebug() << mins.x << maxs.x;
-    //    qDebug() << mins.y << maxs.y;
-
-    //    {
-    //        auto ax = m_chart->axes(Qt::Horizontal);
-    //        for (auto a : ax) {
-    //            a->setRange(mins.x, maxs.x);
-    //        }
-    //    }
-
-    //    {
-    //        auto ax = m_chart->axes(Qt::Vertical);
-    //        for (auto a : ax) {
-    //            a->setRange(mins.y, maxs.y);
-    //        }
-    //    }
+    m_ui_root->nameLineEdit->setEnabled(e);
+    m_ui_root->typeComboBox->setEnabled(e);
+    m_ui_root->xColumn->setEnabled(e);
+    m_ui_root->yColumn->setEnabled(e);
 }

@@ -1,5 +1,6 @@
 #include "state.h"
 
+#include "chartviewer.h"
 #include "noo_client_interface.h"
 #include "noo_common.h"
 #include "tableviewer.h"
@@ -80,6 +81,11 @@ bool State::start_connection(QString name, QString url) {
             &nooc::ClientConnection::disconnected,
             m_client_conn,
             &QObject::deleteLater);
+
+    connect(m_client_conn,
+            &nooc::ClientConnection::disconnected,
+            this,
+            &State::handle_disconnect);
 
     connect(m_client_conn,
             &nooc::ClientConnection::connected,
@@ -332,6 +338,28 @@ void State::launch_table_view(int i) {
 
 
     new TableViewer(del_ptr, this);
+}
+
+void State::launch_chart_view(int i) {
+    auto* p = m_table_list->get_item(i);
+
+    if (!p) return;
+
+    auto slot = p->get_id();
+    auto gen  = p->get_id_gen();
+
+    auto id = noo::TableID(slot, gen);
+
+    auto tbl_ptr = m_client_conn->get(id);
+
+    if (!tbl_ptr) return;
+
+    auto del_ptr = std::dynamic_pointer_cast<ExTable>(tbl_ptr);
+
+    if (!del_ptr) return;
+
+
+    new ChartViewer(del_ptr, this);
 }
 
 

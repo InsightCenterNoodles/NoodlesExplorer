@@ -19,6 +19,11 @@ class TableViewer : public QObject {
 public:
     explicit TableViewer(std::shared_ptr<ExTable>, QObject* parent);
 
+private slots:
+
+    void add_rows();
+    void delete_selection();
+
 signals:
 };
 

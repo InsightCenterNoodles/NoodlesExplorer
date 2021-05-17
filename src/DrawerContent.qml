@@ -61,7 +61,7 @@ ColumnLayout {
             font.styleName: "Solid"
 
             onClicked: {
-                renderer.showDebugOverlay = true
+                //renderer.showDebugOverlay = true
                 app_state.exec_debug()
             }
         }
@@ -158,27 +158,50 @@ ColumnLayout {
                     Label {
                         z: parent.z + 1
                         visible: table_delegate_mouse_area.containsMouse
+                        anchors.right: table_label.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.margins: 3
+                        width: height
+
+                        text: "\uf080"
+                        font.family: icon_solid.name
+                        font.styleName: "Solid"
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                app_state.launch_chart_view(index)
+                            }
+                        }
+                    }
+
+                    Label {
+                        id: table_label
+                        z: parent.z + 1
+                        visible: table_delegate_mouse_area.containsMouse
                         anchors.right: parent.right
                         anchors.top: parent.top
                         anchors.bottom: parent.bottom
                         anchors.margins: 3
                         width: height
 
-                        text: "\uf054"
+                        text: "\uf0ce"
                         font.family: icon_solid.name
                         font.styleName: "Solid"
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                app_state.launch_table_view(index)
+                            }
+                        }
                     }
 
                     MouseArea {
                         id: table_delegate_mouse_area
                         hoverEnabled: true
                         anchors.fill: parent
-
-                        onClicked: {
-                            app_state.launch_table_view(index)
-                            //call_method_pop.close()
-                            //app_state.ask_to_call_doc_method(index)
-                        }
                     }
                 }
             }

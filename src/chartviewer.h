@@ -114,10 +114,12 @@ public:
     QtCharts::QValueAxis* y_axis() const { return m_y_axis; }
     RemoteTableData*      current_data() const { return m_data.get(); }
 
-    void connect_table();
+    void recompute_bounds() { m_series_table.recompute_bounds(); }
 
 private slots:
     void on_table_changed();
+    void on_table_data_changed();
+    void on_mapper_changed(int);
 
 signals:
 };

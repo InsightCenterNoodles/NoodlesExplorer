@@ -1,5 +1,7 @@
 #include "tabledata.h"
 
+#include "variant_tools.h"
+
 #include <QDebug>
 
 RemoteTableData::RemoteTableData(QObject* parent)
@@ -110,32 +112,116 @@ void RemoteTableData::on_table_reset() {
     endResetModel();
 }
 
+using CellType = std::variant<double, std::string_view>;
+
+static CellType get_item_single(noo::AnyVarRef v) {
+    qDebug() << Q_FUNC_INFO;
+    return VMATCH_W(
+        noo::visit,
+        v,
+        VCASE(int64_t sp) {
+            qDebug() << "INT";
+            return CellType((double)sp);
+        },
+        VCASE(double sp) {
+            qDebug() << "DBL";
+            return CellType(sp);
+        },
+        VCASE(std::string_view sp) {
+            qDebug() << "STR";
+            return CellType(sp);
+        },
+        VCASE(auto const& t) {
+            qDebug() << (typeid(t).name());
+            return CellType(0.0);
+        })
+}
+
+inline CellType get_cell_from_array(noo::AnyVarRef v, int i) {
+    qDebug() << Q_FUNC_INFO << i;
+    return VMATCH_W(
+        noo::visit,
+        v,
+        VCASE(std::span<int64_t const> sp) {
+            qDebug() << "INT";
+            return CellType((double)noo::get_or_default(sp, i));
+        },
+        VCASE(std::span<double const> sp) {
+            qDebug() << "DBL";
+            return CellType(noo::get_or_default(sp, i));
+        },
+        VCASE(noo::AnyVarListRef sp) {
+            qDebug() << "VLIST";
+            if (i < 0 or i >= sp.size()) { return CellType(0.0); }
+
+            auto c = sp[i];
+            return get_item_single(c);
+        },
+        VCASE(auto const& t) {
+            qDebug() << (typeid(t).name());
+            return CellType(0.0);
+        })
+}
+
 void RemoteTableData::on_table_updated(noo::AnyVarRef keys,
                                        noo::AnyVarRef columns) {
+    qDebug() << Q_FUNC_INFO << QString::fromStdString(keys.dump_string())
+             << QString::fromStdString(columns.dump_string());
     // TODO: optimize reset
     beginResetModel();
 
-    auto actual_keys = keys.coerce_int_list();
+    auto       actual_keys      = keys.coerce_int_list();
+    auto const actual_keys_span = actual_keys.span();
 
     auto l = columns.to_vector();
-
     if (l.size() != m_columns.size()) return;
 
-    l.for_each([&](auto i, noo::AnyVarRef a) {
-        if (a.has_real_list()) {
-            auto real_list = a.coerce_real_list();
-            m_columns[i].append(real_list.span());
-        } else {
-            m_columns[i].append(a.to_vector());
+
+    // doing this split like this sucks. we have to check if all are new. if
+    // they are, we can append them fast. if not, we should go line by line.
+    // TODO: add fast append
+
+    auto append_row = [&](int64_t ki) {
+        qDebug() << "APPEND" << ki;
+        auto key = actual_keys_span[ki];
+
+        auto current_row = rowCount();
+
+        m_row_to_key_map.push_back(key);
+        m_key_to_row_map[key] = current_row;
+
+
+        l.for_each([&](auto i, noo::AnyVarRef a) {
+            auto cell = get_cell_from_array(a, ki);
+
+            std::visit([&](auto const& c) { m_columns.at(i).append(c); }, cell);
+        });
+    };
+
+    auto update_row = [&](int64_t ki) {
+        qDebug() << "UPDATE" << ki;
+        auto key = actual_keys_span[ki];
+
+        auto row = m_key_to_row_map.at(key);
+
+        l.for_each([&](auto i, noo::AnyVarRef a) {
+            auto cell = get_cell_from_array(a, ki);
+
+            std::visit([&](auto const& c) { m_columns.at(i).set(row, c); },
+                       cell);
+        });
+    };
+
+    for (size_t key_i = 0; key_i < actual_keys_span.size(); key_i++) {
+        auto key  = actual_keys_span[key_i];
+        auto iter = m_key_to_row_map.find(key);
+        if (iter == m_key_to_row_map.end()) {
+            append_row(key_i);
+            continue;
         }
-    });
 
-    auto current_row = rowCount();
-
-    for (auto k : actual_keys) {
-        m_row_to_key_map.push_back(k);
-        m_key_to_row_map[k] = current_row;
-        current_row++;
+        // update
+        update_row(key_i);
     }
 
     endResetModel();
@@ -168,7 +254,7 @@ void RemoteTableData::on_table_rows_removed(noo::AnyVarRef keys) {
         }
     }
 
-    for (size_t row = 0; row < m_row_to_key_map.size();) {
+    for (size_t row = 0; row < m_row_to_key_map.size(); row++) {
         auto k              = m_row_to_key_map[row];
         m_key_to_row_map[k] = row;
     }
@@ -215,6 +301,10 @@ int RemoteTableData::columnCount(QModelIndex const& parent) const {
     return m_columns.size();
 }
 
+int64_t RemoteTableData::key_for_row(size_t i) const {
+    return m_row_to_key_map.at(i);
+}
+
 QVariant RemoteTableData::data(QModelIndex const& index, int role) const {
     // qDebug() << index << m_columns.size();
     if (!index.isValid()) return {};
@@ -234,41 +324,47 @@ QVariant RemoteTableData::data(QModelIndex const& index, int role) const {
 }
 
 
-// bool TableData::setData(QModelIndex const& index,
-//                        QVariant const&    value,
-//                        int                role) {
-//    if (data(index, role) == value) return false;
+bool RemoteTableData::setData(QModelIndex const& index,
+                              QVariant const&    value,
+                              int                role) {
+    if (data(index, role) == value) return false;
 
-//    auto& item = m_records[index.row()];
+    if (role != Qt::EditRole) return false;
 
-//    int location = -1;
+    // we are only making SUGGESTIONS to the server to edit.
+    // Thus, always return false.
+    // This is bad form, but we have to send the whole row if we demand an
+    // update so we get the current row, then we replace the new value in the
+    // list, and send that along
 
-//    if (role >= Qt::UserRole) {
-//        location = role - Qt::UserRole;
-//    } else {
-//        location = index.column();
-//    }
+    noo::AnyVarList row;
 
-//    if (location >= m_header.size()) return false;
+    for (auto const& c : m_columns) {
+        if (c.is_string()) {
+            row.push_back(c.as_string()[index.row()]);
+        } else {
+            row.push_back(c.as_doubles()[index.row()]);
+        }
+    }
 
-//    bool ok = record_runtime_set(item, location, value);
+    bool ok          = false;
+    auto clean_value = value.toDouble(&ok);
 
-//    if (!ok) return false;
+    if (ok) {
+        row[index.column()] = clean_value;
+    } else {
+        row[index.column()] = value.toString().toStdString();
+    }
 
-//    emit dataChanged(index, index, QVector<int>() << role);
-//    return true;
-//}
+    auto key = m_row_to_key_map[index.row()];
 
-// Qt::ItemFlags TableData::flags(QModelIndex const& index) const {
-//    if (!index.isValid()) return Qt::NoItemFlags;
+    emit ask_update_row(key, row);
 
-//    bool can_edit = false;
+    return false;
+}
 
-//    tuple_get(Record::meta, index.column(), [&can_edit](auto const& v) {
-//        can_edit = v.editable;
-//    });
+Qt::ItemFlags RemoteTableData::flags(QModelIndex const& index) const {
+    if (!index.isValid()) return Qt::NoItemFlags;
 
-//    if (!can_edit) return Qt::NoItemFlags;
-
-//    return Qt::ItemIsEditable;
-//}
+    return Qt::ItemIsEditable | Qt::ItemIsSelectable | Qt::ItemIsEnabled;
+}

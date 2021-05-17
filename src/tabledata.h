@@ -35,6 +35,7 @@ public:
     auto const& column(int i) const { return m_columns.at(i); }
     auto        column_count() const { return m_columns.size(); }
 
+    int64_t key_for_row(size_t i) const;
 
 public:
     QVariant headerData(int             section,
@@ -48,11 +49,14 @@ public:
                   int                role = Qt::DisplayRole) const override;
 
 
-    //    bool setData(QModelIndex const& index,
-    //                 QVariant const&    value,
-    //                 int                role = Qt::EditRole) override;
+    bool setData(QModelIndex const& index,
+                 QVariant const&    value,
+                 int                role = Qt::EditRole) override;
 
-    //    Qt::ItemFlags flags(QModelIndex const& index) const override;
+    Qt::ItemFlags flags(QModelIndex const& index) const override;
+
+signals:
+    void ask_update_row(int64_t key, noo::AnyVarList&);
 };
 
 #endif // TABLEDATA_H

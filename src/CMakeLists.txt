@@ -27,7 +27,7 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG 16e769b13d0d9938287277cacc8aeae93a798dea
+    GIT_TAG 9862aab1ce3e12220ecee9543bdd0f88a94fd6e3
 )
 
 find_package(Qt5 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts)
@@ -84,4 +84,8 @@ PRIVATE
     chartviewer.cpp
     chartviewer.h
     chartviewer.ui
+    variant_tools.h
+    adddatadialog.cpp
+    adddatadialog.h
+    adddatadialog.ui
 )

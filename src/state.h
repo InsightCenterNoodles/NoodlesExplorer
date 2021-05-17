@@ -70,6 +70,7 @@ public slots:
     void exec_debug();
 
     void launch_table_view(int);
+    void launch_chart_view(int);
 
 private slots:
     void handle_connect();

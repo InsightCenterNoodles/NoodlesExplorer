@@ -211,12 +211,6 @@
      </item>
      <item>
       <widget class="QToolButton" name="editButton">
-       <property name="minimumSize">
-        <size>
-         <width>16</width>
-         <height>16</height>
-        </size>
-       </property>
        <property name="text">
         <string>E</string>
        </property>
