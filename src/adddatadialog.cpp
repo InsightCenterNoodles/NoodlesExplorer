@@ -1,7 +1,7 @@
 #include "adddatadialog.h"
 #include "ui_adddatadialog.h"
 
-#include "delegates.h"
+#include "delegates/extable.h"
 #include "tabledata.h"
 
 #include <noo_any.h>

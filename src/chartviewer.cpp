@@ -1,6 +1,6 @@
 #include "chartviewer.h"
 
-#include "delegates.h"
+#include "delegates/extable.h"
 #include "tabledata.h"
 
 #include <QtCharts/QChartView>
@@ -10,6 +10,7 @@
 
 #include <QColorDialog>
 #include <QDataWidgetMapper>
+#include <QDebug>
 
 #include <random>
 

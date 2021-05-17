@@ -4,8 +4,10 @@
 #include "argumenttablemodel.h"
 #include "attachedmethodlistmodel.h"
 #include "componentlistmodel.h"
-#include "delegates.h"
+#include "delegates/delegates.h"
+#include "delegates/exdoc.h"
 
+#include <QEntity>
 #include <QObject>
 #include <QPointer>
 

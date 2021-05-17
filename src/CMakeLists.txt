@@ -70,8 +70,8 @@ PRIVATE
     qml.qrc
     state.cpp
     state.h
-    delegates.h
-    delegates.cpp
+    delegates/delegates.h
+    delegates/delegates.cpp
     instance_material/qinstancedmetalroughmaterial.cpp
     instance_material/qinstancedmetalroughmaterial.h
     attachedmethodlistmodel.cpp
@@ -88,4 +88,24 @@ PRIVATE
     adddatadialog.cpp
     adddatadialog.h
     adddatadialog.ui
+    delegates/exmethod.cpp
+    delegates/exmethod.h
+    delegates/exsignal.cpp
+    delegates/exsignal.h
+    delegates/exbuffer.cpp
+    delegates/exbuffer.h
+    delegates/extexture.cpp
+    delegates/extexture.h
+    delegates/exmaterial.cpp
+    delegates/exmaterial.h
+    delegates/exmesh.cpp
+    delegates/exmesh.h
+    delegates/exobject.cpp
+    delegates/exobject.h
+    delegates/extable.cpp
+    delegates/extable.h
+    delegates/exdoc.cpp
+    delegates/exdoc.h
+    delegates/exlight.cpp
+    delegates/exlight.h
 )

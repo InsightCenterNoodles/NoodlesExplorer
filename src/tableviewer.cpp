@@ -1,6 +1,6 @@
 #include "tableviewer.h"
 
-#include "delegates.h"
+#include "delegates/extable.h"
 #include "tabledata.h"
 
 #include "adddatadialog.h"

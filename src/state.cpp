@@ -1,5 +1,15 @@
 #include "state.h"
 
+
+#include "delegates/exbuffer.h"
+#include "delegates/exlight.h"
+#include "delegates/exmaterial.h"
+#include "delegates/exmesh.h"
+#include "delegates/exobject.h"
+#include "delegates/exsignal.h"
+#include "delegates/extable.h"
+#include "delegates/extexture.h"
+
 #include "chartviewer.h"
 #include "noo_client_interface.h"
 #include "noo_common.h"
