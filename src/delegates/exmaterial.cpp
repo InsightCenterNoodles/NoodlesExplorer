@@ -15,16 +15,13 @@ ExMaterial::ExMaterial(noo::MaterialID                     id,
     : nooc::MaterialDelegate(id, md),
       ComponentListItem(list),
       m_data(md),
-      m_3d_entity(new QInstancedMetalRoughMaterial(scene_root)) {
-    // m_3d_entity(new Qt3DExtras::QMetalRoughMaterial(scene_root)) {
-
-
-    m_3d_entity->setBaseColor(
-        QColor::fromRgbF(md.color.r, md.color.g, md.color.b));
-    m_3d_entity->setMetalness(md.metallic);
-    m_3d_entity->setRoughness(md.roughness);
+      m_3d_entity(new QInstancedMetalRoughMaterial(scene_root)),
+      m_2d_material(new Qt3DExtras::QPhongMaterial(scene_root)) {
 
     m_3d_entity->setObjectName(get_name());
+    m_2d_material->setObjectName(get_name());
+
+    on_update(md);
 }
 
 ExMaterial::~ExMaterial() = default;
@@ -56,15 +53,25 @@ QVariant ExMaterial::get_column(int c) const {
 }
 
 void ExMaterial::on_update(nooc::MaterialData const& md) {
+    qDebug() << Q_FUNC_INFO << md.color.r << md.color.g << md.color.b
+             << md.color.a;
     m_data = md;
 
     m_3d_entity->setBaseColor(
         QColor::fromRgbF(md.color.r, md.color.g, md.color.b));
     m_3d_entity->setMetalness(md.metallic);
     m_3d_entity->setRoughness(md.roughness);
+
+    m_2d_material->setDiffuse(
+        QColor::fromRgbF(md.color.r, md.color.g, md.color.b));
+    // m_2d_material->setMetalness(md.metallic);
+    m_2d_material->setShininess(1.0 - md.roughness);
 }
 
-QInstancedMetalRoughMaterial* ExMaterial::entity() {
-    // Qt3DExtras::QMetalRoughMaterial* ExMaterial::entity() {
+// Qt3DExtras::QPhongMaterial* ExMaterial::get_2d_material() {
+//    return m_2d_material;
+//}
+
+QInstancedMetalRoughMaterial* ExMaterial::get_3d_material() {
     return m_3d_entity;
 }

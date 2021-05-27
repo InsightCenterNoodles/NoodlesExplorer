@@ -80,6 +80,12 @@ QString ptr_to_id(std::shared_ptr<T> const& ptr) {
     return ptr->id().to_qstring();
 }
 
+template <class T>
+QString ptr_to_id(T* ptr) {
+    if (!ptr) return "None";
+    return ptr->id().to_qstring();
+}
+
 
 template <class T>
 QStringList build_id_list(std::vector<T> const& methods) {
@@ -91,6 +97,45 @@ QStringList build_id_list(std::vector<T> const& methods) {
 
     return ret;
 }
+
+class AttachmentBase : public QObject {
+    Q_OBJECT
+
+signals:
+    void attachment_changed(bool different_ptr = false);
+};
+
+template <class T>
+class AttachmentPoint : public AttachmentBase {
+    using Ptr = std::shared_ptr<T>;
+    Ptr m_attachment;
+
+    QMetaObject::Connection m_updated_link;
+
+public:
+    void set(Ptr p) {
+        if (m_updated_link) disconnect(m_updated_link);
+
+        m_attachment = p;
+        emit attachment_changed(true);
+
+        if constexpr (T::CAN_UPDATE) {
+            m_updated_link = connect(p.get(), &T::updated, [this]() {
+                emit attachment_changed(false);
+            });
+        }
+    }
+
+    void operator=(Ptr p) { set(p); }
+
+    T* get() const { return m_attachment.get(); }
+    T* get() { return m_attachment.get(); }
+
+    operator bool() const { return !!m_attachment; }
+
+    T& operator*() { return *m_attachment; }
+    T* operator->() { return m_attachment.get(); }
+};
 
 
 #endif // DELEGATES_H

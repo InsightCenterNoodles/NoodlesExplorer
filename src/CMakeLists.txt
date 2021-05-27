@@ -74,6 +74,8 @@ PRIVATE
     delegates/delegates.cpp
     instance_material/qinstancedmetalroughmaterial.cpp
     instance_material/qinstancedmetalroughmaterial.h
+    instance_material/qinstancedlinematerial.cpp
+    instance_material/qinstancedlinematerial.h
     attachedmethodlistmodel.cpp
     attachedmethodlistmodel.h
     tabledata.cpp

@@ -14,6 +14,8 @@ struct QtGeomInfo {
     UniqueQPtr<Qt3DRender::QBuffer>    instance_buffer;
     UniqueQPtr<Qt3DRender::QAttribute> instance_attribute;
 
+    bool is_2d = false;
+
     QtGeomInfo();
     ~QtGeomInfo();
 
