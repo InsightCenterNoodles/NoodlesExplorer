@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12...3.16)
 
-project(NoodlesExplorer VERSION 0.1 LANGUAGES CXX)
+project(NoodlesExplorer VERSION 0.2 LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
