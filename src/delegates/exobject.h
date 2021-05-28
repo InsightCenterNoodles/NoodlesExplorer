@@ -13,6 +13,8 @@ class ExLight;
 
 
 class ExObject : public nooc::ObjectDelegate, public ComponentListItem {
+    Q_OBJECT
+
     Qt3DCore::QEntity*            m_3d_root;
     UniqueQPtr<Qt3DCore::QEntity> m_3d_entity;
     Qt3DCore::QTransform*         m_3d_transform;
@@ -25,8 +27,8 @@ class ExObject : public nooc::ObjectDelegate, public ComponentListItem {
     QString                               m_name;
     std::shared_ptr<ExObject>             m_parent;
     glm::mat4                             m_transform;
-    std::shared_ptr<ExMaterial>           m_material;
-    std::shared_ptr<ExMesh>               m_mesh;
+    AttachmentPoint<ExMaterial>           m_material;
+    AttachmentPoint<ExMesh>               m_mesh;
     std::vector<std::shared_ptr<ExLight>> m_lights;
     std::vector<nooc::TableDelegatePtr>   m_tables;
     std::vector<glm::mat4>                m_instances;
@@ -55,6 +57,10 @@ public:
     void on_update(nooc::ObjectUpdateData const&) override;
 
     Qt3DCore::QEntity* entity();
+
+private slots:
+    void material_changed(bool);
+    void mesh_changed(bool);
 };
 
 #endif // EXOBJECT_H

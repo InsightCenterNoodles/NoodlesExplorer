@@ -6,10 +6,13 @@
 
 #include <noo_client_interface.h>
 
+#include <QPhongMaterial>
+
 class ExMaterial : public nooc::MaterialDelegate, public ComponentListItem {
     nooc::MaterialData m_data;
 
     UniqueQPtr<QInstancedMetalRoughMaterial> m_3d_entity;
+    UniqueQPtr<Qt3DExtras::QPhongMaterial>   m_2d_material;
 
 public:
     static QStringList header();
@@ -29,7 +32,8 @@ public:
     QVariant get_column(int c) const override;
     void     on_update(nooc::MaterialData const&) override;
 
-    QInstancedMetalRoughMaterial* entity();
+    // Qt3DExtras::QPhongMaterial*   get_2d_material();
+    QInstancedMetalRoughMaterial* get_3d_material();
 };
 
 #endif // EXMATERIAL_H

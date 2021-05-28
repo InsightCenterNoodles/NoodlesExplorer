@@ -13,28 +13,48 @@
 #include <QGeometryRenderer>
 #include <QMaterial>
 #include <Qt3DCore/QTransform>
+#include <Qt3DRender/QFrontFace>
 
 void ExObject::remake_mesh_attachment() {
+    qDebug() << Q_FUNC_INFO << !!m_mesh << !!m_material;
+    // if (!m_mesh or !m_material) return;
+
     if (m_att_mesh_details) {
         m_3d_entity->removeComponent(m_att_mesh_details->renderer);
     }
 
-    qDebug() << "Num instances" << m_instances.size();
+    if (m_material) {
+        m_3d_entity->removeComponent(m_material->get_3d_material());
+        // m_3d_entity->removeComponent(m_material->get_2d_material());
+    }
 
-    if (!m_mesh) return;
+    if (!m_mesh or !m_material) return;
 
     m_att_mesh_details.emplace(m_mesh->make_new_info(m_instances));
 
     if (m_att_mesh_details) {
         m_3d_entity->addComponent(m_att_mesh_details->renderer);
+
+
+        if (m_material) {
+            m_3d_entity->addComponent(m_material->get_3d_material());
+
+            //            if (m_att_mesh_details->is_2d) {
+            //                //m_3d_entity->addComponent(m_material->get_2d_material());
+            //            } else {
+
+            //            }
+        }
     }
 }
 
 void ExObject::update_from(nooc::ObjectUpdateData const& md) {
+    /*
     qDebug() << Q_FUNC_INFO << !!md.name << !!md.parent << !!md.transform
              << !!md.material << !!md.mesh << !!md.lights << !!md.tables
              << !!md.instances << !!md.tags << !!md.method_list
              << !!md.signal_list << !!md.text;
+             */
 
 
     bool post_instance_rebuild = false;
@@ -45,7 +65,7 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
     }
 
     if (md.parent) {
-        qDebug() << "Reparenting";
+        // qDebug() << "Reparenting";
 
         // set
         m_parent = std::dynamic_pointer_cast<ExObject>(*md.parent);
@@ -53,31 +73,32 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
         // set up the parent for the 3d scene
         m_3d_entity->setParent(m_parent ? m_parent->entity() : m_3d_root);
 
-        qDebug() << this << "setting parent" << m_parent.get();
+        // qDebug() << this << "setting parent" << m_parent.get();
     }
 
     if (md.transform) {
         m_transform = *md.transform;
 
-        m_3d_transform->setMatrix(QMatrix4x4(glm::value_ptr(m_transform)));
+        auto tf = QMatrix4x4(glm::value_ptr(m_transform));
+
+
+        m_3d_transform->setMatrix(tf.transposed());
     }
 
     if (md.material) {
-        if (m_material) { m_3d_entity->removeComponent(m_material->entity()); }
+
 
         m_material = std::dynamic_pointer_cast<ExMaterial>(*md.material);
 
-        if (m_material) { m_3d_entity->addComponent(m_material->entity()); }
-
-        qDebug() << this << "setting material" << m_material.get();
+        // qDebug() << this << "setting material" << m_material.get();
 
         if (!m_instances.empty()) post_instance_rebuild = true;
     }
 
     if (md.mesh) {
+        // qDebug() << this << "setting mesh start" << !!m_mesh
+        //<< (*md.mesh).get();
         m_mesh = std::dynamic_pointer_cast<ExMesh>(*md.mesh);
-
-        qDebug() << this << "setting mesh" << m_mesh.get();
 
         if (!m_instances.empty()) post_instance_rebuild = true;
     }
@@ -93,7 +114,7 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
             auto& p =
                 m_lights.emplace_back(std::dynamic_pointer_cast<ExLight>(ptr));
 
-            qDebug() << this << "setting light" << p.get();
+            qDebug() << "SETTING LIGHT" << p.get() << m_3d_transform->matrix();
         }
 
         for (auto& ptr : m_lights) {
@@ -154,6 +175,16 @@ ExObject::ExObject(noo::ObjectID                       id,
 
     qDebug() << "New object" << id.id_slot;
 
+    connect(&m_material,
+            &AttachmentBase::attachment_changed,
+            this,
+            &ExObject::material_changed);
+
+    connect(&m_mesh,
+            &AttachmentBase::attachment_changed,
+            this,
+            &ExObject::mesh_changed);
+
     update_from(md);
 }
 
@@ -177,8 +208,8 @@ QVariant ExObject::get_column(int c) const {
     case 1: return get_name();
     case 2: return ptr_to_id(m_parent);
 
-    case 3: return ptr_to_id(m_material);
-    case 4: return ptr_to_id(m_mesh);
+    case 3: return ptr_to_id(m_material.get());
+    case 4: return ptr_to_id(m_mesh.get());
     case 5: return build_id_list(m_lights);
 
     case 6: return m_tags;
@@ -195,4 +226,12 @@ void ExObject::on_update(nooc::ObjectUpdateData const& md) {
 Qt3DCore::QEntity* ExObject::entity() {
     assert(m_3d_entity);
     return m_3d_entity.data();
+}
+
+void ExObject::material_changed(bool /*ptr_changed*/) {
+    remake_mesh_attachment();
+}
+
+void ExObject::mesh_changed(bool /*ptr_changed*/) {
+    remake_mesh_attachment();
 }

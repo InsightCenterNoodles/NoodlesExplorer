@@ -15,6 +15,10 @@ ExLight::ExLight(noo::LightID                        id,
 
     auto* p = new Qt3DRender::QPointLight(scene_root);
 
+    auto c = QColor::fromRgbF(md.color.r, md.color.g, md.color.b);
+
+    qDebug() << Q_FUNC_INFO << id.to_qstring() << c;
+
     p->setColor(QColor::fromRgbF(md.color.r, md.color.g, md.color.b));
     p->setIntensity(md.intensity);
 
