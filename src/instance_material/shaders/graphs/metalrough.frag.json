@@ -324,6 +324,21 @@
         {
             "uuid": "{00000000-0000-0000-0000-000000000030}",
             "type": "fragColor"
+        },
+        {
+            "uuid": "{00000000-0000-0000-0000-000000000031}",
+            "type": "input",
+            "parameters": {
+                "name": "intColor",
+                "qualifier": {
+                    "type": "QShaderLanguage::StorageQualifier",
+                    "value": "QShaderLanguage::Input"
+                },
+                "type": {
+                    "type": "QShaderLanguage::VariableType",
+                    "value": "QShaderLanguage::Vec4"
+                }
+            }
         }
     ],
     "edges": [

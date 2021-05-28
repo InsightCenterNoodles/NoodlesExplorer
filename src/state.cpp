@@ -1,6 +1,19 @@
 #include "state.h"
 
+
+#include "delegates/exbuffer.h"
+#include "delegates/exlight.h"
+#include "delegates/exmaterial.h"
+#include "delegates/exmesh.h"
+#include "delegates/exobject.h"
+#include "delegates/exsignal.h"
+#include "delegates/extable.h"
+#include "delegates/extexture.h"
+
+#include "chartviewer.h"
 #include "noo_client_interface.h"
+#include "noo_common.h"
+#include "tableviewer.h"
 #include "variant_tools.h"
 
 #include <QHostInfo>
@@ -78,6 +91,11 @@ bool State::start_connection(QString name, QString url) {
             &nooc::ClientConnection::disconnected,
             m_client_conn,
             &QObject::deleteLater);
+
+    connect(m_client_conn,
+            &nooc::ClientConnection::disconnected,
+            this,
+            &State::handle_disconnect);
 
     connect(m_client_conn,
             &nooc::ClientConnection::connected,
@@ -266,19 +284,17 @@ void State::invoke_doc_method() {
             VCASE(QString) { avlist.push_back({}); });
     }
 
-    auto* r = m_current_doc->attached_methods()
-                  .new_call_by_delegate<nooc::translators::GetStringReply>(
-                      m_current_doc_method);
+    auto* r =
+        m_current_doc->attached_methods()
+            .new_call_by_delegate<NormalizeStringReply>(m_current_doc_method);
 
     if (!r) return;
 
-    connect(r,
-            &nooc::translators::GetStringReply::recv,
-            this,
-            &State::method_result_recieved);
+    connect(
+        r, &NormalizeStringReply::recv, this, &State::method_result_recieved);
 
     connect(r,
-            &nooc::translators::GetStringReply::recv_fail,
+            &NormalizeStringReply::recv_fail,
             this,
             &State::method_error_recieved);
 
@@ -310,6 +326,50 @@ void State::handle_document_updated() {
     if (!d) return;
 
     m_document_methods.set(d->attached_methods().list());
+}
+
+void State::launch_table_view(int i) {
+    auto* p = m_table_list->get_item(i);
+
+    if (!p) return;
+
+    auto slot = p->get_id();
+    auto gen  = p->get_id_gen();
+
+    auto id = noo::TableID(slot, gen);
+
+    auto tbl_ptr = m_client_conn->get(id);
+
+    if (!tbl_ptr) return;
+
+    auto del_ptr = std::dynamic_pointer_cast<ExTable>(tbl_ptr);
+
+    if (!del_ptr) return;
+
+
+    new TableViewer(del_ptr, this);
+}
+
+void State::launch_chart_view(int i) {
+    auto* p = m_table_list->get_item(i);
+
+    if (!p) return;
+
+    auto slot = p->get_id();
+    auto gen  = p->get_id_gen();
+
+    auto id = noo::TableID(slot, gen);
+
+    auto tbl_ptr = m_client_conn->get(id);
+
+    if (!tbl_ptr) return;
+
+    auto del_ptr = std::dynamic_pointer_cast<ExTable>(tbl_ptr);
+
+    if (!del_ptr) return;
+
+
+    new ChartViewer(del_ptr, this);
 }
 
 
@@ -358,4 +418,12 @@ EntityShim::EntityShim(Qt3DCore::QNode* n) : Qt3DCore::QEntity(n) {
 
 EntityShim::~EntityShim() {
     qDebug() << Q_FUNC_INFO;
+}
+
+// =============================================================================
+
+void NormalizeStringReply::interpret() {
+    auto str = m_var.dump_string();
+
+    emit recv(noo::to_qstring(str));
 }

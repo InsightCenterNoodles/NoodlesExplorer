@@ -1,7 +1,7 @@
 #ifndef ATTACHEDMETHODLISTMODEL_H
 #define ATTACHEDMETHODLISTMODEL_H
 
-#include "delegates.h"
+#include "delegates/exmethod.h"
 
 #include <QAbstractTableModel>
 

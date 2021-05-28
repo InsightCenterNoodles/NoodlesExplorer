@@ -1,9 +1,11 @@
 #include "state.h"
 
+#include <QApplication>
 #include <QFontDatabase>
-#include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QStyle>
+#include <QStyleFactory>
 #include <QSurfaceFormat>
 
 #include <tuple>
@@ -26,9 +28,12 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setOrganizationDomain("nrel.gov");
     QCoreApplication::setApplicationName("NoodlesViewer");
 
-    QGuiApplication app(argc, argv);
+    QApplication app(argc, argv);
+
+    app.setStyle(QStyleFactory::create("Fusion"));
 
     QFontDatabase::addApplicationFont(":/Roboto-Regular.ttf");
+    QFontDatabase::addApplicationFont(":/fa-solid-900.ttf");
 
     // Create models
 
@@ -55,6 +60,8 @@ int main(int argc, char* argv[]) {
 
 
     engine.load(url);
+
+    qDebug() << "Setup complete, running...";
 
     return app.exec();
 }

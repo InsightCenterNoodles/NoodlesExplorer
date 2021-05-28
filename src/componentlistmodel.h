@@ -24,8 +24,9 @@ public:
     // column 0 is the id
     // column 1 is the name
 
-    virtual int     get_id() const   = 0;
-    virtual QString get_name() const = 0;
+    virtual int     get_id() const     = 0;
+    virtual int     get_id_gen() const = 0;
+    virtual QString get_name() const   = 0;
 
     virtual QVariant get_column(int) const = 0;
 };
@@ -54,6 +55,10 @@ public:
     QVariant data(QModelIndex const& index,
                   int                role = Qt::DisplayRole) const override;
 
+
+    QHash<int, QByteArray> roleNames() const override;
+
+    ComponentListItem* get_item(int index) const;
 
 public: // For ComponentListItem
     void register_item(ComponentListItem*);

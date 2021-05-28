@@ -1,3 +1,22 @@
+#version 140
+
+#define LAYER_baseColor
+#define LAYER_metalness
+#define LAYER_roughness
+#define LAYER_ambientOcclusion
+#define LAYER_normal
+#define LAYER_baseColor
+#define LAYER_metalness
+#define LAYER_roughness
+uniform vec3 eyePosition;
+in vec3 worldPosition;
+in vec3 worldNormal;
+in vec4 intColor;
+in vec2 texCoord;
+
+uniform float roughness;
+uniform float metalness;
+uniform vec4 baseColor;
 /****************************************************************************
 **
 ** Copyright (C) 2017 Klaralvdalens Datakonsult AB (KDAB).
@@ -18,7 +37,7 @@
 ** Alternatively, you may use this file under the terms of the BSD license
 ** as follows:
 **
-** "Redistribution and use in source and binary forms, with or without
+** \"Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions are
 ** met:
 **   * Redistributions of source code must retain the above copyright
@@ -33,7 +52,7 @@
 **
 **
 ** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+** \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
 ** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
 ** OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
@@ -42,7 +61,7 @@
 ** DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 ** THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-** OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+** OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\"
 **
 ** $QT_END_LICENSE$
 **
@@ -53,14 +72,41 @@ uniform float exposure = 0.0;
 // Gamma correction
 uniform float gamma = 2.2;
 
-#pragma include light.inc.frag
+const int MAX_LIGHTS = 8;
+const int TYPE_POINT = 0;
+const int TYPE_DIRECTIONAL = 1;
+const int TYPE_SPOT = 2;
+struct Light {
+    int type;
+    vec3 position;
+    vec3 color;
+    float intensity;
+    vec3 direction;
+    float constantAttenuation;
+    float linearAttenuation;
+    float quadraticAttenuation;
+    float cutOffAngle;
+};
+uniform Light lights[MAX_LIGHTS];
+uniform int lightCount;
+
+// Pre-convolved environment maps
+struct EnvironmentLight {
+    samplerCube irradiance; // For diffuse contribution
+    samplerCube specular; // For specular contribution
+    int specularMipLevels;
+};
+uniform EnvironmentLight envLight;
+uniform int envLightCount = 0;
+
+#line 57
 
 float remapRoughness(const in float roughness)
 {
     // As per page 14 of
     // http://www.frostbite.com/wp-content/uploads/2014/11/course_notes_moving_frostbite_to_pbr.pdf
     // we remap the roughness to give a more perceptually linear response
-    // of "bluriness" as a function of the roughness specified by the user.
+    // of \"bluriness\" as a function of the roughness specified by the user.
     // r = roughness^2
     const float maxSpecPower = 999999.0;
     const float minRoughness = sqrt(2.0 / (maxSpecPower + 2));
@@ -177,6 +223,7 @@ vec3 pbrModel(const in int lightIndex,
                 att = 1.0 / (lights[lightIndex].constantAttenuation +
                              lights[lightIndex].linearAttenuation * dist +
                              lights[lightIndex].quadraticAttenuation * dist * dist);
+
             }
 
             // The light direction is in world space already
@@ -316,4 +363,32 @@ vec4 metalRoughFunction(const in vec4 baseColor,
     vec3 cGamma = gammaCorrect(cToneMapped);
 
     return vec4(cGamma, 1.0);
+}
+
+#line 18
+out vec4 fragColor;
+
+void main()
+{
+    vec3 world_view = normalize(eyePosition - worldPosition);
+    vec3 world_normal = normalize(worldNormal);
+
+    vec4 out_color;
+
+    // if the normal is zero, like for a line, dont use lighting
+    if (dot(world_normal, world_normal) < (.5*.5)) {
+        out_color = intColor*baseColor;
+    } else {
+
+        out_color = metalRoughFunction(intColor*baseColor,
+                                        metalness,
+                                        roughness,
+                                        float(1.0),
+                                        worldPosition,
+                                        world_view,
+                                        world_normal);
+
+    }
+
+    fragColor = out_color;
 }

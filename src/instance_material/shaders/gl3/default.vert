@@ -54,11 +54,13 @@ in vec3 vertexPosition;
 in vec3 vertexNormal;
 in vec4 vertexTangent;
 in vec2 vertexTexCoord;
+in vec4 vertexColor;
 in mat4 raw_instance;
 
 out vec3 worldPosition;
 out vec3 worldNormal;
 out vec4 worldTangent;
+out vec4 intColor;
 out vec2 texCoord;
 
 uniform mat4 modelMatrix;
@@ -86,6 +88,10 @@ void main()
 
     // Pass through scaled texture coordinates
     texCoord = vertexTexCoord * texCoordScale;
+
+    intColor = inst_color * vertexColor;
+    //intColor = vertexColor;
+    //intColor = inst_color;
 
     // Transform position, normal, and tangent to world space
     worldPosition = vec3(modelMatrix * vec4(pos, 1.0));

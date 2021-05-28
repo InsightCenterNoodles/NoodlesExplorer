@@ -57,29 +57,21 @@
 class QInstancedMetalRoughMaterial : public Qt3DRender::QMaterial {
     Q_OBJECT
 
-    Qt3DRender::QParameter*            m_baseColorParameter;
-    Qt3DRender::QParameter*            m_metalnessParameter;
-    Qt3DRender::QParameter*            m_roughnessParameter;
-    Qt3DRender::QParameter*            m_baseColorMapParameter;
-    Qt3DRender::QParameter*            m_metalnessMapParameter;
-    Qt3DRender::QParameter*            m_roughnessMapParameter;
-    Qt3DRender::QParameter*            m_ambientOcclusionMapParameter;
-    Qt3DRender::QParameter*            m_normalMapParameter;
-    Qt3DRender::QParameter*            m_textureScaleParameter;
-    Qt3DRender::QEffect*               m_metalRoughEffect;
-    Qt3DRender::QTechnique*            m_metalRoughGL3Technique;
-    Qt3DRender::QRenderPass*           m_metalRoughGL3RenderPass;
-    Qt3DRender::QShaderProgram*        m_metalRoughGL3Shader;
-    Qt3DRender::QShaderProgramBuilder* m_metalRoughGL3ShaderBuilder;
-    Qt3DRender::QTechnique*            m_metalRoughES3Technique;
-    Qt3DRender::QRenderPass*           m_metalRoughES3RenderPass;
-    Qt3DRender::QShaderProgram*        m_metalRoughES3Shader;
-    Qt3DRender::QShaderProgramBuilder* m_metalRoughES3ShaderBuilder;
-    Qt3DRender::QTechnique*            m_metalRoughRHITechnique;
-    Qt3DRender::QRenderPass*           m_metalRoughRHIRenderPass;
-    Qt3DRender::QShaderProgram*        m_metalRoughRHIShader;
-    Qt3DRender::QShaderProgramBuilder* m_metalRoughRHIShaderBuilder;
-    Qt3DRender::QFilterKey*            m_filterKey;
+    Qt3DRender::QParameter*     m_baseColorParameter;
+    Qt3DRender::QParameter*     m_metalnessParameter;
+    Qt3DRender::QParameter*     m_roughnessParameter;
+    Qt3DRender::QParameter*     m_baseColorMapParameter;
+    Qt3DRender::QParameter*     m_metalnessMapParameter;
+    Qt3DRender::QParameter*     m_roughnessMapParameter;
+    Qt3DRender::QParameter*     m_ambientOcclusionMapParameter;
+    Qt3DRender::QParameter*     m_normalMapParameter;
+    Qt3DRender::QParameter*     m_textureScaleParameter;
+    Qt3DRender::QEffect*        m_metalRoughEffect;
+    Qt3DRender::QTechnique*     m_metalRoughGL3Technique;
+    Qt3DRender::QRenderPass*    m_metalRoughGL3RenderPass;
+    Qt3DRender::QShaderProgram* m_metalRoughGL3Shader;
+    // Qt3DRender::QShaderProgramBuilder* m_metalRoughGL3ShaderBuilder;
+    Qt3DRender::QFilterKey* m_filterKey;
 
 
     Q_PROPERTY(QVariant baseColor READ baseColor WRITE setBaseColor NOTIFY

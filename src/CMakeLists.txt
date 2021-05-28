@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12...3.16)
 
-project(NoodlesExplorer VERSION 0.1 LANGUAGES CXX)
+project(NoodlesExplorer VERSION 0.2 LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -27,15 +27,10 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG 5c19fd7179855675b814da36fa5f160cf760600e
+    GIT_TAG 3396e530a5948416fd364cc9ffa3f5bcbb8abc3b
 )
 
-message(${noodles_SOURCE_DIR})
-message(${noodles_BINARY_DIR})
-
-#message(${noodles_INCLUDE_DIR})
-
-find_package(Qt5 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick)
+find_package(Qt5 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts)
 
 # Options ======================================================================
 
@@ -60,7 +55,7 @@ target_link_libraries(NoodlesExplorer PRIVATE noodles)
 target_link_libraries(NoodlesExplorer PUBLIC
     Qt::Gui Qt::Widgets Qt::Core
     Qt::3DCore Qt::3DExtras Qt::3DRender
-    Qt::Quick
+    Qt::Quick Qt::Charts
 )
 
 target_sources(NoodlesExplorer
@@ -75,10 +70,42 @@ PRIVATE
     qml.qrc
     state.cpp
     state.h
-    delegates.h
-    delegates.cpp
+    delegates/delegates.h
+    delegates/delegates.cpp
     instance_material/qinstancedmetalroughmaterial.cpp
     instance_material/qinstancedmetalroughmaterial.h
     attachedmethodlistmodel.cpp
     attachedmethodlistmodel.h
+    tabledata.cpp
+    tabledata.h
+    tableviewer.cpp
+    tableviewer.h
+    tableviewer.ui
+    chartviewer.cpp
+    chartviewer.h
+    chartviewer.ui
+    variant_tools.h
+    adddatadialog.cpp
+    adddatadialog.h
+    adddatadialog.ui
+    delegates/exmethod.cpp
+    delegates/exmethod.h
+    delegates/exsignal.cpp
+    delegates/exsignal.h
+    delegates/exbuffer.cpp
+    delegates/exbuffer.h
+    delegates/extexture.cpp
+    delegates/extexture.h
+    delegates/exmaterial.cpp
+    delegates/exmaterial.h
+    delegates/exmesh.cpp
+    delegates/exmesh.h
+    delegates/exobject.cpp
+    delegates/exobject.h
+    delegates/extable.cpp
+    delegates/extable.h
+    delegates/exdoc.cpp
+    delegates/exdoc.h
+    delegates/exlight.cpp
+    delegates/exlight.h
 )
