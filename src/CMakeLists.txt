@@ -27,7 +27,7 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG ad9eac42a256b5c587c3087d9dafbc306e0a68af
+    GIT_TAG 3396e530a5948416fd364cc9ffa3f5bcbb8abc3b
 )
 
 find_package(Qt5 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts)
@@ -74,8 +74,6 @@ PRIVATE
     delegates/delegates.cpp
     instance_material/qinstancedmetalroughmaterial.cpp
     instance_material/qinstancedmetalroughmaterial.h
-    instance_material/qinstancedlinematerial.cpp
-    instance_material/qinstancedlinematerial.h
     attachedmethodlistmodel.cpp
     attachedmethodlistmodel.h
     tabledata.cpp
