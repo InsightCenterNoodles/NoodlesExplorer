@@ -90,6 +90,8 @@ void main()
     texCoord = vertexTexCoord * texCoordScale;
 
     intColor = inst_color * vertexColor;
+    //intColor = vertexColor;
+    //intColor = inst_color;
 
     // Transform position, normal, and tangent to world space
     worldPosition = vec3(modelMatrix * vec4(pos, 1.0));

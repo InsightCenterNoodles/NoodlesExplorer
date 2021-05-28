@@ -339,7 +339,7 @@
                     "value": "QShaderLanguage::Vec4"
                 }
             }
-        },
+        }
     ],
     "edges": [
         {

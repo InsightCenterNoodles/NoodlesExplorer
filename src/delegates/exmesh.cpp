@@ -47,30 +47,35 @@ template <>
 struct VertexTypeTrait<glm::vec2> {
     static constexpr auto element_type  = Qt3DRender::QAttribute::Float;
     static constexpr auto element_count = 2;
+    static inline auto    blank         = glm::vec2(1);
 };
 
 template <>
 struct VertexTypeTrait<glm::vec3> {
     static constexpr auto element_type  = Qt3DRender::QAttribute::Float;
     static constexpr auto element_count = 3;
+    static inline auto    blank         = glm::vec3(1);
 };
 
 template <>
 struct VertexTypeTrait<glm::u8vec4> {
     static constexpr auto element_type  = Qt3DRender::QAttribute::UnsignedByte;
     static constexpr auto element_count = 4;
+    static inline auto    blank         = glm::u8vec4(255);
 };
 
 template <>
 struct VertexTypeTrait<glm::u16vec2> {
     static constexpr auto element_type  = Qt3DRender::QAttribute::UnsignedShort;
     static constexpr auto element_count = 2;
+    static inline auto blank = glm::u16vec2(std::numeric_limits<short>::max());
 };
 
 template <>
 struct VertexTypeTrait<glm::u16vec3> {
     static constexpr auto element_type  = Qt3DRender::QAttribute::UnsignedShort;
     static constexpr auto element_count = 3;
+    static inline auto blank = glm::u16vec3(std::numeric_limits<short>::max());
 };
 
 template <class VertexType>
@@ -93,11 +98,38 @@ template <class VertexType>
 Qt3DRender::QAttribute*
 attrib_from_ref(QString                                  name,
                 Qt3DRender::QGeometry*                   node,
-                std::optional<nooc::ComponentRef> const& oref) {
-    // qDebug() << "New Attrib" << typeid(VertexType).name() << name << node
-    //         << (bool)oref;
+                std::optional<nooc::ComponentRef> const& oref,
+                bool                                     permit_blank) {
+    qDebug() << "New Attrib" << typeid(VertexType).name() << name << node
+             << (bool)oref;
 
-    if (!oref) return nullptr;
+    if (!oref and permit_blank) {
+        qDebug() << "Creating blank";
+        // synthesize a blank buffer
+
+        using Tr = VertexTypeTrait<VertexType>;
+
+        QByteArray array((const char*)&Tr::blank, sizeof(VertexType));
+
+        auto* b = new Qt3DRender::QBuffer(node);
+
+        b->setData(array);
+
+        auto* p = new Qt3DRender::QAttribute(
+            b,
+            name,
+            VertexTypeTrait<VertexType>::element_type,
+            VertexTypeTrait<VertexType>::element_count,
+            1,
+            0,
+            sizeof(VertexType),
+            node);
+
+        p->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+        p->setDivisor(1'000'000'000); // just make it huge so it never advances
+
+        return p;
+    }
 
     auto const& ref = *oref;
 
@@ -114,7 +146,7 @@ attrib_from_ref(QString                                  name,
         return nullptr;
     }
 
-    debug_attribute<VertexType>(buff.get(), ref);
+    // debug_attribute<VertexType>(buff.get(), ref);
 
     auto* p =
         new Qt3DRender::QAttribute(buff->entity(),
@@ -300,19 +332,26 @@ QtGeomInfo ExMesh::make_new_info(std::span<glm::mat4> instances) {
 
     ret.renderer->setObjectName("GeomRenderer " + get_name());
 
-    auto* pa = attrib_from_ref<glm::vec3>(
-        QAttribute::defaultPositionAttributeName(), ret.geom, m_data.positions);
+    auto* pa =
+        attrib_from_ref<glm::vec3>(QAttribute::defaultPositionAttributeName(),
+                                   ret.geom,
+                                   m_data.positions,
+                                   false);
 
-    auto* na = attrib_from_ref<glm::vec3>(
-        QAttribute::defaultNormalAttributeName(), ret.geom, m_data.normals);
+    auto* na =
+        attrib_from_ref<glm::vec3>(QAttribute::defaultNormalAttributeName(),
+                                   ret.geom,
+                                   m_data.normals,
+                                   false);
 
     auto* ta = attrib_from_ref<glm::u16vec2>(
         QAttribute::defaultTextureCoordinateAttributeName(),
         ret.geom,
-        m_data.textures);
+        m_data.textures,
+        true);
 
     auto* ca = attrib_from_ref<glm::u8vec4>(
-        QAttribute::defaultColorAttributeName(), ret.geom, m_data.colors);
+        QAttribute::defaultColorAttributeName(), ret.geom, m_data.colors, true);
 
     QAttribute* idx_p = nullptr;
 
@@ -349,9 +388,9 @@ QtGeomInfo ExMesh::make_new_info(std::span<glm::mat4> instances) {
 
     if (instances.empty()) { instances = std::span(&ident, 1); }
 
-    //    for (auto const& m : instances) {
-    //        qDebug() << m[0].x << m[0].y << m[0].z << m[0].w;
-    //    }
+    for (auto const& m : instances) {
+        qDebug() << m[1].x << m[1].y << m[1].z << m[1].w;
+    }
 
     ret.instance_data.resize(instances.size_bytes());
 

@@ -40,15 +40,7 @@ QInstancedMetalRoughMaterial::QInstancedMetalRoughMaterial(
       m_metalRoughGL3Technique(new QTechnique()),
       m_metalRoughGL3RenderPass(new QRenderPass()),
       m_metalRoughGL3Shader(new QShaderProgram()),
-      m_metalRoughGL3ShaderBuilder(new QShaderProgramBuilder()),
-      m_metalRoughES3Technique(new QTechnique()),
-      m_metalRoughES3RenderPass(new QRenderPass()),
-      m_metalRoughES3Shader(new QShaderProgram()),
-      m_metalRoughES3ShaderBuilder(new QShaderProgramBuilder()),
-      m_metalRoughRHITechnique(new QTechnique()),
-      m_metalRoughRHIRenderPass(new QRenderPass()),
-      m_metalRoughRHIShader(new QShaderProgram()),
-      m_metalRoughRHIShaderBuilder(new QShaderProgramBuilder()),
+      // m_metalRoughGL3ShaderBuilder(new QShaderProgramBuilder()),
       m_filterKey(new QFilterKey) {
 
 
@@ -80,42 +72,21 @@ QInstancedMetalRoughMaterial::QInstancedMetalRoughMaterial(
 
     m_metalRoughGL3Shader->setVertexShaderCode(QShaderProgram::loadSource(QUrl(
         QStringLiteral("qrc:/instance_material/shaders/gl3/default.vert"))));
-    m_metalRoughGL3ShaderBuilder->setParent(this);
-    m_metalRoughGL3ShaderBuilder->setShaderProgram(m_metalRoughGL3Shader);
-    m_metalRoughGL3ShaderBuilder->setFragmentShaderGraph(QUrl(QStringLiteral(
-        "qrc:/instance_material/shaders/graphs/metalrough.frag.json")));
-    m_metalRoughGL3ShaderBuilder->setEnabledLayers(
-        { QStringLiteral("baseColor"),
-          QStringLiteral("metalness"),
-          QStringLiteral("roughness"),
-          QStringLiteral("ambientOcclusion"),
-          QStringLiteral("normal") });
 
-    m_metalRoughES3Shader->setVertexShaderCode(QShaderProgram::loadSource(QUrl(
-        QStringLiteral("qrc:/instance_material/shaders/es3/default.vert"))));
-    m_metalRoughES3ShaderBuilder->setParent(this);
-    m_metalRoughES3ShaderBuilder->setShaderProgram(m_metalRoughES3Shader);
-    m_metalRoughES3ShaderBuilder->setFragmentShaderGraph(QUrl(QStringLiteral(
-        "qrc:/instance_material/shaders/graphs/metalrough.frag.json")));
-    m_metalRoughES3ShaderBuilder->setEnabledLayers(
-        { QStringLiteral("baseColor"),
-          QStringLiteral("metalness"),
-          QStringLiteral("roughness"),
-          QStringLiteral("ambientOcclusion"),
-          QStringLiteral("normal") });
+    m_metalRoughGL3Shader->setFragmentShaderCode(
+        QShaderProgram::loadSource(QUrl(QStringLiteral(
+            "qrc:/instance_material/shaders/gl3/metalrough.frag"))));
 
-    m_metalRoughRHIShader->setVertexShaderCode(QShaderProgram::loadSource(QUrl(
-        QStringLiteral("qrc:/instance_material/shaders/rhi/default.vert"))));
-    m_metalRoughRHIShaderBuilder->setParent(this);
-    m_metalRoughRHIShaderBuilder->setShaderProgram(m_metalRoughRHIShader);
-    m_metalRoughRHIShaderBuilder->setFragmentShaderGraph(QUrl(QStringLiteral(
-        "qrc:/instance_material/shaders/graphs/metalrough.frag.json")));
-    m_metalRoughRHIShaderBuilder->setEnabledLayers(
-        { QStringLiteral("baseColor"),
-          QStringLiteral("metalness"),
-          QStringLiteral("roughness"),
-          QStringLiteral("ambientOcclusion"),
-          QStringLiteral("normal") });
+    //    m_metalRoughGL3ShaderBuilder->setParent(this);
+    //    m_metalRoughGL3ShaderBuilder->setShaderProgram(m_metalRoughGL3Shader);
+    //    m_metalRoughGL3ShaderBuilder->setFragmentShaderGraph(QUrl(QStringLiteral(
+    //        "qrc:/instance_material/shaders/graphs/metalrough.frag.json")));
+    //    m_metalRoughGL3ShaderBuilder->setEnabledLayers(
+    //        { QStringLiteral("baseColor"),
+    //          QStringLiteral("metalness"),
+    //          QStringLiteral("roughness"),
+    //          QStringLiteral("ambientOcclusion"),
+    //          QStringLiteral("normal") });
 
     m_metalRoughGL3Technique->graphicsApiFilter()->setApi(
         QGraphicsApiFilter::OpenGL);
@@ -123,16 +94,6 @@ QInstancedMetalRoughMaterial::QInstancedMetalRoughMaterial(
     m_metalRoughGL3Technique->graphicsApiFilter()->setMinorVersion(1);
     m_metalRoughGL3Technique->graphicsApiFilter()->setProfile(
         QGraphicsApiFilter::CoreProfile);
-
-    m_metalRoughES3Technique->graphicsApiFilter()->setApi(
-        QGraphicsApiFilter::OpenGLES);
-    m_metalRoughES3Technique->graphicsApiFilter()->setMajorVersion(3);
-    m_metalRoughES3Technique->graphicsApiFilter()->setMinorVersion(0);
-
-    m_metalRoughRHITechnique->graphicsApiFilter()->setApi(
-        QGraphicsApiFilter::RHI);
-    m_metalRoughRHITechnique->graphicsApiFilter()->setMajorVersion(1);
-    m_metalRoughRHITechnique->graphicsApiFilter()->setMinorVersion(0);
 
     m_filterKey->setParent(this);
     m_filterKey->setName(QStringLiteral("renderingStyle"));
@@ -142,16 +103,6 @@ QInstancedMetalRoughMaterial::QInstancedMetalRoughMaterial(
     m_metalRoughGL3RenderPass->setShaderProgram(m_metalRoughGL3Shader);
     m_metalRoughGL3Technique->addRenderPass(m_metalRoughGL3RenderPass);
     m_metalRoughEffect->addTechnique(m_metalRoughGL3Technique);
-
-    m_metalRoughES3Technique->addFilterKey(m_filterKey);
-    m_metalRoughES3RenderPass->setShaderProgram(m_metalRoughES3Shader);
-    m_metalRoughES3Technique->addRenderPass(m_metalRoughES3RenderPass);
-    m_metalRoughEffect->addTechnique(m_metalRoughES3Technique);
-
-    m_metalRoughRHITechnique->addFilterKey(m_filterKey);
-    m_metalRoughRHIRenderPass->setShaderProgram(m_metalRoughRHIShader);
-    m_metalRoughRHITechnique->addRenderPass(m_metalRoughRHIRenderPass);
-    m_metalRoughEffect->addTechnique(m_metalRoughRHITechnique);
 
     // Given parameters a parent
     m_baseColorMapParameter->setParent(m_metalRoughEffect);
@@ -171,7 +122,11 @@ void QInstancedMetalRoughMaterial::handleTextureScaleChanged(
     emit this->textureScaleChanged(var.toFloat());
 }
 
-QInstancedMetalRoughMaterial::~QInstancedMetalRoughMaterial() { }
+QInstancedMetalRoughMaterial::~QInstancedMetalRoughMaterial() {
+    //    qDebug() << "DUMP SHADER CODE";
+    //    qDebug() <<
+    //    QString(m_metalRoughGL3ShaderBuilder->fragmentShaderCode());
+}
 
 QVariant QInstancedMetalRoughMaterial::baseColor() const {
     return m_baseColorParameter->value();
@@ -201,109 +156,99 @@ void QInstancedMetalRoughMaterial::setBaseColor(const QVariant& baseColor) {
     m_baseColorParameter->setValue(baseColor);
     m_baseColorMapParameter->setValue(baseColor);
 
-    auto layers = m_metalRoughGL3ShaderBuilder->enabledLayers();
+    // auto layers = m_metalRoughGL3ShaderBuilder->enabledLayers();
     if (baseColor.value<QAbstractTexture*>()) {
-        layers.removeAll(QStringLiteral("baseColor"));
-        layers.append(QStringLiteral("baseColorMap"));
+        // layers.removeAll(QStringLiteral("baseColor"));
+        // layers.append(QStringLiteral("baseColorMap"));
         m_metalRoughEffect->addParameter(m_baseColorMapParameter);
         if (m_metalRoughEffect->parameters().contains(m_baseColorParameter))
             m_metalRoughEffect->removeParameter(m_baseColorParameter);
     } else {
-        layers.removeAll(QStringLiteral("baseColorMap"));
-        layers.append(QStringLiteral("baseColor"));
+        // layers.removeAll(QStringLiteral("baseColorMap"));
+        // layers.append(QStringLiteral("baseColor"));
         if (m_metalRoughEffect->parameters().contains(m_baseColorMapParameter))
             m_metalRoughEffect->removeParameter(m_baseColorMapParameter);
         m_metalRoughEffect->addParameter(m_baseColorParameter);
     }
-    m_metalRoughGL3ShaderBuilder->setEnabledLayers(layers);
-    m_metalRoughES3ShaderBuilder->setEnabledLayers(layers);
-    m_metalRoughRHIShaderBuilder->setEnabledLayers(layers);
+    // m_metalRoughGL3ShaderBuilder->setEnabledLayers(layers);
 }
 
 void QInstancedMetalRoughMaterial::setMetalness(const QVariant& metalness) {
     m_metalnessParameter->setValue(metalness);
     m_metalnessMapParameter->setValue(metalness);
 
-    auto layers = m_metalRoughGL3ShaderBuilder->enabledLayers();
+    // auto layers = m_metalRoughGL3ShaderBuilder->enabledLayers();
     if (metalness.value<QAbstractTexture*>()) {
-        layers.removeAll(QStringLiteral("metalness"));
-        layers.append(QStringLiteral("metalnessMap"));
+        // layers.removeAll(QStringLiteral("metalness"));
+        // layers.append(QStringLiteral("metalnessMap"));
         m_metalRoughEffect->addParameter(m_metalnessMapParameter);
         if (m_metalRoughEffect->parameters().contains(m_metalnessParameter))
             m_metalRoughEffect->removeParameter(m_metalnessParameter);
     } else {
-        layers.removeAll(QStringLiteral("metalnessMap"));
-        layers.append(QStringLiteral("metalness"));
+        // layers.removeAll(QStringLiteral("metalnessMap"));
+        // layers.append(QStringLiteral("metalness"));
         if (m_metalRoughEffect->parameters().contains(m_metalnessMapParameter))
             m_metalRoughEffect->removeParameter(m_metalnessMapParameter);
         m_metalRoughEffect->addParameter(m_metalnessParameter);
     }
-    m_metalRoughGL3ShaderBuilder->setEnabledLayers(layers);
-    m_metalRoughES3ShaderBuilder->setEnabledLayers(layers);
-    m_metalRoughRHIShaderBuilder->setEnabledLayers(layers);
+    // m_metalRoughGL3ShaderBuilder->setEnabledLayers(layers);
 }
 
 void QInstancedMetalRoughMaterial::setRoughness(const QVariant& roughness) {
     m_roughnessParameter->setValue(roughness);
     m_roughnessMapParameter->setValue(roughness);
 
-    auto layers = m_metalRoughGL3ShaderBuilder->enabledLayers();
+    // auto layers = m_metalRoughGL3ShaderBuilder->enabledLayers();
     if (roughness.value<QAbstractTexture*>()) {
-        layers.removeAll(QStringLiteral("roughness"));
-        layers.append(QStringLiteral("roughnessMap"));
+        // layers.removeAll(QStringLiteral("roughness"));
+        // layers.append(QStringLiteral("roughnessMap"));
         m_metalRoughEffect->addParameter(m_roughnessMapParameter);
         if (m_metalRoughEffect->parameters().contains(m_roughnessParameter))
             m_metalRoughEffect->removeParameter(m_roughnessParameter);
     } else {
-        layers.removeAll(QStringLiteral("roughnessMap"));
-        layers.append(QStringLiteral("roughness"));
+        // layers.removeAll(QStringLiteral("roughnessMap"));
+        // layers.append(QStringLiteral("roughness"));
         if (m_metalRoughEffect->parameters().contains(m_roughnessMapParameter))
             m_metalRoughEffect->removeParameter(m_roughnessMapParameter);
         m_metalRoughEffect->addParameter(m_roughnessParameter);
     }
-    m_metalRoughGL3ShaderBuilder->setEnabledLayers(layers);
-    m_metalRoughES3ShaderBuilder->setEnabledLayers(layers);
-    m_metalRoughRHIShaderBuilder->setEnabledLayers(layers);
+    // m_metalRoughGL3ShaderBuilder->setEnabledLayers(layers);
 }
 
 void QInstancedMetalRoughMaterial::setAmbientOcclusion(
     const QVariant& ambientOcclusion) {
     m_ambientOcclusionMapParameter->setValue(ambientOcclusion);
 
-    auto layers = m_metalRoughGL3ShaderBuilder->enabledLayers();
+    // auto layers = m_metalRoughGL3ShaderBuilder->enabledLayers();
     if (ambientOcclusion.value<QAbstractTexture*>()) {
-        layers.removeAll(QStringLiteral("ambientOcclusion"));
-        layers.append(QStringLiteral("ambientOcclusionMap"));
+        // layers.removeAll(QStringLiteral("ambientOcclusion"));
+        // layers.append(QStringLiteral("ambientOcclusionMap"));
         m_metalRoughEffect->addParameter(m_ambientOcclusionMapParameter);
     } else {
-        layers.removeAll(QStringLiteral("ambientOcclusionMap"));
-        layers.append(QStringLiteral("ambientOcclusion"));
+        // layers.removeAll(QStringLiteral("ambientOcclusionMap"));
+        // layers.append(QStringLiteral("ambientOcclusion"));
         if (m_metalRoughEffect->parameters().contains(
                 m_ambientOcclusionMapParameter))
             m_metalRoughEffect->removeParameter(m_ambientOcclusionMapParameter);
     }
-    m_metalRoughGL3ShaderBuilder->setEnabledLayers(layers);
-    m_metalRoughES3ShaderBuilder->setEnabledLayers(layers);
-    m_metalRoughRHIShaderBuilder->setEnabledLayers(layers);
+    // m_metalRoughGL3ShaderBuilder->setEnabledLayers(layers);
 }
 
 void QInstancedMetalRoughMaterial::setNormal(const QVariant& normal) {
     m_normalMapParameter->setValue(normal);
 
-    auto layers = m_metalRoughGL3ShaderBuilder->enabledLayers();
+    // auto layers = m_metalRoughGL3ShaderBuilder->enabledLayers();
     if (normal.value<QAbstractTexture*>()) {
-        layers.removeAll(QStringLiteral("normal"));
-        layers.append(QStringLiteral("normalMap"));
+        // layers.removeAll(QStringLiteral("normal"));
+        // layers.append(QStringLiteral("normalMap"));
         m_metalRoughEffect->addParameter(m_normalMapParameter);
     } else {
-        layers.removeAll(QStringLiteral("normalMap"));
-        layers.append(QStringLiteral("normal"));
+        // layers.removeAll(QStringLiteral("normalMap"));
+        // layers.append(QStringLiteral("normal"));
         if (m_metalRoughEffect->parameters().contains(m_normalMapParameter))
             m_metalRoughEffect->removeParameter(m_normalMapParameter);
     }
-    m_metalRoughGL3ShaderBuilder->setEnabledLayers(layers);
-    m_metalRoughES3ShaderBuilder->setEnabledLayers(layers);
-    m_metalRoughRHIShaderBuilder->setEnabledLayers(layers);
+    // m_metalRoughGL3ShaderBuilder->setEnabledLayers(layers);
 }
 
 void QInstancedMetalRoughMaterial::setTextureScale(float textureScale) {

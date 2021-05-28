@@ -13,6 +13,7 @@
 #include <QGeometryRenderer>
 #include <QMaterial>
 #include <Qt3DCore/QTransform>
+#include <Qt3DRender/QFrontFace>
 
 void ExObject::remake_mesh_attachment() {
     qDebug() << Q_FUNC_INFO << !!m_mesh << !!m_material;
@@ -78,7 +79,10 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
     if (md.transform) {
         m_transform = *md.transform;
 
-        m_3d_transform->setMatrix(QMatrix4x4(glm::value_ptr(m_transform)));
+        auto tf = QMatrix4x4(glm::value_ptr(m_transform));
+
+
+        m_3d_transform->setMatrix(tf.transposed());
     }
 
     if (md.material) {
@@ -110,7 +114,7 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
             auto& p =
                 m_lights.emplace_back(std::dynamic_pointer_cast<ExLight>(ptr));
 
-            qDebug() << this << "setting light" << p.get();
+            qDebug() << "SETTING LIGHT" << p.get() << m_3d_transform->matrix();
         }
 
         for (auto& ptr : m_lights) {

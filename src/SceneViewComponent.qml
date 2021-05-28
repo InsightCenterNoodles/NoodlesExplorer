@@ -35,6 +35,14 @@ Item {
                     id: renderer
                     camera: camera
                     clearColor: settings.clear_color
+
+                    RenderStateSet {
+                        renderStates: [
+                            FrontFace {
+                                direction: FrontFace.CounterClockWise
+                            }
+                        ]
+                    }
                 }
             }
 
