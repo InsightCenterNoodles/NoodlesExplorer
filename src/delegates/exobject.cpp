@@ -68,7 +68,7 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
         // qDebug() << "Reparenting";
 
         // set
-        m_parent = std::dynamic_pointer_cast<ExObject>(*md.parent);
+        m_parent = dynamic_cast<ExObject*>(*md.parent);
 
         // set up the parent for the 3d scene
         m_3d_entity->setParent(m_parent ? m_parent->entity() : m_3d_root);
@@ -88,7 +88,7 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
     if (md.material) {
 
 
-        m_material = std::dynamic_pointer_cast<ExMaterial>(*md.material);
+        m_material = dynamic_cast<ExMaterial*>(*md.material);
 
         // qDebug() << this << "setting material" << m_material.get();
 
@@ -98,7 +98,7 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
     if (md.mesh) {
         // qDebug() << this << "setting mesh start" << !!m_mesh
         //<< (*md.mesh).get();
-        m_mesh = std::dynamic_pointer_cast<ExMesh>(*md.mesh);
+        m_mesh = dynamic_cast<ExMesh*>(*md.mesh);
 
         if (!m_instances.empty()) post_instance_rebuild = true;
     }
@@ -108,21 +108,14 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
             if (ptr) { m_3d_entity->removeComponent(ptr->entity()); }
         }
 
-        m_lights.clear();
-
-        for (auto& ptr : *md.lights) {
-            auto& p =
-                m_lights.emplace_back(std::dynamic_pointer_cast<ExLight>(ptr));
-
-            qDebug() << "SETTING LIGHT" << p.get() << m_3d_transform->matrix();
-        }
+        m_lights = *md.lights;
 
         for (auto& ptr : m_lights) {
             if (ptr) { m_3d_entity->addComponent(ptr->entity()); }
         }
     }
 
-    m_tables = md.tables.value_or(std::vector<nooc::TableDelegatePtr> {});
+    if (md.tables) { m_tables = *md.tables; }
 
     if (md.instances) {
         auto src = *md.instances;
@@ -135,21 +128,23 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
     if (post_instance_rebuild) remake_mesh_attachment();
 
     m_tags = to_qstringlist(md.tags.value_or(std::vector<std::string_view> {}));
-    m_method_list =
-        md.method_list.value_or(std::vector<nooc::MethodDelegatePtr> {});
-    m_signal_list =
-        md.signal_list.value_or(std::vector<nooc::SignalDelegatePtr> {});
+    //    m_method_list =
+    //        md.method_list.value_or(std::vector<nooc::MethodDelegatePtr> {});
+    //    m_signal_list =
+    //        md.signal_list.value_or(std::vector<nooc::SignalDelegatePtr> {});
 
     m_text = md.text;
 }
 
 QStringList ExObject::header() {
     return {
-        "ID",       "Name",    "Parent",
+        "ID",       "Name", "Parent",
 
-        "Material", "Mesh",    "Lights",
+        "Material", "Mesh", "Lights",
 
-        "Tags",     "Methods", "Signals",
+        "Tags",
+        //"Methods",
+        //"Signals",
     };
 }
 
@@ -180,8 +175,18 @@ ExObject::ExObject(noo::ObjectID                       id,
             this,
             &ExObject::material_changed);
 
+    connect(&m_material,
+            &AttachmentBase::attachment_updated,
+            this,
+            &ExObject::material_changed);
+
     connect(&m_mesh,
             &AttachmentBase::attachment_changed,
+            this,
+            &ExObject::mesh_changed);
+
+    connect(&m_mesh,
+            &AttachmentBase::attachment_updated,
             this,
             &ExObject::mesh_changed);
 
@@ -210,11 +215,12 @@ QVariant ExObject::get_column(int c) const {
 
     case 3: return ptr_to_id(m_material.get());
     case 4: return ptr_to_id(m_mesh.get());
-    case 5: return build_id_list(m_lights);
+    case 5: return build_id_list(m_lights.get());
 
-    case 6: return m_tags;
-    case 7: return build_id_list(m_method_list);
-    case 8: return build_id_list(m_signal_list);
+    case 6:
+        return m_tags;
+        // case 7: return build_id_list(m_method_list);
+        // case 8: return build_id_list(m_signal_list);
     }
     return {};
 }
@@ -228,10 +234,10 @@ Qt3DCore::QEntity* ExObject::entity() {
     return m_3d_entity.data();
 }
 
-void ExObject::material_changed(bool /*ptr_changed*/) {
+void ExObject::material_changed() {
     remake_mesh_attachment();
 }
 
-void ExObject::mesh_changed(bool /*ptr_changed*/) {
+void ExObject::mesh_changed() {
     remake_mesh_attachment();
 }

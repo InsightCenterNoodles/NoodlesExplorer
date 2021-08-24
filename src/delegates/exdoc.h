@@ -5,7 +5,6 @@
 
 class ExDoc : public nooc::DocumentDelegate {
     Q_OBJECT
-    std::vector<nooc::MethodDelegatePtr> m_methods;
 
 public:
     ExDoc();

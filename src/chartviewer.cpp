@@ -1,5 +1,6 @@
 #include "chartviewer.h"
 
+#include "chartplotview.h"
 #include "delegates/extable.h"
 #include "tabledata.h"
 
@@ -10,7 +11,9 @@
 
 #include <QColorDialog>
 #include <QDataWidgetMapper>
+#include <QDateTime>
 #include <QDebug>
+#include <QInputDialog>
 
 #include <random>
 
@@ -288,8 +291,6 @@ void ChartViewer::setup_root() {
     connect(m_widget.data(), &QWidget::destroyed, [this](QObject*) {
         this->deleteLater();
     });
-
-    m_ui_root->stackedWidget->setCurrentIndex(0);
 }
 
 void ChartViewer::setup_edit_page() {
@@ -302,10 +303,6 @@ void ChartViewer::setup_edit_page() {
     color_b_layout->addWidget(color_well);
 
     m_ui_root->colorWidget->setLayout(color_b_layout);
-
-    connect(m_ui_root->editButton, &QToolButton::toggled, [this](bool checked) {
-        m_ui_root->stackedWidget->setCurrentIndex(checked);
-    });
 
     m_ui_root->seriesListView->setModel(&m_series_table);
     m_ui_root->seriesListView->setModelColumn(0);
@@ -364,16 +361,17 @@ void ChartViewer::setup_edit_page() {
 void ChartViewer::setup_chart_page() {
     // set up charts
 
-    auto cview = new QChartView();
+    m_chart_view = new ChartPlotView();
 
-    m_ui_root->chartHolder->layout()->addWidget(cview);
+    m_ui_root->chartHolder->layout()->addWidget(m_chart_view);
 
-    m_chart = new QChart();
+    m_chart = new PlotChart();
     m_chart->setTheme(QChart::ChartThemeDark);
     m_chart->setBackgroundBrush(QColor(63, 63, 63));
     m_chart->legend()->setMarkerShape(QLegend::MarkerShapeFromSeries);
-    m_chart->setContentsMargins(1, 1, 1, 1);
-    m_chart->setMargins(QMargins(2, 2, 2, 2));
+    m_chart->setContentsMargins(0, 0, 0, 0);
+    m_chart->setMargins(QMargins(1, 1, 1, 1));
+    m_chart->setBackgroundRoundness(0);
     m_chart->setAcceptHoverEvents(true);
 
     {
@@ -390,11 +388,21 @@ void ChartViewer::setup_chart_page() {
         m_chart->addAxis(m_y_axis, Qt::AlignLeft);
     }
 
-    cview->setChart(m_chart);
-    cview->setRenderHint(QPainter::Antialiasing);
+    m_chart_view->setChart(m_chart);
+    m_chart_view->setRenderHint(QPainter::Antialiasing);
+
+    connect(this,
+            &ChartViewer::selection_mode_changed,
+            m_chart,
+            &PlotChart::set_selection_mode);
+
+    connect(this,
+            &ChartViewer::selection_mode_changed,
+            m_chart_view,
+            &ChartPlotView::set_selection_mode);
 }
 
-ChartViewer::ChartViewer(std::shared_ptr<ExTable> t, QObject* parent)
+ChartViewer::ChartViewer(QPointer<ExTable> t, QObject* parent)
     : QObject(parent),
       m_attached_table(t),
       m_data(t->table_data()),
@@ -405,7 +413,7 @@ ChartViewer::ChartViewer(std::shared_ptr<ExTable> t, QObject* parent)
     setup_chart_page();
 
 
-    connect(t.get(),
+    connect(t,
             &ExTable::fetch_new_remote_table_data,
             this,
             &ChartViewer::on_table_changed);
@@ -452,6 +460,12 @@ void ChartViewer::on_table_changed() {
     add_link(&RemoteTableData::dataChanged);
 
     m_series_table.rebuild_all();
+
+    // selections
+
+    if (m_data->selections()) {
+        m_ui_root->selectionsListView->setModel(m_data->selections());
+    }
 }
 
 void ChartViewer::on_table_data_changed() {
@@ -465,4 +479,69 @@ void ChartViewer::on_mapper_changed(int i) {
     m_ui_root->typeComboBox->setEnabled(e);
     m_ui_root->xColumn->setEnabled(e);
     m_ui_root->yColumn->setEnabled(e);
+}
+
+void ChartViewer::on_edit_selection_clicked(bool down) {
+    if (down) {
+        // enter selection mode
+        auto rows =
+            m_ui_root->selectionsListView->selectionModel()->selectedRows();
+
+        if (rows.empty()) {
+            m_ui_root->editSelection->setChecked(false);
+            return;
+        }
+
+        auto row = rows.value(0);
+
+        auto name = m_attached_table->table_data()
+                        ->selections()
+                        ->slot_at(row.row())
+                        ->name;
+
+        m_editing_selection = name;
+
+        emit selection_mode_changed(true);
+
+        return;
+    }
+
+
+    emit selection_mode_changed(false);
+}
+
+void ChartViewer::add_selection() {
+    // auto populate with the first row
+    auto key = m_attached_table->table_data()->key_for_row(0);
+
+    if (key < 0) return;
+
+    noo::Selection sel;
+
+    sel.rows.push_back(key);
+
+
+    auto name = QInputDialog::getText(m_widget,
+                                      "New selection name",
+                                      "New selection name:",
+                                      QLineEdit::Normal);
+
+    if (name.isEmpty()) { name = QDateTime::currentDateTime().toString(); }
+
+    auto local_str = name.toStdString();
+
+    m_attached_table->request_selection_update(local_str, std::move(sel));
+}
+
+void ChartViewer::del_selection() {
+    auto rows = m_ui_root->selectionsListView->selectionModel()->selectedRows();
+
+    if (rows.empty()) return;
+
+    auto row = rows.value(0);
+
+    auto name =
+        m_attached_table->table_data()->selections()->slot_at(row.row())->name;
+
+    m_attached_table->request_selection_update(name, {});
 }

@@ -31,7 +31,7 @@ public:
     QStringList argument_names() const { return m_argument_names; }
     QStringList argument_details() const { return m_argument_details; }
 
-    void prepare_delete() override { unregister(); }
+    // void prepare_delete() override { unregister(); }
 };
 
 #endif // EXMETHOD_H

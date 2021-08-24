@@ -2,6 +2,7 @@
 #define ADDDATADIALOG_H
 
 #include <QDialog>
+#include <QPointer>
 
 class ExTable;
 class QTableWidgetItem;
@@ -23,10 +24,10 @@ class AddDataDialog : public QDialog {
 
     QTableWidgetItem* new_row_item;
 
-    std::shared_ptr<ExTable> m_table;
+    QPointer<ExTable> m_table;
 
 public:
-    explicit AddDataDialog(std::shared_ptr<ExTable>, QWidget* parent = nullptr);
+    explicit AddDataDialog(QPointer<ExTable>, QWidget* parent = nullptr);
     ~AddDataDialog();
 
     noo::AnyVarList get_data() const;

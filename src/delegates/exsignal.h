@@ -24,7 +24,7 @@ public:
     QString  get_name() const override;
     QVariant get_column(int c) const override;
 
-    void prepare_delete() override { unregister(); }
+    // void prepare_delete() override { unregister(); }
 };
 
 #endif // EXSIGNAL_H

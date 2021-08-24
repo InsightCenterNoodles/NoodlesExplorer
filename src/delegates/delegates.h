@@ -3,6 +3,9 @@
 
 #include <QPointer>
 
+#include <span>
+#include <vector>
+
 namespace Qt3DCore {
 class QEntity;
 class QTransform;
@@ -75,7 +78,13 @@ struct UniqueQPtr {
 QStringList to_qstringlist(std::vector<std::string_view> v);
 
 template <class T>
-QString ptr_to_id(std::shared_ptr<T> const& ptr) {
+QString ptr_to_id(std::unique_ptr<T> const& ptr) {
+    if (!ptr) return "None";
+    return ptr->id().to_qstring();
+}
+
+template <class T>
+QString ptr_to_id(QPointer<T> const& ptr) {
     if (!ptr) return "None";
     return ptr->id().to_qstring();
 }
@@ -88,7 +97,7 @@ QString ptr_to_id(T* ptr) {
 
 
 template <class T>
-QStringList build_id_list(std::vector<T> const& methods) {
+QStringList build_id_list(std::vector<T*> const& methods) {
     QStringList ret;
 
     for (auto const& ptr : methods) {
@@ -98,44 +107,123 @@ QStringList build_id_list(std::vector<T> const& methods) {
     return ret;
 }
 
+template <class T>
+QStringList build_id_list(std::vector<QPointer<T>> const& methods) {
+    QStringList ret;
+
+    for (auto const& ptr : methods) {
+        ret << ptr->id().to_qstring();
+    }
+
+    return ret;
+}
+
+// =============================================================================
+
 class AttachmentBase : public QObject {
     Q_OBJECT
 
 signals:
-    void attachment_changed(bool different_ptr = false);
+
+    // issued when the attached component is updated
+    void attachment_updated();
+
+    // issued when the attachment changes (swapped to a new component)
+    void attachment_changed();
 };
 
 template <class T>
 class AttachmentPoint : public AttachmentBase {
-    using Ptr = std::shared_ptr<T>;
-    Ptr m_attachment;
+    QPointer<T> m_attachment;
 
     QMetaObject::Connection m_updated_link;
 
 public:
-    void set(Ptr p) {
+    void set(T* p) {
         if (m_updated_link) disconnect(m_updated_link);
 
         m_attachment = p;
-        emit attachment_changed(true);
+        emit attachment_changed();
 
         if constexpr (T::CAN_UPDATE) {
-            m_updated_link = connect(p.get(), &T::updated, [this]() {
-                emit attachment_changed(false);
-            });
+            m_updated_link = connect(
+                p, &T::updated, this, &AttachmentBase::attachment_updated);
         }
     }
 
-    void operator=(Ptr p) { set(p); }
+    void operator=(T* p) { set(p); }
 
-    T* get() const { return m_attachment.get(); }
-    T* get() { return m_attachment.get(); }
+    T* get() const { return m_attachment; }
+    T* get() { return m_attachment; }
 
     operator bool() const { return !!m_attachment; }
 
     T& operator*() { return *m_attachment; }
-    T* operator->() { return m_attachment.get(); }
+    T* operator->() { return m_attachment; }
 };
 
+// =============================================================================
+
+class AttachmentVectorBase : public QObject {
+    Q_OBJECT
+
+signals:
+    void attachment_updated();
+
+    void attachment_changed();
+};
+
+template <class T>
+class AttachmentVector : public AttachmentVectorBase {
+    std::vector<QPointer<T>> m_attachment;
+
+    std::vector<QMetaObject::Connection> m_updated_links;
+
+public:
+    template <class U>
+    void set(std::vector<U*> const& ptrs) {
+
+        // static_assert(std::is_base_of_v<T, U> or std::is_same_v<T, U>);
+
+        for (auto l : m_updated_links) {
+            disconnect(l);
+        }
+
+        m_updated_links.clear();
+
+        m_attachment.clear();
+
+        for (auto p : ptrs) {
+            if constexpr (std::is_same_v<T, U>) {
+                m_attachment.emplace_back(p);
+            } else {
+                m_attachment.emplace_back(dynamic_cast<T*>(p));
+            }
+
+            if constexpr (T::CAN_UPDATE) {
+                m_updated_links.push_back(
+                    connect(p,
+                            &T::updated,
+                            this,
+                            &AttachmentVector::attachment_updated));
+            }
+        }
+
+        emit attachment_changed();
+    }
+    template <class U>
+    void operator=(std::vector<U*> const& ptrs) {
+        set(ptrs);
+    }
+
+    auto const& get() const { return m_attachment; }
+    auto        get() { return m_attachment; }
+
+    auto& operator*() { return get(); }
+    auto* operator->() { return &m_attachment; }
+
+    auto begin() const { return m_attachment.begin(); }
+    auto end() const { return m_attachment.end(); }
+};
 
 #endif // DELEGATES_H

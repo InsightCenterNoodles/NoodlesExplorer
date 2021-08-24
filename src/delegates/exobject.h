@@ -25,17 +25,17 @@ class ExObject : public nooc::ObjectDelegate, public ComponentListItem {
 
 
     QString                               m_name;
-    std::shared_ptr<ExObject>             m_parent;
+    QPointer<ExObject>                    m_parent;
     glm::mat4                             m_transform;
     AttachmentPoint<ExMaterial>           m_material;
     AttachmentPoint<ExMesh>               m_mesh;
-    std::vector<std::shared_ptr<ExLight>> m_lights;
-    std::vector<nooc::TableDelegatePtr>   m_tables;
+    AttachmentVector<ExLight>             m_lights;
+    AttachmentVector<nooc::TableDelegate> m_tables;
     std::vector<glm::mat4>                m_instances;
     QStringList                           m_tags;
-    std::vector<nooc::MethodDelegatePtr>  m_method_list;
-    std::vector<nooc::SignalDelegatePtr>  m_signal_list;
-    std::optional<nooc::ObjectText>       m_text;
+    // std::vector<QPointer<nooc::MethodDelegate>> m_method_list;
+    // std::vector<QPointer<nooc::SignalDelegate>> m_signal_list;
+    std::optional<nooc::ObjectText> m_text;
 
     void update_from(nooc::ObjectUpdateData const& md);
 
@@ -59,8 +59,8 @@ public:
     Qt3DCore::QEntity* entity();
 
 private slots:
-    void material_changed(bool);
-    void mesh_changed(bool);
+    void material_changed();
+    void mesh_changed();
 };
 
 #endif // EXOBJECT_H

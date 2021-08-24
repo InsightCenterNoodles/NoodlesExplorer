@@ -24,7 +24,7 @@ public:
 
     ~ExMaterial();
 
-    void prepare_delete() override { unregister(); }
+    // void prepare_delete() override { unregister(); }
 
     int      get_id() const override;
     int      get_id_gen() const override;

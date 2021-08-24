@@ -27,7 +27,7 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG 3396e530a5948416fd364cc9ffa3f5bcbb8abc3b
+    GIT_TAG 39ebddf39f21d6fbc18478cc7ad0bda4668418cf
 )
 
 find_package(Qt5 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts)
@@ -108,4 +108,9 @@ PRIVATE
     delegates/exdoc.h
     delegates/exlight.cpp
     delegates/exlight.h
+    newselectiondialog.cpp
+    newselectiondialog.h
+    newselectiondialog.ui
+    chartplotview.h
+    chartplotview.cpp
 )

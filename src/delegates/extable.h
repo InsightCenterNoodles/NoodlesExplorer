@@ -13,8 +13,6 @@ class ExTable : public nooc::TableDelegate, public ComponentListItem {
 
     QString m_name;
 
-    std::vector<nooc::MethodDelegatePtr> m_methods;
-
     std::shared_ptr<RemoteTableData> m_data;
 
     void set_from(nooc::TableData const& md);
@@ -30,7 +28,7 @@ public:
 
     ~ExTable();
 
-    void prepare_delete() override { unregister(); }
+    // void prepare_delete() override { unregister(); }
 
     int      get_id() const override;
     int      get_id_gen() const override;

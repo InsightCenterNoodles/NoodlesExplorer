@@ -32,11 +32,11 @@ void AddDataDialog::double_clicked(QTableWidgetItem* item) {
         new_row_item->row(), new_row_item->column(), 1, names.size());
 }
 
-AddDataDialog::AddDataDialog(std::shared_ptr<ExTable> tbl, QWidget* parent)
+AddDataDialog::AddDataDialog(QPointer<ExTable> tbl, QWidget* parent)
     : QDialog(parent), ui(new Ui::AddDataDialog), m_table(tbl) {
     ui->setupUi(this);
 
-    connect(m_table.get(),
+    connect(m_table,
             &ExTable::fetch_new_remote_table_data,
             this,
             &AddDataDialog::setup);

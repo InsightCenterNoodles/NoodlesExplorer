@@ -12,8 +12,6 @@ void ExTable::set_from(nooc::TableData const& md) {
     } else {
         m_name = id().to_qstring();
     }
-
-    if (md.method_list) m_methods = *md.method_list;
 }
 
 QStringList ExTable::header() {

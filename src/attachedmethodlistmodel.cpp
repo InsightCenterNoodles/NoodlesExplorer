@@ -3,14 +3,13 @@
 AttachedMethodListModel::AttachedMethodListModel(QObject* parent)
     : QAbstractTableModel(parent) { }
 
-void AttachedMethodListModel::set(
-    std::vector<nooc::MethodDelegatePtr> const& l) {
+void AttachedMethodListModel::set(std::vector<nooc::MethodDelegate*> const& l) {
     beginResetModel();
 
     m_list.clear();
 
     for (auto const& s : l) {
-        m_list.emplace_back(std::dynamic_pointer_cast<ExMethod>(s));
+        m_list.emplace_back(dynamic_cast<ExMethod*>(s));
     }
 
     endResetModel();
@@ -24,9 +23,9 @@ void AttachedMethodListModel::clear() {
     endResetModel();
 }
 
-std::shared_ptr<ExMethod> AttachedMethodListModel::get_method_row(int i) const {
+ExMethod* AttachedMethodListModel::get_method_row(int i) const {
     if (i < 0) return {};
-    if (i >= m_list.size()) return {};
+    if ((size_t)i >= m_list.size()) return {};
 
     return m_list[i];
 }

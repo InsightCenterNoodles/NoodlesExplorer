@@ -107,41 +107,41 @@ bool State::start_connection(QString name, QString url) {
 
     delegates.tex_maker = [this](noo::TextureID           id,
                                  nooc::TextureData const& md) {
-        return std::make_shared<ExTexture>(id, md, m_texture_list);
+        return std::make_unique<ExTexture>(id, md, m_texture_list);
     };
     delegates.buffer_maker = [this](noo::BufferID           id,
                                     nooc::BufferData const& md) {
-        return std::make_shared<ExBuffer>(id, md, m_buffer_list, m_root_entity);
+        return std::make_unique<ExBuffer>(id, md, m_buffer_list, m_root_entity);
     };
     delegates.table_maker = [this](noo::TableID id, nooc::TableData const& md) {
-        return std::make_shared<ExTable>(id, md, m_table_list);
+        return std::make_unique<ExTable>(id, md, m_table_list);
     };
     delegates.light_maker = [this](noo::LightID id, nooc::LightData const& md) {
-        return std::make_shared<ExLight>(id, md, m_light_list, m_root_entity);
+        return std::make_unique<ExLight>(id, md, m_light_list, m_root_entity);
     };
     delegates.mat_maker = [this](noo::MaterialID           id,
                                  nooc::MaterialData const& md) {
-        return std::make_shared<ExMaterial>(
+        return std::make_unique<ExMaterial>(
             id, md, m_material_list, m_root_entity);
     };
     delegates.mesh_maker = [this](noo::MeshID id, nooc::MeshData const& md) {
-        return std::make_shared<ExMesh>(id, md, m_mesh_list, m_root_entity);
+        return std::make_unique<ExMesh>(id, md, m_mesh_list, m_root_entity);
     };
     delegates.object_maker = [this](noo::ObjectID                 id,
                                     nooc::ObjectUpdateData const& md) {
-        return std::make_shared<ExObject>(id, md, m_object_list, m_root_entity);
+        return std::make_unique<ExObject>(id, md, m_object_list, m_root_entity);
     };
     delegates.sig_maker = [this](noo::SignalID id, nooc::SignalData const& md) {
-        return std::make_shared<ExSignal>(id, md, m_signal_list);
+        return std::make_unique<ExSignal>(id, md, m_signal_list);
     };
     delegates.method_maker = [this](noo::MethodID           id,
                                     nooc::MethodData const& md) {
-        return std::make_shared<ExMethod>(id, md, m_method_list);
+        return std::make_unique<ExMethod>(id, md, m_method_list);
     };
     delegates.doc_maker = [this]() {
-        auto p = std::make_shared<ExDoc>();
+        auto p = std::make_unique<ExDoc>();
 
-        m_current_doc = p;
+        m_current_doc = p.get();
 
         connect(
             p.get(), &ExDoc::updated, this, &State::handle_document_updated);
@@ -342,7 +342,7 @@ void State::launch_table_view(int i) {
 
     if (!tbl_ptr) return;
 
-    auto del_ptr = std::dynamic_pointer_cast<ExTable>(tbl_ptr);
+    auto del_ptr = dynamic_cast<ExTable*>(tbl_ptr);
 
     if (!del_ptr) return;
 
@@ -364,7 +364,7 @@ void State::launch_chart_view(int i) {
 
     if (!tbl_ptr) return;
 
-    auto del_ptr = std::dynamic_pointer_cast<ExTable>(tbl_ptr);
+    auto del_ptr = dynamic_cast<ExTable*>(tbl_ptr);
 
     if (!del_ptr) return;
 

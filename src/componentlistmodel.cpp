@@ -2,16 +2,18 @@
 
 #include <QDebug>
 
-void ComponentListItem::unregister() {
-    m_host->unregister_item(this);
-}
+// void ComponentListItem::unregister() {
+//    m_host->unregister_item(this);
+//}
 
 ComponentListItem::ComponentListItem(std::shared_ptr<ComponentListModel> host)
     : m_host(host) {
     m_host->register_item(this);
 }
 
-ComponentListItem::~ComponentListItem() { }
+ComponentListItem::~ComponentListItem() {
+    m_host->unregister_item(this);
+}
 
 void ComponentListItem::notify() {
     m_host->item_in_list_updated(this);
@@ -108,7 +110,13 @@ void ComponentListModel::unregister_item(ComponentListItem* item) {
     beginRemoveRows({}, place, place);
 
     m_items.remove(place);
-    m_item_place_map.erase(iter);
+
+    // rebuild place map (terrible, but ok for now)
+    m_item_place_map.clear();
+
+    for (int i = 0; i < m_items.size(); i++) {
+        m_item_place_map[m_items[i]] = i;
+    }
 
     endRemoveRows();
 }

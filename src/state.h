@@ -32,8 +32,8 @@ class State : public QObject {
     UniqueQPtr<Qt3DCore::QEntity> m_root_entity;
 
 
-    std::shared_ptr<ExMethod> m_current_doc_method;
-    ArgumentTableModel        m_argument_table_model;
+    QPointer<ExMethod> m_current_doc_method;
+    ArgumentTableModel m_argument_table_model;
 
     AttachedMethodListModel m_document_methods;
 
@@ -46,7 +46,7 @@ class State : public QObject {
     std::shared_ptr<ComponentListModel> m_light_list;
     std::shared_ptr<ComponentListModel> m_mesh_list;
     std::shared_ptr<ComponentListModel> m_object_list;
-    std::shared_ptr<ExDoc>              m_current_doc;
+    QPointer<ExDoc>                     m_current_doc;
 
 
 public:

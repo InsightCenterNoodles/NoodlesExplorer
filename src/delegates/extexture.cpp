@@ -25,8 +25,8 @@ QVariant ExTexture::get_column(int c) const {
     switch (c) {
     case 0: return get_id();
     case 1: return get_name();
-    case 2: return ptr_to_id(m_data.buffer);
-    case 3: return m_data.buffer ? (int)m_data.size : 0;
+    case 2: return ptr_to_id(m_data.buffer.value_or(nullptr));
+    case 3: return m_data.buffer ? (int)m_data.size.value_or(0) : 0;
     }
     return {};
 }

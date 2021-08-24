@@ -131,9 +131,13 @@ attrib_from_ref(QString                                  name,
         return p;
     }
 
+    if (!oref) return nullptr;
+
+    assert(oref.has_value());
+
     auto const& ref = *oref;
 
-    auto buff = std::dynamic_pointer_cast<ExBuffer>(ref.buffer);
+    auto buff = dynamic_cast<ExBuffer*>(ref.buffer);
 
     if (!buff) return nullptr;
 
@@ -234,7 +238,7 @@ attrib_from_idx_ref(Qt3DRender::QGeometry*                   node,
 
     auto const& ref = *oref;
 
-    auto buff = std::dynamic_pointer_cast<ExBuffer>(ref.buffer);
+    auto buff = dynamic_cast<ExBuffer*>(ref.buffer);
 
     if (!buff) return nullptr;
 

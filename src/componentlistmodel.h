@@ -15,8 +15,6 @@ class ComponentListItem {
 protected:
     void notify();
 
-    void unregister();
-
 public:
     ComponentListItem(std::shared_ptr<ComponentListModel> host);
     ~ComponentListItem();

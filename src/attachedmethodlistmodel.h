@@ -5,10 +5,12 @@
 
 #include <QAbstractTableModel>
 
+#include <deque>
+
 class AttachedMethodListModel : public QAbstractTableModel {
     Q_OBJECT
 
-    std::vector<std::shared_ptr<ExMethod>> m_list;
+    std::deque<QPointer<ExMethod>> m_list;
 
 public:
     enum Roles {
@@ -19,10 +21,10 @@ public:
 
     explicit AttachedMethodListModel(QObject* parent = nullptr);
 
-    void set(std::vector<nooc::MethodDelegatePtr> const&);
+    void set(std::vector<nooc::MethodDelegate*> const&);
     void clear();
 
-    std::shared_ptr<ExMethod> get_method_row(int) const;
+    ExMethod* get_method_row(int) const;
 
     // Header:
     QVariant headerData(int             section,
