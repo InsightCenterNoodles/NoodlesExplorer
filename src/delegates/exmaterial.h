@@ -8,7 +8,7 @@
 
 #include <QPhongMaterial>
 
-class ExMaterial : public nooc::MaterialDelegate, public ComponentListItem {
+class ExMaterial : public nooc::MaterialDelegate {
     nooc::MaterialData m_data;
 
     UniqueQPtr<QInstancedMetalRoughMaterial> m_3d_entity;
@@ -17,19 +17,18 @@ class ExMaterial : public nooc::MaterialDelegate, public ComponentListItem {
 public:
     static QStringList header();
 
-    ExMaterial(noo::MaterialID                     id,
-               nooc::MaterialData const&           md,
-               std::shared_ptr<ComponentListModel> list,
-               Qt3DCore::QEntity*                  scene_root);
+    ExMaterial(noo::MaterialID           id,
+               nooc::MaterialData const& md,
+               Qt3DCore::QEntity*        scene_root);
 
     ~ExMaterial();
 
     // void prepare_delete() override { unregister(); }
 
-    int      get_id() const override;
-    int      get_id_gen() const override;
-    QString  get_name() const override;
-    QVariant get_column(int c) const override;
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
     void     on_update(nooc::MaterialData const&) override;
 
     // Qt3DExtras::QPhongMaterial*   get_2d_material();

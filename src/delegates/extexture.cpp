@@ -4,10 +4,8 @@ QStringList ExTexture::header() {
     return { "ID", "Name", "Buffer", "Size" };
 }
 
-ExTexture::ExTexture(noo::TextureID                      id,
-                     nooc::TextureData const&            md,
-                     std::shared_ptr<ComponentListModel> list)
-    : nooc::TextureDelegate(id, md), ComponentListItem(list), m_data(md) { }
+ExTexture::ExTexture(noo::TextureID id, nooc::TextureData const& md)
+    : nooc::TextureDelegate(id, md), m_data(md) { }
 
 ExTexture::~ExTexture() = default;
 

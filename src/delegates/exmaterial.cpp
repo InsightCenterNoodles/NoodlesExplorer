@@ -8,12 +8,10 @@ QStringList ExMaterial::header() {
     return { "ID", "Name", "Color", "Surface", "Texture" };
 }
 
-ExMaterial::ExMaterial(noo::MaterialID                     id,
-                       nooc::MaterialData const&           md,
-                       std::shared_ptr<ComponentListModel> list,
-                       Qt3DCore::QEntity*                  scene_root)
+ExMaterial::ExMaterial(noo::MaterialID           id,
+                       nooc::MaterialData const& md,
+                       Qt3DCore::QEntity*        scene_root)
     : nooc::MaterialDelegate(id, md),
-      ComponentListItem(list),
       m_data(md),
       m_3d_entity(new QInstancedMetalRoughMaterial(scene_root)),
       m_2d_material(new Qt3DExtras::QPhongMaterial(scene_root)) {

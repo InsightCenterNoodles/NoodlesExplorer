@@ -23,26 +23,25 @@ struct QtGeomInfo {
     QtGeomInfo& operator=(QtGeomInfo&&);
 };
 
-class ExMesh : public nooc::MeshDelegate, public ComponentListItem {
+class ExMesh : public nooc::MeshDelegate {
     nooc::MeshData     m_data;
     Qt3DCore::QEntity* m_scene_root;
 
 public:
     static QStringList header();
 
-    ExMesh(noo::MeshID                         id,
-           nooc::MeshData const&               md,
-           std::shared_ptr<ComponentListModel> list,
-           Qt3DCore::QEntity*                  scene_root);
+    ExMesh(noo::MeshID           id,
+           nooc::MeshData const& md,
+           Qt3DCore::QEntity*    scene_root);
 
     ~ExMesh();
 
     // void prepare_delete() override { unregister(); }
 
-    int      get_id() const override;
-    int      get_id_gen() const override;
-    QString  get_name() const override;
-    QVariant get_column(int c) const override;
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
 
     QtGeomInfo make_new_info(std::span<glm::mat4> instances);
 };

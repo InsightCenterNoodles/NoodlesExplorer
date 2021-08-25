@@ -137,24 +137,16 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
 }
 
 QStringList ExObject::header() {
+    // be careful about changing these. consider the filter below.
     return {
-        "ID",       "Name", "Parent",
-
-        "Material", "Mesh", "Lights",
-
-        "Tags",
-        //"Methods",
-        //"Signals",
+        "ID", "Name", "Parent", "Material", "Mesh", "Lights", "Tags",
     };
 }
 
-ExObject::ExObject(noo::ObjectID                       id,
-                   nooc::ObjectUpdateData const&       md,
-                   std::shared_ptr<ComponentListModel> list,
-                   Qt3DCore::QEntity*                  scene_root)
-    : nooc::ObjectDelegate(id, md),
-      ComponentListItem(list),
-      m_3d_root(scene_root) {
+ExObject::ExObject(noo::ObjectID                 id,
+                   nooc::ObjectUpdateData const& md,
+                   Qt3DCore::QEntity*            scene_root)
+    : nooc::ObjectDelegate(id, md), m_3d_root(scene_root) {
 
     m_3d_entity    = new Qt3DCore::QEntity(scene_root);
     m_3d_transform = new Qt3DCore::QTransform(m_3d_entity.data());
@@ -240,4 +232,100 @@ void ExObject::material_changed() {
 
 void ExObject::mesh_changed() {
     remake_mesh_attachment();
+}
+
+// =============================================================================
+
+TaggedNameObjectFilter::TaggedNameObjectFilter(QObject* p)
+    : QSortFilterProxyModel(p) { }
+
+static int max_h_size = ExObject::header().size();
+static int name_idx   = ExObject::header().indexOf("Name");
+static int tag_idx    = ExObject::header().indexOf("Tags");
+
+bool TaggedNameObjectFilter::filterAcceptsRow(
+    int                source_row,
+    QModelIndex const& source_parent) const {
+
+    qDebug() << Q_FUNC_INFO << source_row;
+
+    // see if this an object table...
+    auto* src = sourceModel();
+
+    if (!src) return true;
+
+    if (src->columnCount() < max_h_size) return true;
+
+    auto name = src->data(src->index(source_row, name_idx, source_parent))
+                    .value<QString>();
+
+    auto tags = src->data(src->index(source_row, tag_idx, source_parent))
+                    .value<QStringList>();
+
+    // ick
+    static QString hidden_tag =
+        QString::fromStdString(std::string(noo::names::tag_noo_user_hidden));
+
+    if (tags.contains(hidden_tag)) {
+        qDebug() << Q_FUNC_INFO << "Hidden!";
+        return false;
+    }
+
+    if (m_names.isEmpty() and m_tags.isEmpty()) {
+        qDebug() << Q_FUNC_INFO << "NO FILTER!";
+        return true;
+    }
+
+
+    bool accept_name = false;
+
+    for (auto const& n : m_names) {
+        if (name.contains(n)) {
+            accept_name = true;
+            break;
+        }
+    }
+
+    if (accept_name) return true;
+
+    bool accept_tags = false;
+
+    for (auto const& t : m_tags) {
+        for (auto const& ot : tags) {
+            if (ot.contains(t)) {
+                accept_tags = true;
+                break;
+            }
+        }
+    }
+
+    return accept_tags;
+}
+
+QString const& TaggedNameObjectFilter::filter() const {
+    return m_filter;
+}
+
+void TaggedNameObjectFilter::set_filter(QString const& new_filter) {
+    qDebug() << Q_FUNC_INFO << new_filter;
+
+    if (m_filter == new_filter) return;
+    m_filter = new_filter;
+
+    m_tags.clear();
+    m_names.clear();
+
+    auto parts = m_filter.split(":");
+
+    for (auto part : parts) {
+        if (part.startsWith("#")) {
+            m_tags << part.mid(1);
+        } else {
+            m_names << part;
+        }
+    }
+
+    invalidateFilter();
+
+    emit filter_changed();
 }

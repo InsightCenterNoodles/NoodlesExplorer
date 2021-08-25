@@ -6,7 +6,7 @@
 
 #include <noo_client_interface.h>
 
-class ExLight : public nooc::LightDelegate, public ComponentListItem {
+class ExLight : public nooc::LightDelegate {
     nooc::LightData m_data;
 
     UniqueQPtr<Qt3DRender::QAbstractLight> m_3d_entity;
@@ -14,19 +14,18 @@ class ExLight : public nooc::LightDelegate, public ComponentListItem {
 public:
     static QStringList header();
 
-    ExLight(noo::LightID                        id,
-            nooc::LightData const&              md,
-            std::shared_ptr<ComponentListModel> list,
-            Qt3DCore::QEntity*                  scene_root);
+    ExLight(noo::LightID           id,
+            nooc::LightData const& md,
+            Qt3DCore::QEntity*     scene_root);
 
     ~ExLight();
 
     // void prepare_delete() override { unregister(); }
 
-    int      get_id() const override;
-    int      get_id_gen() const override;
-    QString  get_name() const override;
-    QVariant get_column(int c) const override;
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
     void     on_update(nooc::LightData const&) override;
 
     Qt3DRender::QAbstractLight* entity();

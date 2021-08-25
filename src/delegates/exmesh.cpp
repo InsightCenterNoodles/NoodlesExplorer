@@ -264,14 +264,10 @@ attrib_from_idx_ref(Qt3DRender::QGeometry*                   node,
     return p;
 }
 
-ExMesh::ExMesh(noo::MeshID                         id,
-               nooc::MeshData const&               md,
-               std::shared_ptr<ComponentListModel> list,
-               Qt3DCore::QEntity*                  scene_root)
-    : nooc::MeshDelegate(id, md),
-      ComponentListItem(list),
-      m_data(md),
-      m_scene_root(scene_root) { }
+ExMesh::ExMesh(noo::MeshID           id,
+               nooc::MeshData const& md,
+               Qt3DCore::QEntity*    scene_root)
+    : nooc::MeshDelegate(id, md), m_data(md), m_scene_root(scene_root) { }
 
 ExMesh::~ExMesh() = default;
 

@@ -8,10 +8,8 @@ QStringList ExMethod::header() {
     };
 }
 
-ExMethod::ExMethod(noo::MethodID                       id,
-                   nooc::MethodData const&             md,
-                   std::shared_ptr<ComponentListModel> list)
-    : nooc::MethodDelegate(id, md), ComponentListItem(list) {
+ExMethod::ExMethod(noo::MethodID id, nooc::MethodData const& md)
+    : nooc::MethodDelegate(id, md) {
 
     m_documentation        = noo::to_qstring(md.documentation);
     m_return_documentation = noo::to_qstring(md.return_documentation);

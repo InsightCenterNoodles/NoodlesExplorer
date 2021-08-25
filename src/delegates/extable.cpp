@@ -18,10 +18,8 @@ QStringList ExTable::header() {
     return { "ID", "Name" };
 }
 
-ExTable::ExTable(noo::TableID                        id,
-                 nooc::TableData const&              md,
-                 std::shared_ptr<ComponentListModel> list)
-    : nooc::TableDelegate(id, md), ComponentListItem(list) {
+ExTable::ExTable(noo::TableID id, nooc::TableData const& md)
+    : nooc::TableDelegate(id, md) {
 
     set_from(md);
 }

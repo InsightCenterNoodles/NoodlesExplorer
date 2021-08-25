@@ -5,7 +5,16 @@
 #include "attachedmethodlistmodel.h"
 #include "componentlistmodel.h"
 #include "delegates/delegates.h"
+//#include "delegates/exbuffer.h"
 #include "delegates/exdoc.h"
+//#include "delegates/exlight.h"
+//#include "delegates/exmaterial.h"
+//#include "delegates/exmesh.h"
+//#include "delegates/exobject.h"
+//#include "delegates/exsignal.h"
+//#include "delegates/extable.h"
+//#include "delegates/extexture.h"
+
 
 #include <QEntity>
 #include <QObject>
@@ -18,6 +27,17 @@ class QQmlContext;
 namespace nooc {
 class ClientConnection;
 }
+
+class TaggedNameObjectFilter;
+
+class ExSignal;
+class ExTable;
+class ExBuffer;
+class ExTexture;
+class ExMaterial;
+class ExLight;
+class ExMesh;
+class ExObject;
 
 class State : public QObject {
     Q_OBJECT
@@ -37,16 +57,18 @@ class State : public QObject {
 
     AttachedMethodListModel m_document_methods;
 
-    std::shared_ptr<ComponentListModel> m_method_list;
-    std::shared_ptr<ComponentListModel> m_signal_list;
-    std::shared_ptr<ComponentListModel> m_table_list;
-    std::shared_ptr<ComponentListModel> m_buffer_list;
-    std::shared_ptr<ComponentListModel> m_texture_list;
-    std::shared_ptr<ComponentListModel> m_material_list;
-    std::shared_ptr<ComponentListModel> m_light_list;
-    std::shared_ptr<ComponentListModel> m_mesh_list;
-    std::shared_ptr<ComponentListModel> m_object_list;
-    QPointer<ExDoc>                     m_current_doc;
+    ComponentListModel<ExMethod>*   m_method_list;
+    ComponentListModel<ExSignal>*   m_signal_list;
+    ComponentListModel<ExTable>*    m_table_list;
+    ComponentListModel<ExBuffer>*   m_buffer_list;
+    ComponentListModel<ExTexture>*  m_texture_list;
+    ComponentListModel<ExMaterial>* m_material_list;
+    ComponentListModel<ExLight>*    m_light_list;
+    ComponentListModel<ExMesh>*     m_mesh_list;
+    ComponentListModel<ExObject>*   m_object_list;
+    QPointer<ExDoc>                 m_current_doc;
+
+    TaggedNameObjectFilter* m_object_filter;
 
 
 public:

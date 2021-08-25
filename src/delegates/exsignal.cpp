@@ -6,10 +6,8 @@ QStringList ExSignal::header() {
     return { "ID", "Name", "Documentation", "Arguments" };
 }
 
-ExSignal::ExSignal(noo::SignalID                       id,
-                   nooc::SignalData const&             md,
-                   std::shared_ptr<ComponentListModel> list)
-    : nooc::SignalDelegate(id, md), ComponentListItem(list) {
+ExSignal::ExSignal(noo::SignalID id, nooc::SignalData const& md)
+    : nooc::SignalDelegate(id, md) {
 
     m_documentation = noo::to_qstring(md.documentation);
 

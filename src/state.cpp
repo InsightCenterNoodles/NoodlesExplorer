@@ -38,16 +38,20 @@ State::State(QObject* parent) : QObject(parent) {
 
     m_root_entity = new Qt3DCore::QEntity();
 
-    m_method_list  = std::make_shared<ComponentListModel>(ExMethod::header());
-    m_signal_list  = std::make_shared<ComponentListModel>(ExSignal::header());
-    m_table_list   = std::make_shared<ComponentListModel>(ExTable::header());
-    m_buffer_list  = std::make_shared<ComponentListModel>(ExBuffer::header());
-    m_texture_list = std::make_shared<ComponentListModel>(ExTexture::header());
-    m_material_list =
-        std::make_shared<ComponentListModel>(ExMaterial::header());
-    m_light_list  = std::make_shared<ComponentListModel>(ExLight::header());
-    m_mesh_list   = std::make_shared<ComponentListModel>(ExMesh::header());
-    m_object_list = std::make_shared<ComponentListModel>(ExObject::header());
+    m_method_list   = new ComponentListModel<ExMethod>(this);
+    m_signal_list   = new ComponentListModel<ExSignal>(this);
+    m_table_list    = new ComponentListModel<ExTable>(this);
+    m_buffer_list   = new ComponentListModel<ExBuffer>(this);
+    m_texture_list  = new ComponentListModel<ExTexture>(this);
+    m_material_list = new ComponentListModel<ExMaterial>(this);
+    m_light_list    = new ComponentListModel<ExLight>(this);
+    m_mesh_list     = new ComponentListModel<ExMesh>(this);
+    m_object_list   = new ComponentListModel<ExObject>(this);
+
+
+    m_object_filter = new TaggedNameObjectFilter(this);
+
+    m_object_filter->setSourceModel(m_object_list);
 }
 
 State::~State() { }
@@ -57,15 +61,17 @@ void State::link(QQmlContext* c) {
 
     c->setContextProperty("argument_model", &m_argument_table_model);
 
-    c->setContextProperty("method_list", m_method_list.get());
-    c->setContextProperty("signal_list", m_signal_list.get());
-    c->setContextProperty("table_list", m_table_list.get());
-    c->setContextProperty("buffer_list", m_buffer_list.get());
-    c->setContextProperty("texture_list", m_texture_list.get());
-    c->setContextProperty("material_list", m_material_list.get());
-    c->setContextProperty("light_list", m_light_list.get());
-    c->setContextProperty("mesh_list", m_mesh_list.get());
-    c->setContextProperty("object_list", m_object_list.get());
+    c->setContextProperty("method_list", m_method_list);
+    c->setContextProperty("signal_list", m_signal_list);
+    c->setContextProperty("table_list", m_table_list);
+    c->setContextProperty("buffer_list", m_buffer_list);
+    c->setContextProperty("texture_list", m_texture_list);
+    c->setContextProperty("material_list", m_material_list);
+    c->setContextProperty("light_list", m_light_list);
+    c->setContextProperty("mesh_list", m_mesh_list);
+    c->setContextProperty("object_list", m_object_list);
+
+    c->setContextProperty("filtered_object_list", m_object_filter);
 
     c->setContextProperty("document_methods", &m_document_methods);
 
@@ -107,36 +113,35 @@ bool State::start_connection(QString name, QString url) {
 
     delegates.tex_maker = [this](noo::TextureID           id,
                                  nooc::TextureData const& md) {
-        return std::make_unique<ExTexture>(id, md, m_texture_list);
+        return m_texture_list->add_item(id, md);
     };
     delegates.buffer_maker = [this](noo::BufferID           id,
                                     nooc::BufferData const& md) {
-        return std::make_unique<ExBuffer>(id, md, m_buffer_list, m_root_entity);
+        return m_buffer_list->add_item(id, md, m_root_entity);
     };
     delegates.table_maker = [this](noo::TableID id, nooc::TableData const& md) {
-        return std::make_unique<ExTable>(id, md, m_table_list);
+        return m_table_list->add_item(id, md);
     };
     delegates.light_maker = [this](noo::LightID id, nooc::LightData const& md) {
-        return std::make_unique<ExLight>(id, md, m_light_list, m_root_entity);
+        return m_light_list->add_item(id, md, m_root_entity);
     };
     delegates.mat_maker = [this](noo::MaterialID           id,
                                  nooc::MaterialData const& md) {
-        return std::make_unique<ExMaterial>(
-            id, md, m_material_list, m_root_entity);
+        return m_material_list->add_item(id, md, m_root_entity);
     };
     delegates.mesh_maker = [this](noo::MeshID id, nooc::MeshData const& md) {
-        return std::make_unique<ExMesh>(id, md, m_mesh_list, m_root_entity);
+        return m_mesh_list->add_item(id, md, m_root_entity);
     };
     delegates.object_maker = [this](noo::ObjectID                 id,
                                     nooc::ObjectUpdateData const& md) {
-        return std::make_unique<ExObject>(id, md, m_object_list, m_root_entity);
+        return m_object_list->add_item(id, md, m_root_entity);
     };
     delegates.sig_maker = [this](noo::SignalID id, nooc::SignalData const& md) {
-        return std::make_unique<ExSignal>(id, md, m_signal_list);
+        return m_signal_list->add_item(id, md);
     };
     delegates.method_maker = [this](noo::MethodID           id,
                                     nooc::MethodData const& md) {
-        return std::make_unique<ExMethod>(id, md, m_method_list);
+        return m_method_list->add_item(id, md);
     };
     delegates.doc_maker = [this]() {
         auto p = std::make_unique<ExDoc>();

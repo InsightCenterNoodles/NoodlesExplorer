@@ -8,7 +8,7 @@
 
 class QNetworkReply;
 
-class ExBuffer : public nooc::BufferDelegate, public ComponentListItem {
+class ExBuffer : public nooc::BufferDelegate {
     Q_OBJECT
 
     QByteArray m_array;
@@ -21,19 +21,18 @@ class ExBuffer : public nooc::BufferDelegate, public ComponentListItem {
 public:
     static QStringList header();
 
-    ExBuffer(noo::BufferID                       id,
-             nooc::BufferData const&             md,
-             std::shared_ptr<ComponentListModel> list,
-             Qt3DCore::QEntity*                  scene_root);
+    ExBuffer(noo::BufferID           id,
+             nooc::BufferData const& md,
+             Qt3DCore::QEntity*      scene_root);
 
     ~ExBuffer();
 
     // void prepare_delete() override { unregister(); }
 
-    int      get_id() const override;
-    int      get_id_gen() const override;
-    QString  get_name() const override;
-    QVariant get_column(int c) const override;
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
 
     size_t            size() const;
     QByteArray const& byte_array() const { return m_array; }

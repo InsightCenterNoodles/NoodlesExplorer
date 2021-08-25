@@ -9,13 +9,10 @@ QStringList ExBuffer::header() {
     return { "ID", "Name", "Size", "Ready" };
 }
 
-ExBuffer::ExBuffer(noo::BufferID                       id,
-                   nooc::BufferData const&             md,
-                   std::shared_ptr<ComponentListModel> list,
-                   Qt3DCore::QEntity*                  scene_root)
-    : nooc::BufferDelegate(id, md),
-      ComponentListItem(list),
-      m_scene_root(scene_root) {
+ExBuffer::ExBuffer(noo::BufferID           id,
+                   nooc::BufferData const& md,
+                   Qt3DCore::QEntity*      scene_root)
+    : nooc::BufferDelegate(id, md), m_scene_root(scene_root) {
 
     if (!md.data.empty()) {
         m_array = QByteArray((const char*)md.data.data(), md.data.size());

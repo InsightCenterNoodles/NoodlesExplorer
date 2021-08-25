@@ -12,7 +12,7 @@ class ExMesh;
 class ExLight;
 
 
-class ExObject : public nooc::ObjectDelegate, public ComponentListItem {
+class ExObject : public nooc::ObjectDelegate {
     Q_OBJECT
 
     Qt3DCore::QEntity*            m_3d_root;
@@ -42,17 +42,16 @@ class ExObject : public nooc::ObjectDelegate, public ComponentListItem {
 public:
     static QStringList header();
 
-    ExObject(noo::ObjectID                       id,
-             nooc::ObjectUpdateData const&       md,
-             std::shared_ptr<ComponentListModel> list,
-             Qt3DCore::QEntity*                  scene_root);
+    ExObject(noo::ObjectID                 id,
+             nooc::ObjectUpdateData const& md,
+             Qt3DCore::QEntity*            scene_root);
 
     ~ExObject();
 
-    int      get_id() const override;
-    int      get_id_gen() const override;
-    QString  get_name() const override;
-    QVariant get_column(int c) const override;
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
 
     void on_update(nooc::ObjectUpdateData const&) override;
 
@@ -61,6 +60,29 @@ public:
 private slots:
     void material_changed();
     void mesh_changed();
+};
+
+class TaggedNameObjectFilter : public QSortFilterProxyModel {
+    Q_OBJECT
+
+    QString m_filter;
+
+    Q_PROPERTY(
+        QString filter READ filter WRITE set_filter NOTIFY filter_changed)
+
+    QStringList m_names;
+    QStringList m_tags;
+
+public:
+    explicit TaggedNameObjectFilter(QObject* p = nullptr);
+
+    bool filterAcceptsRow(int                source_row,
+                          QModelIndex const& source_parent) const override;
+
+    QString const& filter() const;
+    void           set_filter(const QString& new_filter);
+signals:
+    void filter_changed();
 };
 
 #endif // EXOBJECT_H
