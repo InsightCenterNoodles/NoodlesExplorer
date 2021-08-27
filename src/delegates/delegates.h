@@ -9,15 +9,15 @@
 namespace Qt3DCore {
 class QEntity;
 class QTransform;
+class QGeometry;
+class QAttribute;
+class QBuffer;
 } // namespace Qt3DCore
 
 namespace Qt3DRender {
 class QMaterial;
-class QGeometry;
 class QGeometryRenderer;
 class QAbstractLight;
-class QAttribute;
-class QBuffer;
 } // namespace Qt3DRender
 
 class QTreeWidget;

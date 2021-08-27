@@ -16,8 +16,6 @@ public:
 
     ~ExTexture();
 
-    // void prepare_delete() override { unregister(); }
-
     int      get_id() const;
     int      get_id_gen() const;
     QString  get_name() const;

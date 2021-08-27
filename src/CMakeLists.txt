@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12...3.16)
+cmake_minimum_required(VERSION 3.16)
 
 project(NoodlesExplorer VERSION 0.2 LANGUAGES CXX)
 
@@ -27,10 +27,10 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG 36c6edfb8d85f1dadcf26109ca588d537fe24ee9
+    GIT_TAG 7964d970aa2d5f4136c7ecaf2d7112791288b651
 )
 
-find_package(Qt5 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts)
+find_package(Qt6 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts)
 
 # Options ======================================================================
 

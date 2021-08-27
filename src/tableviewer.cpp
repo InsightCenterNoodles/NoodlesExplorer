@@ -26,7 +26,7 @@ TableViewer::TableViewer(QPointer<ExTable> t, QObject* parent)
 
     m_widget->setWindowTitle(t->get_name());
 
-    auto font = QFont("Font Awesome 5 Free", 14);
+    auto font = QFont(QStringList() << "Font Awesome 5 Free", 14);
     font.setStyleName("Solid");
 
     m_ui_root->addRows->setFont(font);
@@ -173,7 +173,8 @@ void TableViewer::add_selection() {
         sel = dialog.get_selection();
     }
 
-    qDebug() << "Keys selected" << QVector<int64_t>::fromStdVector(sel.rows);
+    qDebug() << "Keys selected"
+             << QList<int64_t>(sel.rows.begin(), sel.rows.end());
 
     auto local_str = name.toStdString();
 
@@ -248,7 +249,7 @@ void TableViewer::selection_double_clicked(QModelIndex const& index) {
 
     auto cols = std::max(model->columnCount() - 1, 0);
 
-    qDebug() << QVector<int64_t>(selection.rows.begin(), selection.rows.end());
+    qDebug() << QList<int64_t>(selection.rows.begin(), selection.rows.end());
 
 
     for (auto key : selection.rows) {

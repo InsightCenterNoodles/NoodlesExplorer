@@ -5,35 +5,9 @@
 #include <QSet>
 #include <QSortFilterProxyModel>
 
-
-// be careful not to double inherit from QObject...
-
-// class ComponentListItem {
-// protected:
-//    // void notify();
-
-// public:
-//    ComponentListItem();
-//    ~ComponentListItem();
-
-//    // column 0 is the id
-//    // column 1 is the name
-
-//    virtual int     get_id() const     = 0;
-//    virtual int     get_id_gen() const = 0;
-//    virtual QString get_name() const   = 0;
-
-//    virtual QVariant get_column(int) const = 0;
-//};
-
 // some jungle gym work for templated QObjects...
 class ComponentListModelBase : public QAbstractTableModel {
     Q_OBJECT
-
-protected:
-    // virtual void unregister_item(QObject*) = 0;
-
-    // virtual void item_in_list_updated(QObject) = 0;
 
 public:
     using QAbstractTableModel::QAbstractTableModel;

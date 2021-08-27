@@ -24,7 +24,7 @@ bool ChartPlotView::viewportEvent(QEvent* event) {
         m_in_touch_event = true;
 
         // disable animations with touch
-        chart()->setAnimationOptions(QtCharts::QChart::NoAnimation);
+        chart()->setAnimationOptions(QChart::NoAnimation);
     }
 
     return QChartView::viewportEvent(event);
@@ -94,7 +94,7 @@ void ChartPlotView::mouseReleaseEvent(QMouseEvent* event) {
     if (m_in_touch_event) m_in_touch_event = false;
 
     // Restore animations
-    chart()->setAnimationOptions(QtCharts::QChart::SeriesAnimations);
+    chart()->setAnimationOptions(QChart::SeriesAnimations);
 
     if (rubberBand()) QChartView::mouseReleaseEvent(event);
 }

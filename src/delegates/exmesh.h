@@ -7,12 +7,12 @@
 #include <noo_client_interface.h>
 
 struct QtGeomInfo {
-    UniqueQPtr<Qt3DRender::QGeometry>         geom;
+    UniqueQPtr<Qt3DCore::QGeometry>           geom;
     UniqueQPtr<Qt3DRender::QGeometryRenderer> renderer;
 
-    QByteArray                         instance_data;
-    UniqueQPtr<Qt3DRender::QBuffer>    instance_buffer;
-    UniqueQPtr<Qt3DRender::QAttribute> instance_attribute;
+    QByteArray                       instance_data;
+    UniqueQPtr<Qt3DCore::QBuffer>    instance_buffer;
+    UniqueQPtr<Qt3DCore::QAttribute> instance_attribute;
 
     bool is_2d = false;
 

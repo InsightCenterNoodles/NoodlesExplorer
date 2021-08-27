@@ -6,7 +6,7 @@
 #include <QEntity>
 #include <QGeometry>
 #include <QGeometryRenderer>
-#include <Qt3DRender/QBuffer>
+#include <Qt3DCore/QBuffer>
 
 
 QtGeomInfo::QtGeomInfo()  = default;
@@ -45,35 +45,35 @@ struct VertexTypeTrait;
 
 template <>
 struct VertexTypeTrait<glm::vec2> {
-    static constexpr auto element_type  = Qt3DRender::QAttribute::Float;
+    static constexpr auto element_type  = Qt3DCore::QAttribute::Float;
     static constexpr auto element_count = 2;
     static inline auto    blank         = glm::vec2(1);
 };
 
 template <>
 struct VertexTypeTrait<glm::vec3> {
-    static constexpr auto element_type  = Qt3DRender::QAttribute::Float;
+    static constexpr auto element_type  = Qt3DCore::QAttribute::Float;
     static constexpr auto element_count = 3;
     static inline auto    blank         = glm::vec3(1);
 };
 
 template <>
 struct VertexTypeTrait<glm::u8vec4> {
-    static constexpr auto element_type  = Qt3DRender::QAttribute::UnsignedByte;
+    static constexpr auto element_type  = Qt3DCore::QAttribute::UnsignedByte;
     static constexpr auto element_count = 4;
     static inline auto    blank         = glm::u8vec4(255);
 };
 
 template <>
 struct VertexTypeTrait<glm::u16vec2> {
-    static constexpr auto element_type  = Qt3DRender::QAttribute::UnsignedShort;
+    static constexpr auto element_type  = Qt3DCore::QAttribute::UnsignedShort;
     static constexpr auto element_count = 2;
     static inline auto blank = glm::u16vec2(std::numeric_limits<short>::max());
 };
 
 template <>
 struct VertexTypeTrait<glm::u16vec3> {
-    static constexpr auto element_type  = Qt3DRender::QAttribute::UnsignedShort;
+    static constexpr auto element_type  = Qt3DCore::QAttribute::UnsignedShort;
     static constexpr auto element_count = 3;
     static inline auto blank = glm::u16vec3(std::numeric_limits<short>::max());
 };
@@ -95,9 +95,9 @@ void debug_attribute(ExBuffer* data, nooc::ComponentRef const& ref) {
 
 
 template <class VertexType>
-Qt3DRender::QAttribute*
+Qt3DCore::QAttribute*
 attrib_from_ref(QString                                  name,
-                Qt3DRender::QGeometry*                   node,
+                Qt3DCore::QGeometry*                     node,
                 std::optional<nooc::ComponentRef> const& oref,
                 bool                                     permit_blank) {
     qDebug() << "New Attrib" << typeid(VertexType).name() << name << node
@@ -111,21 +111,21 @@ attrib_from_ref(QString                                  name,
 
         QByteArray array((const char*)&Tr::blank, sizeof(VertexType));
 
-        auto* b = new Qt3DRender::QBuffer(node);
+        auto* b = new Qt3DCore::QBuffer(node);
 
         b->setData(array);
 
-        auto* p = new Qt3DRender::QAttribute(
-            b,
-            name,
-            VertexTypeTrait<VertexType>::element_type,
-            VertexTypeTrait<VertexType>::element_count,
-            1,
-            0,
-            sizeof(VertexType),
-            node);
+        auto* p =
+            new Qt3DCore::QAttribute(b,
+                                     name,
+                                     VertexTypeTrait<VertexType>::element_type,
+                                     VertexTypeTrait<VertexType>::element_count,
+                                     1,
+                                     0,
+                                     sizeof(VertexType),
+                                     node);
 
-        p->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+        p->setAttributeType(Qt3DCore::QAttribute::VertexAttribute);
         p->setDivisor(1'000'000'000); // just make it huge so it never advances
 
         return p;
@@ -153,16 +153,16 @@ attrib_from_ref(QString                                  name,
     // debug_attribute<VertexType>(buff.get(), ref);
 
     auto* p =
-        new Qt3DRender::QAttribute(buff->entity(),
-                                   name,
-                                   VertexTypeTrait<VertexType>::element_type,
-                                   VertexTypeTrait<VertexType>::element_count,
-                                   count,
-                                   ref.start,
-                                   ref.stride,
-                                   node);
+        new Qt3DCore::QAttribute(buff->entity(),
+                                 name,
+                                 VertexTypeTrait<VertexType>::element_type,
+                                 VertexTypeTrait<VertexType>::element_count,
+                                 count,
+                                 ref.start,
+                                 ref.stride,
+                                 node);
 
-    p->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+    p->setAttributeType(Qt3DCore::QAttribute::VertexAttribute);
 
     //    qDebug() << p->name() << p->count() << p->attributeType()
     //             << p->vertexBaseType() << p->vertexSize() << p->buffer()
@@ -171,8 +171,8 @@ attrib_from_ref(QString                                  name,
     return p;
 }
 
-Qt3DRender::QAttribute* instance_attrib(Qt3DRender::QGeometry* node,
-                                        Qt3DRender::QBuffer*   array) {
+Qt3DCore::QAttribute* instance_attrib(Qt3DCore::QGeometry* node,
+                                      Qt3DCore::QBuffer*   array) {
     //    qDebug() << "New Attrib" << typeid(glm::mat4).name() << node;
 
     if (array->data().isEmpty()) return nullptr;
@@ -181,16 +181,16 @@ Qt3DRender::QAttribute* instance_attrib(Qt3DRender::QGeometry* node,
 
     //    qDebug() << "Index attrib has" << count;
 
-    auto* p = new Qt3DRender::QAttribute(array,
-                                         "raw_instance",
-                                         Qt3DRender::QAttribute::Float,
-                                         16,
-                                         count,
-                                         0,
-                                         0,
-                                         node);
+    auto* p = new Qt3DCore::QAttribute(array,
+                                       "raw_instance",
+                                       Qt3DCore::QAttribute::Float,
+                                       16,
+                                       count,
+                                       0,
+                                       0,
+                                       node);
 
-    p->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+    p->setAttributeType(Qt3DCore::QAttribute::VertexAttribute);
     p->setDivisor(1);
 
     //    qDebug() << p->name() << p->count() << p->attributeType()
@@ -200,8 +200,8 @@ Qt3DRender::QAttribute* instance_attrib(Qt3DRender::QGeometry* node,
     return p;
 }
 
-Qt3DRender::QAttribute* instance_fake_pos_attrib(Qt3DRender::QGeometry* node,
-                                                 Qt3DRender::QBuffer*   array) {
+Qt3DCore::QAttribute* instance_fake_pos_attrib(Qt3DCore::QGeometry* node,
+                                               Qt3DCore::QBuffer*   array) {
     //    qDebug() << "New Attrib" << typeid(glm::mat4).name() << node;
 
     if (array->data().isEmpty()) return nullptr;
@@ -210,16 +210,16 @@ Qt3DRender::QAttribute* instance_fake_pos_attrib(Qt3DRender::QGeometry* node,
 
     //    qDebug() << "Index attrib has" << count;
 
-    auto* p = new Qt3DRender::QAttribute(array,
-                                         "instance_positions",
-                                         Qt3DRender::QAttribute::Float,
-                                         4,
-                                         count,
-                                         0,
-                                         sizeof(glm::mat4),
-                                         node);
+    auto* p = new Qt3DCore::QAttribute(array,
+                                       "instance_positions",
+                                       Qt3DCore::QAttribute::Float,
+                                       4,
+                                       count,
+                                       0,
+                                       sizeof(glm::mat4),
+                                       node);
 
-    p->setAttributeType(Qt3DRender::QAttribute::VertexAttribute);
+    p->setAttributeType(Qt3DCore::QAttribute::VertexAttribute);
 
     //    qDebug() << p->name() << p->count() << p->attributeType()
     //             << p->vertexBaseType() << p->vertexSize() << p->buffer()
@@ -230,8 +230,8 @@ Qt3DRender::QAttribute* instance_fake_pos_attrib(Qt3DRender::QGeometry* node,
 
 
 template <class IndexType>
-Qt3DRender::QAttribute*
-attrib_from_idx_ref(Qt3DRender::QGeometry*                   node,
+Qt3DCore::QAttribute*
+attrib_from_idx_ref(Qt3DCore::QGeometry*                     node,
                     std::optional<nooc::ComponentRef> const& oref) {
 
     if (!oref) return nullptr;
@@ -246,9 +246,9 @@ attrib_from_idx_ref(Qt3DRender::QGeometry*                   node,
 
     qDebug() << Q_FUNC_INFO << ref.size << count;
 
-    auto* p = new Qt3DRender::QAttribute(node);
+    auto* p = new Qt3DCore::QAttribute(node);
     p->setBuffer(buff->entity());
-    p->setAttributeType(Qt3DRender::QAttribute::IndexAttribute);
+    p->setAttributeType(Qt3DCore::QAttribute::IndexAttribute);
 
     p->setVertexBaseType(VertexTypeTrait<IndexType>::element_type);
     // p->setVertexSize(VertexTypeTrait<IndexType>::element_count);
@@ -324,7 +324,7 @@ QtGeomInfo ExMesh::make_new_info(std::span<glm::mat4> instances) {
     if (!m_data.triangles and !m_data.lines) return ret;
 
     // set up geometry
-    ret.geom = new Qt3DRender::QGeometry(m_scene_root);
+    ret.geom = new Qt3DCore::QGeometry(m_scene_root);
 
     ret.geom->setObjectName("Geom " + get_name());
 
@@ -332,28 +332,31 @@ QtGeomInfo ExMesh::make_new_info(std::span<glm::mat4> instances) {
 
     ret.renderer->setObjectName("GeomRenderer " + get_name());
 
-    auto* pa =
-        attrib_from_ref<glm::vec3>(QAttribute::defaultPositionAttributeName(),
-                                   ret.geom,
-                                   m_data.positions,
-                                   false);
+    auto* pa = attrib_from_ref<glm::vec3>(
+        Qt3DCore::QAttribute::defaultPositionAttributeName(),
+        ret.geom,
+        m_data.positions,
+        false);
 
-    auto* na =
-        attrib_from_ref<glm::vec3>(QAttribute::defaultNormalAttributeName(),
-                                   ret.geom,
-                                   m_data.normals,
-                                   false);
+    auto* na = attrib_from_ref<glm::vec3>(
+        Qt3DCore::QAttribute::defaultNormalAttributeName(),
+        ret.geom,
+        m_data.normals,
+        false);
 
     auto* ta = attrib_from_ref<glm::u16vec2>(
-        QAttribute::defaultTextureCoordinateAttributeName(),
+        Qt3DCore::QAttribute::defaultTextureCoordinateAttributeName(),
         ret.geom,
         m_data.textures,
         true);
 
     auto* ca = attrib_from_ref<glm::u8vec4>(
-        QAttribute::defaultColorAttributeName(), ret.geom, m_data.colors, true);
+        Qt3DCore::QAttribute::defaultColorAttributeName(),
+        ret.geom,
+        m_data.colors,
+        true);
 
-    QAttribute* idx_p = nullptr;
+    Qt3DCore::QAttribute* idx_p = nullptr;
 
     if (m_data.triangles) {
         idx_p = attrib_from_idx_ref<glm::u16vec3>(ret.geom, m_data.triangles);
@@ -397,7 +400,7 @@ QtGeomInfo ExMesh::make_new_info(std::span<glm::mat4> instances) {
     std::memcpy(
         ret.instance_data.data(), instances.data(), instances.size_bytes());
 
-    ret.instance_buffer = new Qt3DRender::QBuffer(m_scene_root);
+    ret.instance_buffer = new Qt3DCore::QBuffer(m_scene_root);
 
     ret.instance_buffer->setData(ret.instance_data);
 

@@ -104,8 +104,8 @@ ApplicationWindow {
 
                     text: settings.last_server
 
-                    validator: RegExpValidator {
-                        regExp: /^(ws|wss):\/\/[^ "]+$/
+                    validator: RegularExpressionValidator {
+                        regularExpression: /^(ws|wss):\/\/[^ "]+$/
                     }
                 }
             }

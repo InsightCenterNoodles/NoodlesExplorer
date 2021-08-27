@@ -11,12 +11,12 @@ namespace Ui {
 class NewSelectionDialog;
 }
 
-class QRegExpValidator;
+class QRegularExpressionValidator;
 
 class NewSelectionDialog : public QDialog {
     Q_OBJECT
 
-    QRegExpValidator* m_validator;
+    QRegularExpressionValidator* m_validator;
 
 public:
     explicit NewSelectionDialog(QString info, QWidget* parent = nullptr);

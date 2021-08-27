@@ -17,8 +17,6 @@
 
 #include <random>
 
-using namespace QtCharts;
-
 static const QStringList default_color_list = {
     "#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462",
     "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd", "#ccebc5", "#ffed6f",
@@ -27,7 +25,7 @@ static const QStringList default_color_list = {
 QColor random_color() {
     static auto gen = std::mt19937 { std::random_device {}() };
     static auto b =
-        std::uniform_int_distribution(0, default_color_list.size() - 1);
+        std::uniform_int_distribution<int>(0, default_color_list.size() - 1);
     return default_color_list.value(b(gen));
 }
 
@@ -83,7 +81,7 @@ void ChartSeriesPart::rebuild(ChartViewer& chart_view) {
     mins = glm::vec2(std::numeric_limits<float>::max());
     maxs = glm::vec2(std::numeric_limits<float>::lowest());
 
-    QVector<QPointF> points;
+    QList<QPointF> points;
 
     for (size_t i = 0; i < common_size; i++) {
         auto p = glm::vec2(span_a[i], span_b[i]);
@@ -296,7 +294,8 @@ void ChartViewer::setup_root() {
 void ChartViewer::setup_edit_page() {
 
     auto* color_b_layout = new QVBoxLayout();
-    color_b_layout->setMargin(0);
+    // color_b_layout->setMargin(0);
+    color_b_layout->setContentsMargins(0, 0, 0, 0);
 
     auto* color_well = new ColorWell();
 

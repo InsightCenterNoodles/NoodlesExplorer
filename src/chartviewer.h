@@ -14,11 +14,9 @@ class ExTable;
 class RemoteTableData;
 class ChartViewer;
 
-namespace QtCharts {
 class QAbstractSeries;
 class QChart;
 class QValueAxis;
-} // namespace QtCharts
 
 
 class ColorWell : public QPushButton {
@@ -45,16 +43,16 @@ struct ChartSeriesPart {
     int     b_col = -1;
     QColor  color = Qt::black;
 
-    QtCharts::QAbstractSeries* series;
-    glm::vec2                  mins;
-    glm::vec2                  maxs;
-    void                       rebuild(ChartViewer& chart_view);
+    QAbstractSeries* series;
+    glm::vec2        mins;
+    glm::vec2        maxs;
+    void             rebuild(ChartViewer& chart_view);
 };
 
 
 class SeriesTable : public QAbstractTableModel {
-    ChartViewer*                 m_host;
-    std::vector<ChartSeriesPart> m_active_series;
+    ChartViewer*           m_host;
+    QList<ChartSeriesPart> m_active_series;
 
 public:
     explicit SeriesTable(ChartViewer*);
@@ -94,10 +92,10 @@ class ChartViewer : public QObject {
     QPointer<QWidget>              m_widget;
     std::unique_ptr<Ui::ChartRoot> m_ui_root;
 
-    PlotChart*            m_chart;
-    ChartPlotView*        m_chart_view;
-    QtCharts::QValueAxis* m_x_axis;
-    QtCharts::QValueAxis* m_y_axis;
+    PlotChart*     m_chart;
+    ChartPlotView* m_chart_view;
+    QValueAxis*    m_x_axis;
+    QValueAxis*    m_y_axis;
 
     QPointer<ExTable>                m_attached_table;
     std::shared_ptr<RemoteTableData> m_data;
@@ -115,10 +113,10 @@ class ChartViewer : public QObject {
 public:
     explicit ChartViewer(QPointer<ExTable>, QObject* parent = nullptr);
 
-    PlotChart*            chart() const { return m_chart; }
-    QtCharts::QValueAxis* x_axis() const { return m_x_axis; }
-    QtCharts::QValueAxis* y_axis() const { return m_y_axis; }
-    RemoteTableData*      current_data() const { return m_data.get(); }
+    PlotChart*       chart() const { return m_chart; }
+    QValueAxis*      x_axis() const { return m_x_axis; }
+    QValueAxis*      y_axis() const { return m_y_axis; }
+    RemoteTableData* current_data() const { return m_data.get(); }
 
     void recompute_bounds() { m_series_table.recompute_bounds(); }
 

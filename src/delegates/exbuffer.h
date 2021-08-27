@@ -15,8 +15,8 @@ class ExBuffer : public nooc::BufferDelegate {
 
     bool m_ready = false;
 
-    Qt3DCore::QEntity*              m_scene_root = nullptr;
-    UniqueQPtr<Qt3DRender::QBuffer> m_3d_entity;
+    Qt3DCore::QEntity*            m_scene_root = nullptr;
+    UniqueQPtr<Qt3DCore::QBuffer> m_3d_entity;
 
 public:
     static QStringList header();
@@ -37,7 +37,7 @@ public:
     size_t            size() const;
     QByteArray const& byte_array() const { return m_array; }
 
-    Qt3DRender::QBuffer* entity();
+    Qt3DCore::QBuffer* entity();
 
 
 public slots:

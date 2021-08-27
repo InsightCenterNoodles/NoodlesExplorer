@@ -3,7 +3,7 @@
 
 #include "noo_client_interface.h"
 
-#include <QRegExpValidator>
+#include <QRegularExpressionValidator>
 
 NewSelectionDialog::NewSelectionDialog(QString info, QWidget* parent)
     : QDialog(parent), ui(new Ui::NewSelectionDialog) {
@@ -11,7 +11,8 @@ NewSelectionDialog::NewSelectionDialog(QString info, QWidget* parent)
 
     ui->label->setText(info);
 
-    m_validator = new QRegExpValidator(QRegExp("[\\d,-]"), ui->keysTextEdit);
+    m_validator = new QRegularExpressionValidator(QRegularExpression("[\\d,-]"),
+                                                  ui->keysTextEdit);
 }
 
 NewSelectionDialog::~NewSelectionDialog() {
@@ -30,7 +31,7 @@ noo::Selection NewSelectionDialog::get_selection() const {
 
     if (valid != QValidator::Acceptable) { return sel; }
 
-    auto refs = t.splitRef(',');
+    auto refs = QStringView(t).split(',');
 
     for (auto ref : refs) {
         if (ref.isEmpty()) continue;

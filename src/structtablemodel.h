@@ -98,7 +98,7 @@ bool record_runtime_set(Record& r, int i, QVariant const& v) {
 
 template <class Record>
 class StructTableModel : public QAbstractTableModel {
-    QVector<Record> m_records;
+    QList<Record> m_records;
 
     QStringList const m_header;
 
@@ -176,7 +176,7 @@ public:
 
         if (!ok) return false;
 
-        emit dataChanged(index, index, QVector<int>() << role);
+        emit dataChanged(index, index, QList<int>() << role);
         return true;
     }
 
@@ -200,7 +200,7 @@ public:
         return roles;
     }
 
-    void reset(QVector<Record> new_records = {}) {
+    void reset(QList<Record> new_records = {}) {
         beginResetModel();
         m_records = new_records;
         endResetModel();

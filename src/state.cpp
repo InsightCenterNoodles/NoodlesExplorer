@@ -193,7 +193,7 @@ void State::ask_to_call_doc_method(int index) {
     QStringList arg_names = m_current_doc_method->argument_names();
     QStringList arg_deets = m_current_doc_method->argument_details();
 
-    QVector<Argument> args;
+    QList<Argument> args;
 
     for (int i = 0; i < std::min(arg_names.size(), arg_deets.size()); i++) {
         args << Argument { arg_names[i], arg_deets[i], "null", false };

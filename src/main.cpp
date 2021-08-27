@@ -11,6 +11,7 @@
 #include <tuple>
 
 int main(int argc, char* argv[]) {
+    qputenv("QSG_RHI_BACKEND", "opengl");
 
 #if __APPLE__
     QSurfaceFormat fmt;

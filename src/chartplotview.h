@@ -8,8 +8,7 @@ class QGestureEvent;
 class QGraphicsProxyWidget;
 QT_END_NAMESPACE
 
-
-class ChartPlotView : public QtCharts::QChartView {
+class ChartPlotView : public QChartView {
     bool m_in_touch_event = false;
     bool m_selection_mode = false;
 
@@ -41,7 +40,7 @@ signals:
 };
 
 
-class PlotChart : public QtCharts::QChart {
+class PlotChart : public QChart {
     bool m_selection_mode = false;
 
     bool gesture_event(QGestureEvent* event);

@@ -3,7 +3,7 @@
 #include <QEntity>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
-#include <Qt3DRender/QBuffer>
+#include <Qt3DCore/QBuffer>
 
 QStringList ExBuffer::header() {
     return { "ID", "Name", "Size", "Ready" };
@@ -62,9 +62,9 @@ size_t ExBuffer::size() const {
     return m_array.size();
 }
 
-Qt3DRender::QBuffer* ExBuffer::entity() {
+Qt3DCore::QBuffer* ExBuffer::entity() {
     if (!m_3d_entity) {
-        m_3d_entity = new Qt3DRender::QBuffer(m_scene_root);
+        m_3d_entity = new Qt3DCore::QBuffer(m_scene_root);
 
         // doesnt matter if this ready or not;
         m_3d_entity->setData(m_array);

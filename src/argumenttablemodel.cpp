@@ -4,7 +4,7 @@
 
 ArgumentTableModel::ArgumentTableModel() {
 
-    reset(QVector<Argument>()
+    reset(QList<Argument>()
           << Argument { "title",
                         "This is a long line of documentation for testing",
                         "null",

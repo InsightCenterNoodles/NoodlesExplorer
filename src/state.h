@@ -5,15 +5,7 @@
 #include "attachedmethodlistmodel.h"
 #include "componentlistmodel.h"
 #include "delegates/delegates.h"
-//#include "delegates/exbuffer.h"
 #include "delegates/exdoc.h"
-//#include "delegates/exlight.h"
-//#include "delegates/exmaterial.h"
-//#include "delegates/exmesh.h"
-//#include "delegates/exobject.h"
-//#include "delegates/exsignal.h"
-//#include "delegates/extable.h"
-//#include "delegates/extexture.h"
 
 
 #include <QEntity>

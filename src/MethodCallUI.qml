@@ -69,7 +69,7 @@ ColumnLayout {
                             standardButtons: arg_editor_fld.valid_json ? Dialog.Save | Dialog.Cancel : Dialog.Cancel
                             title: "Edit Argument <i>" + name + "</i>"
 
-                            parent: overlay
+                            parent: Overlay.overlay
 
                             x: Math.round((parent.width - width) / 2)
                             y: Math.round((parent.height - height) / 2)
