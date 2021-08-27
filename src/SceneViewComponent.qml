@@ -1,9 +1,9 @@
-import QtQuick 2.12
-import Qt3D.Core 2.12
-import Qt3D.Render 2.12
-import Qt3D.Input 2.12
-import Qt3D.Extras 2.15
-import QtQuick.Scene3D 2.15
+import QtQuick
+import Qt3D.Core
+import Qt3D.Render
+import Qt3D.Input
+import Qt3D.Extras
+import QtQuick.Scene3D
 
 import Qt.labs.settings 1.1
 
