@@ -189,9 +189,9 @@ public:
             can_edit = v.editable;
         });
 
-        if (!can_edit) return Qt::NoItemFlags;
+        if (!can_edit) return Qt::ItemIsEnabled;
 
-        return Qt::ItemIsEditable;
+        return Qt::ItemIsEditable | Qt::ItemIsSelectable | Qt::ItemIsEnabled;
     }
 
     QHash<int, QByteArray> roleNames() const override {

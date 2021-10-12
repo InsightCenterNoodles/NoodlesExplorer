@@ -27,10 +27,10 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG 7964d970aa2d5f4136c7ecaf2d7112791288b651
+    GIT_TAG 9cfd8b36c0689076dbe9330cfff74b931379fcc8
 )
 
-find_package(Qt6 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts)
+find_package(Qt6 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts Quick3D)
 
 # Options ======================================================================
 
@@ -55,7 +55,7 @@ target_link_libraries(NoodlesExplorer PRIVATE noodles)
 target_link_libraries(NoodlesExplorer PUBLIC
     Qt::Gui Qt::Widgets Qt::Core
     Qt::3DCore Qt::3DExtras Qt::3DRender
-    Qt::Quick Qt::Charts
+    Qt::Quick Qt::Charts Qt::Quick3D
 )
 
 target_sources(NoodlesExplorer
@@ -74,6 +74,8 @@ PRIVATE
     delegates/delegates.cpp
     instance_material/qinstancedmetalroughmaterial.cpp
     instance_material/qinstancedmetalroughmaterial.h
+    instance_material/instancetable.cpp
+    instance_material/instancetable.h
     attachedmethodlistmodel.cpp
     attachedmethodlistmodel.h
     tabledata.cpp
@@ -113,4 +115,7 @@ PRIVATE
     newselectiondialog.ui
     chartplotview.h
     chartplotview.cpp
+    methodcalldialog.cpp
+    methodcalldialog.h
+    methodcalldialog.ui
 )

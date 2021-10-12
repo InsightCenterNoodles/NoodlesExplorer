@@ -17,6 +17,7 @@ int main(int argc, char* argv[]) {
     QSurfaceFormat fmt;
     fmt.setProfile(QSurfaceFormat::CoreProfile);
     fmt.setVersion(4, 1);
+    fmt.setSamples(4);
 
     QSurfaceFormat::setDefaultFormat(fmt);
 #endif

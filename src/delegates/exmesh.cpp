@@ -318,7 +318,7 @@ QtGeomInfo ExMesh::make_new_info(std::span<glm::mat4> instances) {
 
     QtGeomInfo ret;
 
-    qDebug() << "New geometry" << m_data.extent_min << m_data.extent_max;
+    // qDebug() << "New geometry" << m_data.extent_min << m_data.extent_max;
 
     if (!m_data.positions) return ret;
     if (!m_data.triangles and !m_data.lines) return ret;

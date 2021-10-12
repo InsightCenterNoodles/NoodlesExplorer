@@ -1,9 +1,12 @@
 #include "exobject.h"
 
+#include "attachedmethodlistmodel.h"
 #include "exlight.h"
 #include "exmaterial.h"
 #include "exmesh.h"
 #include "instance_material/qinstancedmetalroughmaterial.h"
+#include "methodcalldialog.h"
+#include "variant_tools.h"
 
 #include <noo_common.h>
 
@@ -15,8 +18,19 @@
 #include <Qt3DCore/QTransform>
 #include <Qt3DRender/QFrontFace>
 
-void ExObject::remake_mesh_attachment() {
-    qDebug() << Q_FUNC_INFO << !!m_mesh << !!m_material;
+RepresentationPart::RepresentationPart(QObject* p) : QObject(p) { }
+RepresentationPart::~RepresentationPart() = default;
+
+QString TextPart::info_string() const {
+    return "Text Part";
+}
+
+QString WebPart::info_string() const {
+    return "Web Part";
+}
+
+void RenderPart::remake_mesh_attachment() {
+    qDebug() << Q_FUNC_INFO << "START" << !!m_mesh << !!m_material;
     // if (!m_mesh or !m_material) return;
 
     if (m_att_mesh_details) {
@@ -25,7 +39,6 @@ void ExObject::remake_mesh_attachment() {
 
     if (m_material) {
         m_3d_entity->removeComponent(m_material->get_3d_material());
-        // m_3d_entity->removeComponent(m_material->get_2d_material());
     }
 
     if (!m_mesh or !m_material) return;
@@ -34,19 +47,72 @@ void ExObject::remake_mesh_attachment() {
 
     if (m_att_mesh_details) {
         m_3d_entity->addComponent(m_att_mesh_details->renderer);
-
-
-        if (m_material) {
-            m_3d_entity->addComponent(m_material->get_3d_material());
-
-            //            if (m_att_mesh_details->is_2d) {
-            //                //m_3d_entity->addComponent(m_material->get_2d_material());
-            //            } else {
-
-            //            }
-        }
     }
+
+    if (m_material) {
+        m_3d_entity->addComponent(m_material->get_3d_material());
+    }
+
+    qDebug() << Q_FUNC_INFO << "END" << !!m_att_mesh_details << !!m_material;
 }
+
+RenderPart::RenderPart(Qt3DCore::QEntity*         p_entity,
+                       ExMaterial*                ma,
+                       ExMesh*                    me,
+                       std::span<glm::mat4 const> inst,
+                       QObject*                   parent)
+    : RepresentationPart(parent), m_instances(inst.begin(), inst.end()) {
+
+    m_3d_entity = new Qt3DCore::QEntity();
+    m_3d_entity->setParent(p_entity);
+
+    qDebug() << Q_FUNC_INFO << p_entity << m_3d_entity.data();
+
+    m_material.set(ma);
+    m_mesh.set(me);
+
+    connect(&m_material,
+            &AttachmentBase::attachment_changed,
+            this,
+            &RenderPart::material_changed);
+
+    connect(&m_material,
+            &AttachmentBase::attachment_updated,
+            this,
+            &RenderPart::material_changed);
+
+    connect(&m_mesh,
+            &AttachmentBase::attachment_changed,
+            this,
+            &RenderPart::mesh_changed);
+
+    connect(&m_mesh,
+            &AttachmentBase::attachment_updated,
+            this,
+            &RenderPart::mesh_changed);
+
+
+    remake_mesh_attachment();
+}
+
+RenderPart::~RenderPart() { }
+
+QString RenderPart::info_string() const {
+    return QString("Render: Mesh %1, Mat %2, Inst %3")
+        .arg(ptr_to_id(m_material.get()))
+        .arg(ptr_to_id(m_mesh.get()))
+        .arg(m_instances.size());
+}
+
+void RenderPart::material_changed() {
+    remake_mesh_attachment();
+}
+
+void RenderPart::mesh_changed() {
+    remake_mesh_attachment();
+}
+
+// =============================================================================
 
 void ExObject::update_from(nooc::ObjectUpdateData const& md) {
     /*
@@ -56,8 +122,6 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
              << !!md.signal_list << !!md.text;
              */
 
-
-    bool post_instance_rebuild = false;
 
     if (md.name) {
         m_name = noo::to_qstring(*md.name);
@@ -85,22 +149,24 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
         m_3d_transform->setMatrix(tf.transposed());
     }
 
-    if (md.material) {
+    if (md.definition) {
+        if (m_attached_part) {
+            delete m_attached_part;
+            m_attached_part = {};
+        }
 
+        VMATCH(
+            *md.definition,
+            VCASE(std::monostate) {},
+            VCASE(nooc::ObjectTextDefinition const&) {},
+            VCASE(nooc::ObjectWebpageDefinition const&) {},
+            VCASE(nooc::ObjectRenderableDefinition const& def) {
+                auto new_material = dynamic_cast<ExMaterial*>(def.material);
+                auto new_mesh     = dynamic_cast<ExMesh*>(def.mesh);
 
-        m_material = dynamic_cast<ExMaterial*>(*md.material);
-
-        // qDebug() << this << "setting material" << m_material.get();
-
-        if (!m_instances.empty()) post_instance_rebuild = true;
-    }
-
-    if (md.mesh) {
-        // qDebug() << this << "setting mesh start" << !!m_mesh
-        //<< (*md.mesh).get();
-        m_mesh = dynamic_cast<ExMesh*>(*md.mesh);
-
-        if (!m_instances.empty()) post_instance_rebuild = true;
+                m_attached_part = new RenderPart(
+                    m_3d_entity, new_material, new_mesh, def.instances, this);
+            });
     }
 
     if (md.lights) {
@@ -117,30 +183,22 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
 
     if (md.tables) { m_tables = *md.tables; }
 
-    if (md.instances) {
-        auto src = *md.instances;
-        m_instances.clear();
-        m_instances.insert(m_instances.end(), src.begin(), src.end());
-
-        post_instance_rebuild = true;
-    }
-
-    if (post_instance_rebuild) remake_mesh_attachment();
-
     m_tags = to_qstringlist(md.tags.value_or(std::vector<std::string_view> {}));
     //    m_method_list =
     //        md.method_list.value_or(std::vector<nooc::MethodDelegatePtr> {});
     //    m_signal_list =
     //        md.signal_list.value_or(std::vector<nooc::SignalDelegatePtr> {});
 
-    m_text = md.text;
+    if (md.method_list) {
+        qDebug() << "update method list" << md.method_list->size();
+        m_attached_methods->set(*md.method_list);
+    }
 }
 
 QStringList ExObject::header() {
     // be careful about changing these. consider the filter below.
-    return {
-        "ID", "Name", "Parent", "Material", "Mesh", "Lights", "Tags",
-    };
+    return { "ID",     "Name", "Parent", "Representation",
+             "Lights", "Tags", "Methods" };
 }
 
 ExObject::ExObject(noo::ObjectID                 id,
@@ -150,6 +208,8 @@ ExObject::ExObject(noo::ObjectID                 id,
 
     m_3d_entity    = new Qt3DCore::QEntity(scene_root);
     m_3d_transform = new Qt3DCore::QTransform(m_3d_entity.data());
+
+    m_attached_methods = new AttachedMethodListModel(this);
 
     m_3d_entity->addComponent(m_3d_transform);
 
@@ -162,25 +222,13 @@ ExObject::ExObject(noo::ObjectID                 id,
 
     qDebug() << "New object" << id.id_slot;
 
-    connect(&m_material,
-            &AttachmentBase::attachment_changed,
-            this,
-            &ExObject::material_changed);
+    connect(m_attached_methods,
+            &AttachedMethodListModel::wishes_to_call,
+            [this](ExMethod* ptr) {
+                auto* dialog = new MethodCallDialog(this, ptr);
 
-    connect(&m_material,
-            &AttachmentBase::attachment_updated,
-            this,
-            &ExObject::material_changed);
-
-    connect(&m_mesh,
-            &AttachmentBase::attachment_changed,
-            this,
-            &ExObject::mesh_changed);
-
-    connect(&m_mesh,
-            &AttachmentBase::attachment_updated,
-            this,
-            &ExObject::mesh_changed);
+                dialog->setVisible(true);
+            });
 
     update_from(md);
 }
@@ -205,14 +253,11 @@ QVariant ExObject::get_column(int c) const {
     case 1: return get_name();
     case 2: return ptr_to_id(m_parent);
 
-    case 3: return ptr_to_id(m_material.get());
-    case 4: return ptr_to_id(m_mesh.get());
-    case 5: return build_id_list(m_lights.get());
+    case 3: return m_attached_part ? m_attached_part->info_string() : "None";
+    case 4: return build_id_list(m_lights.get());
 
-    case 6:
-        return m_tags;
-        // case 7: return build_id_list(m_method_list);
-        // case 8: return build_id_list(m_signal_list);
+    case 5: return m_tags;
+    case 6: return QVariant::fromValue(m_attached_methods);
     }
     return {};
 }
@@ -224,14 +269,6 @@ void ExObject::on_update(nooc::ObjectUpdateData const& md) {
 Qt3DCore::QEntity* ExObject::entity() {
     assert(m_3d_entity);
     return m_3d_entity.data();
-}
-
-void ExObject::material_changed() {
-    remake_mesh_attachment();
-}
-
-void ExObject::mesh_changed() {
-    remake_mesh_attachment();
 }
 
 // =============================================================================

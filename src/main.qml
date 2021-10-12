@@ -13,22 +13,6 @@ ApplicationWindow {
     visible: true
     title: qsTr("Noodles Viewer")
 
-    Component.onCompleted: {
-        app_state.onOpen_call_method_page.connect(function () {
-            call_method_pop.open()
-        })
-
-        app_state.onMethod_result_recieved.connect(function (s) {
-            message_recv_dialog.text = s
-            message_recv_dialog.open()
-        })
-
-        app_state.onMethod_error_recieved.connect(function (s) {
-            message_recv_dialog.text = "Error! " + s
-            message_recv_dialog.open()
-        })
-    }
-
     Settings {
         id: settings
         property alias x: window.x
@@ -145,20 +129,19 @@ ApplicationWindow {
         }
     }
 
-    Popup {
-        id: call_method_pop
-        modal: true
+    //    Popup {
+    //        id: call_method_pop
+    //        modal: true
 
-        x: Math.round((parent.width - width) / 2)
-        y: Math.round((parent.height - height) / 2)
-        width: window.width * .9
+    //        x: Math.round((parent.width - width) / 2)
+    //        y: Math.round((parent.height - height) / 2)
+    //        width: window.width * .9
 
-        //height: window.height * .9
-        MethodCallUI {
-            anchors.fill: parent
-        }
-    }
-
+    //        //height: window.height * .9
+    //        MethodCallUI {
+    //            anchors.fill: parent
+    //        }
+    //    }
     Dialog {
         id: message_recv_dialog
         title: "Message Result"

@@ -1,10 +1,14 @@
 #ifndef EXDOC_H
 #define EXDOC_H
 
+//#include "attachedmethodlistmodel.h"
+
 #include <noo_client_interface.h>
 
 class ExDoc : public nooc::DocumentDelegate {
     Q_OBJECT
+
+    // AttachedMethodListModel* m_attached_methods;
 
 public:
     ExDoc();

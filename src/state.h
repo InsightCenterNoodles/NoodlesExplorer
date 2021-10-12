@@ -78,9 +78,6 @@ public slots:
 
     QString get_hostname();
 
-    void ask_to_call_doc_method(int index);
-    void invoke_doc_method();
-
     Qt3DCore::QEntity* scene_root();
 
     void exec_debug();
@@ -97,11 +94,6 @@ private slots:
 signals:
     void connection_state_changed(int connection_state);
 
-    void open_call_method_page();
-
-    void method_result_recieved(QString);
-    void method_error_recieved(QString);
-
     void debug_tree();
 };
 
@@ -110,17 +102,6 @@ class EntityShim : public Qt3DCore::QEntity {
 public:
     EntityShim(Qt3DCore::QNode* n = nullptr);
     ~EntityShim();
-};
-
-class NormalizeStringReply : public nooc::PendingMethodReply {
-    Q_OBJECT
-
-public:
-    using PendingMethodReply::PendingMethodReply;
-
-    void interpret() override;
-signals:
-    void recv(QString);
 };
 
 #endif // STATE_H

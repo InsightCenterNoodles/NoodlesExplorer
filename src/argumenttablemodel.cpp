@@ -2,21 +2,8 @@
 
 #include <QDebug>
 
-ArgumentTableModel::ArgumentTableModel() {
-
-    reset(QList<Argument>()
-          << Argument { "title",
-                        "This is a long line of documentation for testing",
-                        "null",
-                        false }
-          << Argument { "table",
-                        "This is a longer line of documentation for testing",
-                        "null",
-                        false });
-
-    set_method_name("load_table");
-    set_method_documentation("This method loads a new table");
-}
+ArgumentTableModel::ArgumentTableModel(QObject* parent)
+    : StructTableModel<Argument>(parent) { }
 
 void ArgumentTableModel::set_method_name(QString method_name) {
     if (m_method_name == method_name) return;

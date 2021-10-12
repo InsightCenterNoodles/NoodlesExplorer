@@ -99,124 +99,10 @@ ColumnLayout {
         }
     }
 
-    Rectangle {
-        Layout.fillWidth: true
+    ObjectBox {
         Layout.fillHeight: true
+        Layout.fillWidth: true
         Layout.rightMargin: 6
-
-        color: Material.backgroundColor
-        opacity: .8
-        border.color: Material.frameColor
-        border.width: 1
-        radius: 5
-
-        GroupBox {
-            title: "Objects"
-
-            Material.elevation: 3
-
-            anchors.fill: parent
-            anchors.margins: 6
-
-            background: Item {}
-
-            ColumnLayout {
-                anchors.fill: parent
-
-                TextField {
-                    id: filter_obj_input
-                    Layout.fillWidth: true
-
-                    placeholderText: "Name or #tag"
-
-                    Binding {
-                        target: filtered_object_list
-                        property: "filter"
-                        value: filter_obj_input.text
-                    }
-                }
-
-                ListView {
-                    id: document_obj_view
-
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.margins: 0
-
-                    model: filtered_object_list
-
-                    clip: true
-
-                    delegate: Item {
-                        id: obj_view_delegate
-
-                        height: obj_name_label.implicitHeight * 1.5
-                        width: document_table_view.width
-                        Label {
-                            id: obj_name_label
-                            text: name
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.left: parent.left
-                            anchors.leftMargin: 12
-                            anchors.right: parent.right
-                            anchors.rightMargin: 6
-                        }
-
-                        Rectangle {
-                            height: 1
-                            anchors.right: parent.right
-                            anchors.rightMargin: 6
-                            anchors.bottom: parent.bottom
-                            width: parent.width - 12
-                            color: Material.frameColor
-                        }
-
-                        Label {
-                            z: parent.z + 1
-                            visible: obj_delegate_mouse_area.containsMouse
-                            anchors.right: obj_label.left
-                            anchors.top: parent.top
-                            anchors.bottom: parent.bottom
-                            anchors.margins: 3
-                            width: height
-
-                            text: "\uf080"
-                            font.family: icon_solid.name
-                            font.styleName: "Solid"
-
-                            MouseArea {
-                                anchors.fill: parent
-                            }
-                        }
-
-                        Label {
-                            id: obj_label
-                            z: parent.z + 1
-                            visible: obj_delegate_mouse_area.containsMouse
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                            anchors.bottom: parent.bottom
-                            anchors.margins: 3
-                            width: height
-
-                            text: "\uf0ce"
-                            font.family: icon_solid.name
-                            font.styleName: "Solid"
-
-                            MouseArea {
-                                anchors.fill: parent
-                            }
-                        }
-
-                        MouseArea {
-                            id: obj_delegate_mouse_area
-                            hoverEnabled: true
-                            anchors.fill: parent
-                        }
-                    }
-                }
-            }
-        }
     }
 
     Rectangle {
@@ -394,8 +280,7 @@ ColumnLayout {
                         anchors.fill: parent
 
                         onClicked: {
-                            call_method_pop.close()
-                            app_state.ask_to_call_doc_method(index)
+                            document_method_view.model.ask_call(index)
                         }
                     }
                 }

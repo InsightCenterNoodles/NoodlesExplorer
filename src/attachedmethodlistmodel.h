@@ -40,6 +40,13 @@ public:
 
 
     QHash<int, QByteArray> roleNames() const override;
+
+public slots:
+    void ask_call(int index);
+
+
+signals:
+    void wishes_to_call(ExMethod*);
 };
 
 #endif // ATTACHEDMETHODLISTMODEL_H

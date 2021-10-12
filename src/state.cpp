@@ -11,6 +11,7 @@
 #include "delegates/extexture.h"
 
 #include "chartviewer.h"
+#include "methodcalldialog.h"
 #include "noo_client_interface.h"
 #include "noo_common.h"
 #include "tableviewer.h"
@@ -20,11 +21,6 @@
 #include <QQmlContext>
 #include <QTreeWidgetItem>
 #include <QUrl>
-
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonValue>
 
 #include <QQmlEngine>
 #include <Qt3DCore/QComponent>
@@ -52,6 +48,17 @@ State::State(QObject* parent) : QObject(parent) {
     m_object_filter = new TaggedNameObjectFilter(this);
 
     m_object_filter->setSourceModel(m_object_list);
+
+    connect(&m_document_methods,
+            &AttachedMethodListModel::wishes_to_call,
+            [this](ExMethod* ptr) {
+                if (m_current_doc) {
+
+                    auto* dialog = new MethodCallDialog(m_current_doc, ptr);
+
+                    dialog->setVisible(true);
+                }
+            });
 }
 
 State::~State() { }
@@ -173,140 +180,6 @@ QString State::get_hostname() {
     return QHostInfo::localHostName();
 }
 
-static QString convert_string(std::string_view s) {
-    return QString::fromLatin1(s.data(), s.size());
-}
-
-void State::ask_to_call_doc_method(int index) {
-    auto ptr = m_document_methods.get_method_row(index);
-
-    if (!ptr) return;
-
-    m_current_doc_method = ptr;
-
-    m_argument_table_model.set_method_name(
-        convert_string(m_current_doc_method->name()));
-
-    m_argument_table_model.set_method_documentation(
-        m_current_doc_method->documentation());
-
-    QStringList arg_names = m_current_doc_method->argument_names();
-    QStringList arg_deets = m_current_doc_method->argument_details();
-
-    QList<Argument> args;
-
-    for (int i = 0; i < std::min(arg_names.size(), arg_deets.size()); i++) {
-        args << Argument { arg_names[i], arg_deets[i], "null", false };
-    }
-
-    m_argument_table_model.reset(args);
-
-    emit open_call_method_page();
-}
-
-
-// Forward
-static noo::AnyVar from_json(QJsonValue const& s);
-
-static noo::AnyVar from_json(QJsonArray const& arr) {
-    // TODO: we can do better
-    bool all_reals = std::all_of(
-        arr.begin(), arr.end(), [](auto const& v) { return v.isDouble(); });
-
-    if (all_reals) {
-        std::vector<double> reals;
-        reals.reserve(arr.size());
-
-        for (auto const& v : arr) {
-            reals.push_back(v.toDouble());
-        }
-
-        return noo::AnyVar(std::move(reals));
-    }
-
-    noo::AnyVarList ret;
-
-    ret.reserve(arr.size());
-
-    for (auto const& v : arr) {
-        ret.push_back(from_json(v));
-    }
-
-    return std::move(ret);
-}
-
-static noo::AnyVar from_json(QJsonObject const& obj) {
-    noo::AnyVarMap ret;
-
-    for (auto iter = obj.begin(); iter != obj.end(); ++iter) {
-        ret.try_emplace(iter.key().toStdString(), from_json(iter.value()));
-    }
-
-    return ret;
-}
-
-static noo::AnyVar from_json(QJsonValue const& s) {
-    switch (s.type()) {
-    case QJsonValue::Null: return std::monostate();
-    case QJsonValue::Bool: return (int64_t)s.toBool();
-    case QJsonValue::Double: return s.toDouble();
-    case QJsonValue::String: return s.toString().toStdString();
-    case QJsonValue::Array: return from_json(s.toArray());
-    case QJsonValue::Object: return from_json(s.toObject());
-    case QJsonValue::Undefined: return std::monostate();
-    }
-
-    return std::monostate();
-}
-
-static std::variant<noo::AnyVar, QString> from_raw_string(QString const& s) {
-
-    auto ls = QString("[ %1 ]").arg(s);
-
-    // to save us effort, we are going to hijack the document reader
-
-    QJsonParseError error;
-
-    auto doc = QJsonDocument::fromJson(ls.toLocal8Bit(), &error);
-
-    if (error.error == QJsonParseError::NoError) {
-        return from_json(doc.array().at(0));
-    }
-
-    return error.errorString();
-}
-
-void State::invoke_doc_method() {
-
-    noo::AnyVarList avlist;
-
-    for (auto const& d : m_argument_table_model.vector()) {
-        auto ret = from_raw_string(d.current_value);
-
-        VMATCH(
-            ret,
-            VCASE(noo::AnyVar & a) { avlist.push_back(std::move(a)); },
-            VCASE(QString) { avlist.push_back({}); });
-    }
-
-    auto* r =
-        m_current_doc->attached_methods()
-            .new_call_by_delegate<NormalizeStringReply>(m_current_doc_method);
-
-    if (!r) return;
-
-    connect(
-        r, &NormalizeStringReply::recv, this, &State::method_result_recieved);
-
-    connect(r,
-            &NormalizeStringReply::recv_fail,
-            this,
-            &State::method_error_recieved);
-
-
-    r->call_direct(std::move(avlist));
-}
-
 Qt3DCore::QEntity* State::scene_root() {
     Q_ASSERT(m_root_entity);
     return m_root_entity;
@@ -423,12 +296,4 @@ EntityShim::EntityShim(Qt3DCore::QNode* n) : Qt3DCore::QEntity(n) {
 
 EntityShim::~EntityShim() {
     qDebug() << Q_FUNC_INFO;
-}
-
-// =============================================================================
-
-void NormalizeStringReply::interpret() {
-    auto str = m_var.dump_string();
-
-    emit recv(noo::to_qstring(str));
 }
