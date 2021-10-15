@@ -156,7 +156,7 @@ Popup {
 
                     model: light_list
 
-                    relWidths: [1, 5, 5, 1]
+                    relWidths: [1, 5, 1, 5, 1]
                 }
             }
 

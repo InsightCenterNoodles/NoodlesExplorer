@@ -32,6 +32,8 @@ public:
     QString method_name() const { return m_method_name; }
     QString method_documentation() const { return m_method_documentation; }
 
+    QVariant data(const QModelIndex& index, int role) const override;
+
 public slots:
     void set_method_name(QString method_name);
     void set_method_documentation(QString method_documentation);

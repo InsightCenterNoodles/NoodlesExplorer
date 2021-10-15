@@ -27,7 +27,7 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG 9cfd8b36c0689076dbe9330cfff74b931379fcc8
+    GIT_TAG bf0eb5ca8fc45a20d885e79f33232b8a75255711
 )
 
 find_package(Qt6 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts Quick3D)
@@ -118,4 +118,7 @@ PRIVATE
     methodcalldialog.cpp
     methodcalldialog.h
     methodcalldialog.ui
+    jsoneditdialog.cpp
+    jsoneditdialog.h
+    jsoneditdialog.ui
 )

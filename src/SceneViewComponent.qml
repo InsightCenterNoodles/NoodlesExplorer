@@ -68,28 +68,7 @@ Item {
             //                enabled: !settings.orbit_cam
             //                camera: camera
             //            }
-            EntityShim {
-
-                Entity {
-
-                    enabled: false
-
-                    MetalRoughMaterial {
-                        id: redMat
-                        baseColor: "red"
-                    }
-                    SphereMesh {
-                        id: sphereMesh
-                        radius: .1
-                    }
-                    Transform {
-                        id: sphereTransform
-                        translation: Qt.vector3d(0, 0, 0)
-                    }
-
-                    components: [redMat, sphereMesh, sphereTransform]
-                }
-            }
+            EntityShim {}
         }
     }
 }

@@ -169,17 +169,17 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
             });
     }
 
-    if (md.lights) {
-        for (auto& ptr : m_lights) {
-            if (ptr) { m_3d_entity->removeComponent(ptr->entity()); }
-        }
+    //    if (md.lights) {
+    //        for (auto& ptr : m_lights) {
+    //            if (ptr) { m_3d_entity->removeComponent(ptr->entity()); }
+    //        }
 
-        m_lights = *md.lights;
+    //        m_lights = *md.lights;
 
-        for (auto& ptr : m_lights) {
-            if (ptr) { m_3d_entity->addComponent(ptr->entity()); }
-        }
-    }
+    //        for (auto& ptr : m_lights) {
+    //            if (ptr) { m_3d_entity->addComponent(ptr->entity()); }
+    //        }
+    //    }
 
     if (md.tables) { m_tables = *md.tables; }
 

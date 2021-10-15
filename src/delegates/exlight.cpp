@@ -1,10 +1,17 @@
 #include "exlight.h"
 
+#include <QDirectionalLight>
 #include <QEntity>
 #include <QPointLight>
 
 QStringList ExLight::header() {
-    return { "ID", "Name", "Color", "Intensity" };
+    return { "ID", "Name", "Type", "Color", "Intensity" };
+}
+
+static QColor get_color(std::optional<glm::vec3> const& c) {
+    auto vec = c.value_or(glm::vec3(1));
+
+    return QColor::fromRgbF(vec.r, vec.g, vec.b);
 }
 
 ExLight::ExLight(noo::LightID           id,
@@ -12,16 +19,41 @@ ExLight::ExLight(noo::LightID           id,
                  Qt3DCore::QEntity*     scene_root)
     : nooc::LightDelegate(id, md), m_data(md) {
 
-    auto* p = new Qt3DRender::QPointLight(scene_root);
+    qDebug() << "CREATE LIGHT" << id.to_qstring();
+#if 0
 
-    auto c = QColor::fromRgbF(md.color.r, md.color.g, md.color.b);
+    switch (md.type.value_or(nooc::LightType::POINT)) {
+    case nooc::LightType::POINT: {
+        auto* p = new Qt3DRender::QPointLight(scene_root);
 
-    qDebug() << Q_FUNC_INFO << id.to_qstring() << c;
+        p->setColor(get_color(md.color));
+        p->setIntensity(md.intensity.value_or(0));
 
-    p->setColor(QColor::fromRgbF(md.color.r, md.color.g, md.color.b));
-    p->setIntensity(md.intensity);
+        m_3d_entity.reset(p);
+        qDebug() << "HERE" << __LINE__;
+    } break;
+    case nooc::LightType::SUN: {
+        auto* p = new Qt3DRender::QDirectionalLight(scene_root);
 
-    m_3d_entity.reset(p);
+        p->setColor(get_color(md.color));
+        p->setIntensity(md.intensity.value_or(0));
+
+        glm::vec3 dir = md.spatial.value_or(glm::vec4());
+
+        p->setWorldDirection({ dir.x, dir.y, dir.z });
+
+        m_3d_entity.reset(p);
+        qDebug() << "HERE" << __LINE__;
+    } break;
+    }
+
+    qDebug() << "HERE" << __LINE__;
+
+    assert(m_3d_entity->isShareable());
+
+    m_3d_entity->setColor(QColor("red"));
+    m_3d_entity->setIntensity(100);
+#endif
 }
 
 ExLight::~ExLight() = default;
@@ -40,9 +72,9 @@ QVariant ExLight::get_column(int c) const {
     switch (c) {
     case 0: return get_id();
     case 1: return get_name();
-    case 2:
-        return QColor::fromRgbF(m_data.color.r, m_data.color.g, m_data.color.b);
-    case 3: return m_data.intensity;
+    case 2: return (int)m_data.type.value_or(nooc::LightType::POINT);
+    case 3: return get_color(m_data.color);
+    case 4: return m_data.intensity.value_or(0);
     }
     return {};
 }

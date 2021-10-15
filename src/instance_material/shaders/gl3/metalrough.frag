@@ -245,6 +245,13 @@ vec3 pbrModel(const in int lightIndex,
 
     // Calculate diffuse component
     vec3 diffuseColor = (1.0 - metalness) * baseColor * lights[lightIndex].color;
+
+    if (false) {
+
+        diffuseColor = lightCount > 6 ? vec3(1,0,0) : vec3(0,0,1);
+
+        //diffuseColor = vec3(lightCount) / 8.0f;
+    }
     vec3 diffuse = diffuseColor * max(sDotN, 0.0) / 3.14159;
 
     // Calculate specular component

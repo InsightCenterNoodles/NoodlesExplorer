@@ -37,6 +37,7 @@ public:
     ~MethodCallDialog();
 
 private slots:
+    void double_clicked(QModelIndex const&);
     void execute_method();
 
     void method_reply(QString);
@@ -52,57 +53,6 @@ public:
     void interpret() override;
 signals:
     void recv(QString);
-};
-
-class JSONEditDelegate : public QStyledItemDelegate {
-    Q_OBJECT
-
-public:
-    JSONEditDelegate(QObject* parent = nullptr);
-
-    QWidget* createEditor(QWidget*                    parent,
-                          QStyleOptionViewItem const& option,
-                          QModelIndex const&          index) const override;
-
-    void setEditorData(QWidget*           editor,
-                       QModelIndex const& index) const override;
-    void setModelData(QWidget*            editor,
-                      QAbstractItemModel* model,
-                      QModelIndex const&  index) const override;
-
-    void updateEditorGeometry(QWidget*                    editor,
-                              QStyleOptionViewItem const& option,
-                              QModelIndex const&          index) const override;
-
-    // QAbstractItemDelegate interface
-public:
-    QSize sizeHint(QStyleOptionViewItem const& option,
-                   QModelIndex const&          index) const override;
-
-private slots:
-    void commit();
-    void cancel();
-};
-
-
-class JSONEditor : public QWidget {
-    Q_OBJECT
-
-    QPlainTextEdit* m_text_edit;
-    QLabel*         m_feedback;
-
-public:
-    JSONEditor(QWidget* parent = nullptr);
-
-    void    set_text(QString);
-    QString text() const;
-
-private slots:
-    bool evaluate_text() const;
-
-signals:
-    void editing_finished();
-    void editing_cancelled();
 };
 
 #endif // METHODCALLDIALOG_H

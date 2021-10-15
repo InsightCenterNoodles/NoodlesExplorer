@@ -7,6 +7,7 @@
 #include "delegates/exdoc.h"
 #include "delegates/exmethod.h"
 #include "delegates/exobject.h"
+#include "jsoneditdialog.h"
 
 #include <noo_common.h>
 
@@ -16,78 +17,6 @@
 #include <QJsonValue>
 #include <QPushButton>
 
-// Forward
-static noo::AnyVar from_json(QJsonValue const& s);
-
-static noo::AnyVar from_json(QJsonArray const& arr) {
-    // TODO: we can do better
-    bool all_reals = std::all_of(
-        arr.begin(), arr.end(), [](auto const& v) { return v.isDouble(); });
-
-    if (all_reals) {
-        std::vector<double> reals;
-        reals.reserve(arr.size());
-
-        for (auto const& v : arr) {
-            reals.push_back(v.toDouble());
-        }
-
-        return noo::AnyVar(std::move(reals));
-    }
-
-    noo::AnyVarList ret;
-
-    ret.reserve(arr.size());
-
-    for (auto const& v : arr) {
-        ret.push_back(from_json(v));
-    }
-
-    return std::move(ret);
-}
-
-static noo::AnyVar from_json(QJsonObject const& obj) {
-    noo::AnyVarMap ret;
-
-    for (auto iter = obj.begin(); iter != obj.end(); ++iter) {
-        ret.try_emplace(iter.key().toStdString(), from_json(iter.value()));
-    }
-
-    return ret;
-}
-
-static noo::AnyVar from_json(QJsonValue const& s) {
-    switch (s.type()) {
-    case QJsonValue::Null: return std::monostate();
-    case QJsonValue::Bool: return (int64_t)s.toBool();
-    case QJsonValue::Double: return s.toDouble();
-    case QJsonValue::String: return s.toString().toStdString();
-    case QJsonValue::Array: return from_json(s.toArray());
-    case QJsonValue::Object: return from_json(s.toObject());
-    case QJsonValue::Undefined: return std::monostate();
-    }
-
-    return std::monostate();
-}
-
-static std::variant<noo::AnyVar, QString> from_raw_string(QString const& s) {
-
-    auto ls = QString("[ %1 ]").arg(s);
-
-    // to save us effort, we are going to hijack the document reader
-
-    QJsonParseError error;
-
-    auto doc = QJsonDocument::fromJson(ls.toLocal8Bit(), &error);
-
-    if (error.error == QJsonParseError::NoError) {
-        return from_json(doc.array().at(0));
-    }
-
-    return error.errorString();
-}
-
-// =============================================================================
 
 MethodCallDialog::MethodCallDialog(T                  mc,
                                    QPointer<ExMethod> method,
@@ -120,8 +49,6 @@ MethodCallDialog::MethodCallDialog(T                  mc,
 
     m_ui->tableView->setModel(m_model);
 
-    m_ui->tableView->setItemDelegateForColumn(2, new JSONEditDelegate);
-
     connect(m_ui->invokeButton,
             &QPushButton::clicked,
             this,
@@ -129,11 +56,33 @@ MethodCallDialog::MethodCallDialog(T                  mc,
 
     connect(
         m_ui->cancelButton, &QPushButton::clicked, [this]() { this->close(); });
+
+    connect(m_ui->tableView,
+            &QTableView::doubleClicked,
+            this,
+            &MethodCallDialog::double_clicked);
 }
 
 MethodCallDialog::~MethodCallDialog() {
     delete m_ui;
     qDebug() << Q_FUNC_INFO;
+}
+
+void MethodCallDialog::double_clicked(QModelIndex const& index) {
+
+    auto json_index = m_model->index(index.row(), 2);
+
+    auto text = m_model->data(json_index, Qt::DisplayRole).toString();
+
+    JSONEditDialog dialog;
+
+    dialog.set_text(text);
+
+    auto ret = dialog.exec();
+
+    if (ret == QDialog::DialogCode::Accepted) {
+        m_model->setData(json_index, dialog.text());
+    }
 }
 
 void MethodCallDialog::execute_method() {
@@ -143,12 +92,7 @@ void MethodCallDialog::execute_method() {
     noo::AnyVarList avlist;
 
     for (auto const& d : m_model->vector()) {
-        auto ret = from_raw_string(d.current_value);
-
-        VMATCH(
-            ret,
-            VCASE(noo::AnyVar & a) { avlist.push_back(std::move(a)); },
-            VCASE(QString) { avlist.push_back({}); });
+        avlist.push_back(JSONEditDialog::parse_any(d.current_value));
     }
 
 
@@ -198,7 +142,7 @@ void NormalizeStringReply::interpret() {
 }
 
 // =============================================================================
-
+#if 0
 JSONEditDelegate::JSONEditDelegate(QObject* parent)
     : QStyledItemDelegate(parent) { }
 
@@ -323,3 +267,4 @@ bool JSONEditor::evaluate_text() const {
 
     return ok;
 }
+#endif
