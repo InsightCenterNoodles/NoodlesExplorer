@@ -18,6 +18,21 @@
 #include <Qt3DCore/QTransform>
 #include <Qt3DRender/QFrontFace>
 
+
+class IterationCounter {
+    size_t m_counter = 0;
+
+public:
+    size_t next() {
+        m_counter++;
+        return m_counter;
+    }
+};
+
+static IterationCounter qentity_object_counter;
+
+// =============================================================================
+
 RepresentationPart::RepresentationPart(QObject* p) : QObject(p) { }
 RepresentationPart::~RepresentationPart() = default;
 
@@ -193,6 +208,19 @@ void ExObject::update_from(nooc::ObjectUpdateData const& md) {
         qDebug() << "update method list" << md.method_list->size();
         m_attached_methods->set(*md.method_list);
     }
+
+    auto next_id = qentity_object_counter.next();
+
+    int64_t mat_id  = -1;
+    int64_t mesh_id = -1;
+    int64_t inst_id = -1;
+
+    emit ask_recreate(current_object_iteration,
+                      next_id,
+                      m_3d_transform->matrix(),
+                      mat_id,
+                      mesh_id,
+                      inst_id);
 }
 
 QStringList ExObject::header() {
@@ -203,8 +231,16 @@ QStringList ExObject::header() {
 
 ExObject::ExObject(noo::ObjectID                 id,
                    nooc::ObjectUpdateData const& md,
-                   Qt3DCore::QEntity*            scene_root)
+                   Qt3DCore::QEntity*            scene_root,
+                   EntityChangeNotifier*         notifier)
     : nooc::ObjectDelegate(id, md), m_3d_root(scene_root) {
+
+    // wnat to connect this before we do any set up...
+
+    connect(this,
+            &ExObject::ask_recreate,
+            notifier,
+            &EntityChangeNotifier::ask_recreate);
 
     m_3d_entity    = new Qt3DCore::QEntity(scene_root);
     m_3d_transform = new Qt3DCore::QTransform(m_3d_entity.data());
@@ -366,3 +402,11 @@ void TaggedNameObjectFilter::set_filter(QString const& new_filter) {
 
     emit filter_changed();
 }
+
+// =============================================================================
+
+
+EntityChangeNotifier::EntityChangeNotifier(QObject* parent)
+    : QObject(parent) { }
+
+EntityChangeNotifier::~EntityChangeNotifier() { }

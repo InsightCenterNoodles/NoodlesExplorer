@@ -7,10 +7,33 @@
 
 #include <noo_client_interface.h>
 
+#include <QMatrix4x4>
+
 class ExMaterial;
 class ExMesh;
 class ExLight;
 class AttachedMethodListModel;
+
+
+// =============================================================================
+
+class EntityChangeNotifier : public QObject {
+    Q_OBJECT
+
+public:
+    explicit EntityChangeNotifier(QObject* parent = nullptr);
+    ~EntityChangeNotifier();
+
+signals:
+    void ask_recreate(int64_t    old_id,
+                      int64_t    new_id,
+                      QMatrix4x4 transform,
+                      int64_t    material,
+                      int64_t    mesh,
+                      int64_t    instances);
+};
+
+// =============================================================================
 
 class RepresentationPart : public QObject {
 
@@ -71,6 +94,8 @@ class ExObject : public nooc::ObjectDelegate {
     QPointer<ExObject> m_parent;
     glm::mat4          m_transform;
 
+    int64_t current_object_iteration = -1;
+
 
     QPointer<RepresentationPart> m_attached_part;
 
@@ -88,7 +113,8 @@ public:
 
     ExObject(noo::ObjectID                 id,
              nooc::ObjectUpdateData const& md,
-             Qt3DCore::QEntity*            scene_root);
+             Qt3DCore::QEntity*            scene_root,
+             EntityChangeNotifier*         notifier);
 
     ~ExObject();
 
@@ -102,6 +128,14 @@ public:
     void on_update(nooc::ObjectUpdateData const&) override;
 
     Qt3DCore::QEntity* entity();
+
+signals:
+    void ask_recreate(int64_t    old_id,
+                      int64_t    new_id,
+                      QMatrix4x4 transform,
+                      int64_t    material,
+                      int64_t    mesh,
+                      int64_t    instances);
 };
 
 // =============================================================================
@@ -128,5 +162,6 @@ public:
 signals:
     void filter_changed();
 };
+
 
 #endif // EXOBJECT_H

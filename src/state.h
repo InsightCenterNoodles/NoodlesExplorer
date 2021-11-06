@@ -30,6 +30,8 @@ class ExMaterial;
 class ExLight;
 class ExMesh;
 class ExObject;
+class EntityChangeNotifier;
+
 
 class State : public QObject {
     Q_OBJECT
@@ -59,6 +61,8 @@ class State : public QObject {
     ComponentListModel<ExMesh>*     m_mesh_list;
     ComponentListModel<ExObject>*   m_object_list;
     QPointer<ExDoc>                 m_current_doc;
+
+    EntityChangeNotifier* m_ent_notifier;
 
     TaggedNameObjectFilter* m_object_filter;
 

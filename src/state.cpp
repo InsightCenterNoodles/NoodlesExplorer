@@ -44,6 +44,7 @@ State::State(QObject* parent) : QObject(parent) {
     m_mesh_list     = new ComponentListModel<ExMesh>(this);
     m_object_list   = new ComponentListModel<ExObject>(this);
 
+    m_ent_notifier = new EntityChangeNotifier(this);
 
     m_object_filter = new TaggedNameObjectFilter(this);
 
@@ -79,6 +80,8 @@ void State::link(QQmlContext* c) {
     c->setContextProperty("object_list", m_object_list);
 
     c->setContextProperty("filtered_object_list", m_object_filter);
+
+    c->setContextProperty("entity_notifier", m_ent_notifier);
 
     c->setContextProperty("document_methods", &m_document_methods);
 
@@ -141,7 +144,7 @@ bool State::start_connection(QString name, QString url) {
     };
     delegates.object_maker = [this](noo::ObjectID                 id,
                                     nooc::ObjectUpdateData const& md) {
-        return m_object_list->add_item(id, md, m_root_entity);
+        return m_object_list->add_item(id, md, m_root_entity, m_ent_notifier);
     };
     delegates.sig_maker = [this](noo::SignalID id, nooc::SignalData const& md) {
         return m_signal_list->add_item(id, md);

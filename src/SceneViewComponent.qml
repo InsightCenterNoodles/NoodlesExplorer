@@ -10,6 +10,13 @@ import Qt.labs.settings 1.1
 import EntityShim 1.0
 
 Item {
+    Connections {
+        target: entity_notifier
+
+        function onAsk_recreate(oid, nid, tf, mat, mesh, inst) {
+            console.log("REQUEST NEW GFX", oid, nid, tf, mat, mesh, inst)
+        }
+    }
 
     Scene3D {
         anchors.fill: parent
