@@ -25,12 +25,12 @@ public:
     ~EntityChangeNotifier();
 
 signals:
-    void ask_recreate(int64_t    old_id,
-                      int64_t    new_id,
-                      QMatrix4x4 transform,
-                      int64_t    material,
-                      int64_t    mesh,
-                      int64_t    instances);
+    void ask_delete(int32_t);
+    void ask_create(int32_t);
+    void ask_set_parent(int32_t child, int32_t parent);
+    void ask_set_tf(int32_t, QMatrix4x4 transform);
+    void
+    ask_set_render(int32_t, int32_t material, int32_t mesh, int32_t instances);
 };
 
 // =============================================================================
@@ -62,8 +62,8 @@ class RenderPart : public RepresentationPart {
 
     UniqueQPtr<Qt3DCore::QEntity> m_3d_entity;
 
-    std::optional<QtGeomInfo> m_att_mesh_details;
-    void                      remake_mesh_attachment();
+    //    std::optional<QtGeomInfo> m_att_mesh_details;
+    //    void                      remake_mesh_attachment();
 
 public:
     RenderPart(Qt3DCore::QEntity* p_entity,
@@ -83,19 +83,16 @@ private slots:
 
 // =============================================================================
 
-class ExObject : public nooc::ObjectDelegate {
+class ExObject : public nooc::EntityDelegate {
     Q_OBJECT
 
-    Qt3DCore::QEntity*            m_3d_root;
-    UniqueQPtr<Qt3DCore::QEntity> m_3d_entity;
-    Qt3DCore::QTransform*         m_3d_transform;
+    //    Qt3DCore::QEntity*            m_3d_root;
+    //    UniqueQPtr<Qt3DCore::QEntity> m_3d_entity;
+    //    Qt3DCore::QTransform*         m_3d_transform;
 
-    QString            m_name;
-    QPointer<ExObject> m_parent;
-    glm::mat4          m_transform;
-
-    int64_t current_object_iteration = -1;
-
+    //    QString            m_name;
+    //    QPointer<ExObject> m_parent;
+    //    glm::mat4          m_transform;
 
     QPointer<RepresentationPart> m_attached_part;
 
@@ -106,15 +103,14 @@ class ExObject : public nooc::ObjectDelegate {
 
     AttachedMethodListModel* m_attached_methods;
 
-    void update_from(nooc::ObjectUpdateData const& md);
+    void update_from(nooc::EntityUpdateData const& md);
 
 public:
     static QStringList header();
 
-    ExObject(noo::ObjectID                 id,
-             nooc::ObjectUpdateData const& md,
-             Qt3DCore::QEntity*            scene_root,
-             EntityChangeNotifier*         notifier);
+    ExObject(noo::EntityID           id,
+             nooc::EntityInit const& md,
+             EntityChangeNotifier*   notifier);
 
     ~ExObject();
 
@@ -125,17 +121,17 @@ public:
 
     AttachedMethodListModel* attached_method_list() const;
 
-    void on_update(nooc::ObjectUpdateData const&) override;
+    void on_update(nooc::EntityUpdateData const&) override;
 
-    Qt3DCore::QEntity* entity();
+    //    Qt3DCore::QEntity* entity();
 
 signals:
-    void ask_recreate(int64_t    old_id,
-                      int64_t    new_id,
-                      QMatrix4x4 transform,
-                      int64_t    material,
-                      int64_t    mesh,
-                      int64_t    instances);
+    void ask_delete(int32_t);
+    void ask_create(int32_t);
+    void ask_set_parent(int32_t child, int32_t parent);
+    void ask_set_tf(int32_t, QMatrix4x4 transform);
+    void
+    ask_set_render(int32_t, int32_t material, int32_t mesh, int32_t instances);
 };
 
 // =============================================================================

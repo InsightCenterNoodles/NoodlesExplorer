@@ -7,12 +7,10 @@
 #include <noo_client_interface.h>
 
 class ExTexture : public nooc::TextureDelegate {
-    nooc::TextureData m_data;
-
 public:
     static QStringList header();
 
-    ExTexture(noo::TextureID id, nooc::TextureData const& md);
+    ExTexture(noo::TextureID id, nooc::TextureInit const& md);
 
     ~ExTexture();
 
@@ -20,7 +18,34 @@ public:
     int      get_id_gen() const;
     QString  get_name() const;
     QVariant get_column(int c) const;
-    void     on_update(nooc::TextureData const&) override;
+};
+
+class ExSampler : public nooc::SamplerDelegate {
+public:
+    static QStringList header();
+
+    ExSampler(noo::SamplerID id, nooc::SamplerInit const& md);
+
+    ~ExSampler();
+
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
+};
+
+class ExImage : public nooc::ImageDelegate {
+public:
+    static QStringList header();
+
+    ExImage(noo::ImageID id, nooc::ImageInit const& md);
+
+    ~ExImage();
+
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
 };
 
 #endif // EXTEXTURE_H

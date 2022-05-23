@@ -1,32 +1,63 @@
 #ifndef TABLEDATA_H
 #define TABLEDATA_H
 
+#include <noo_client_interface.h>
+
 #include <QAbstractTableModel>
 
-#include <noo_server_interface.h> //steal the table info here
+#include <span>
+
+
+class TableColumn : public std::variant<QVector<double>, QStringList> {
+public:
+    QString name;
+
+    using variant::variant;
+
+    size_t size() const;
+    bool   is_string() const;
+
+    std::span<double const> as_doubles() const;
+    QStringList const&      as_string() const;
+
+    void append(std::span<double const>);
+    void append(QStringList const&);
+    void append(QCborArray const&);
+    void append(double);
+    void append(QString);
+
+    void set(size_t row, double);
+    void set(size_t row, QCborValue);
+    void set(size_t row, QString);
+
+    void erase(size_t row);
+
+    void clear();
+};
+
 
 class SelectionsTableData : public QAbstractTableModel {
     Q_OBJECT
 
     struct SelectionSlot {
-        std::string    name;
+        QString        name;
         noo::Selection selection;
         size_t         index;
     };
 
     using SelectionSlotPtr = std::shared_ptr<SelectionSlot>;
 
-    std::vector<SelectionSlotPtr>                     m_selections;
-    std::unordered_map<std::string, SelectionSlotPtr> m_string_map;
+    std::vector<SelectionSlotPtr>    m_selections;
+    QHash<QString, SelectionSlotPtr> m_string_map;
 
-    void new_selection(std::string const&, noo::SelectionRef const&);
-    void update_selection(std::string const&, noo::SelectionRef const&);
-    void del_selection(std::string const&);
+    void new_selection(QString const&, noo::Selection const&);
+    void update_selection(QString const&, noo::Selection const&);
+    void del_selection(QString const&);
 
 public:
     explicit SelectionsTableData(QObject* parent = nullptr);
 
-    void on_table_selection_updated(std::string_view, noo::SelectionRef const&);
+    void on_table_selection_updated(QString, noo::Selection const&);
 
     SelectionSlot const* slot_at(size_t) const;
 
@@ -51,9 +82,9 @@ public:
 class RemoteTableData : public QAbstractTableModel {
     Q_OBJECT
 
-    std::vector<noo::TableColumn> m_columns;
+    QVector<TableColumn> m_columns;
 
-    std::vector<int64_t>                m_row_to_key_map;
+    QVector<int64_t>                    m_row_to_key_map;
     std::unordered_map<size_t, int64_t> m_key_to_row_map;
 
     SelectionsTableData* m_selections = nullptr;
@@ -62,15 +93,15 @@ public:
     explicit RemoteTableData(QObject* parent = nullptr);
 
 public:
-    void on_table_initialize(noo::AnyVarListRef const& names,
-                             noo::AnyVarRef            keys,
-                             noo::AnyVarListRef const& data_cols,
-                             noo::AnyVarListRef const& selections);
+    void on_table_initialize(QCborArray const& names,
+                             QCborValue        keys,
+                             QCborArray const& data_cols,
+                             QCborArray const& selections);
 
     void on_table_reset();
-    void on_table_updated(noo::AnyVarRef keys, noo::AnyVarRef columns);
-    void on_table_rows_removed(noo::AnyVarRef keys);
-    void on_table_selection_updated(std::string_view, noo::SelectionRef const&);
+    void on_table_updated(QCborValue keys, QCborValue columns);
+    void on_table_rows_removed(QCborValue keys);
+    void on_table_selection_updated(QString, noo::Selection const&);
 
 
 public:
@@ -102,7 +133,7 @@ public:
     Qt::ItemFlags flags(QModelIndex const& index) const override;
 
 signals:
-    void ask_update_row(int64_t key, noo::AnyVarList&);
+    void ask_update_row(int64_t key, QCborArray&);
 };
 
 #endif // TABLEDATA_H

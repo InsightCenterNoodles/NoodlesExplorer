@@ -27,7 +27,13 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG 37a8b7ea0794ab0cb4d8854036bbf647a1c24182
+    GIT_TAG 5f2b31d14dd1bda919a8a91d114f4f8584d0ab2a
+)
+
+CPMAddPackage(
+    NAME magic_enum
+    GITHUB_REPOSITORY Neargye/magic_enum
+    GIT_TAG v0.8.0
 )
 
 find_package(Qt6 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts Quick3D)
@@ -48,7 +54,7 @@ target_compile_features(NoodlesExplorer PUBLIC cxx_std_20)
 target_compile_options(NoodlesExplorer PUBLIC ${sanitizer_compile_flag})
 target_link_options(NoodlesExplorer PUBLIC ${sanitizer_compile_flag})
 
-target_link_libraries(NoodlesExplorer PRIVATE glm)
+target_link_libraries(NoodlesExplorer PRIVATE glm magic_enum)
 
 target_link_libraries(NoodlesExplorer PRIVATE noodles)
 

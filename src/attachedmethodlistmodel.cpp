@@ -3,7 +3,7 @@
 AttachedMethodListModel::AttachedMethodListModel(QObject* parent)
     : QAbstractTableModel(parent) { }
 
-void AttachedMethodListModel::set(std::vector<nooc::MethodDelegate*> const& l) {
+void AttachedMethodListModel::set(QVector<nooc::MethodDelegate*> const& l) {
     beginResetModel();
 
     m_list.clear();
@@ -70,8 +70,7 @@ QVariant AttachedMethodListModel::data(const QModelIndex& index,
     }
 
     switch (role) {
-    case name:
-        return QString::fromLatin1(item->name().data(), item->name().size());
+    case name: return item->name();
     case slot: return item->id().id_slot;
     case gen: return item->id().id_gen;
     }

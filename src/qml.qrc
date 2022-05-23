@@ -30,5 +30,6 @@
         <file>ColorPicker.qml</file>
         <file>instance_material/shaders/gl3/metalrough.frag</file>
         <file>ObjectBox.qml</file>
+        <file>RenderableEntity.qml</file>
     </qresource>
 </RCC>

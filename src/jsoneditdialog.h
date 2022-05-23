@@ -1,11 +1,8 @@
 #ifndef JSONEDITDIALOG_H
 #define JSONEDITDIALOG_H
 
+#include <QCborValue>
 #include <QDialog>
-
-namespace noo {
-struct AnyVar;
-}
 
 namespace Ui {
 class JSONEditDialog;
@@ -17,7 +14,7 @@ class JSONEditDialog : public QDialog {
 
 
 public:
-    static noo::AnyVar parse_any(QString const& s, bool* ok = nullptr);
+    static QCborValue parse_any(QString const& s, bool* ok = nullptr);
 
     explicit JSONEditDialog(QWidget* parent = nullptr);
     ~JSONEditDialog();
@@ -25,7 +22,7 @@ public:
     void    set_text(QString);
     QString text() const;
 
-    noo::AnyVar get_as_any(bool* ok) const;
+    QCborValue get_as_any(bool* ok) const;
 
 private slots:
     bool evaluate_text() const;

@@ -4,15 +4,15 @@
 
 #include <QDebug>
 
-void SelectionsTableData::new_selection(std::string const&       name,
-                                        noo::SelectionRef const& ref) {
+void SelectionsTableData::new_selection(QString const&        name,
+                                        noo::Selection const& ref) {
     auto const location = m_selections.size();
     beginInsertRows(QModelIndex(), location, location);
 
     auto sel = m_selections.emplace_back(std::make_shared<SelectionSlot>());
 
     sel->name      = name;
-    sel->selection = ref.to_selection();
+    sel->selection = ref;
     sel->index     = location;
 
     m_string_map[name] = sel;
@@ -20,21 +20,21 @@ void SelectionsTableData::new_selection(std::string const&       name,
     endInsertRows();
 }
 
-void SelectionsTableData::update_selection(std::string const&       name,
-                                           noo::SelectionRef const& ref) {
-    auto& place = m_string_map.at(name);
+void SelectionsTableData::update_selection(QString const&        name,
+                                           noo::Selection const& ref) {
+    auto& place = m_string_map[name];
 
-    place->selection = ref.to_selection();
+    place->selection = ref;
 
     auto qindex = index(place->index, 0);
     dataChanged(qindex, qindex);
 }
 
-void SelectionsTableData::del_selection(std::string const& name) {
-    auto place = m_string_map.at(name)->index;
+void SelectionsTableData::del_selection(QString const& name) {
+    auto place = m_string_map[name]->index;
     beginRemoveRows(QModelIndex(), place, place);
 
-    m_string_map.erase(name);
+    m_string_map.remove(name);
     m_selections.erase(m_selections.begin() + place);
     endRemoveRows();
 }
@@ -43,24 +43,23 @@ SelectionsTableData::SelectionsTableData(QObject* parent)
     : QAbstractTableModel(parent) { }
 
 void SelectionsTableData::on_table_selection_updated(
-    std::string_view         name,
-    noo::SelectionRef const& ref) {
-    auto ns = std::string(name);
+    QString               name,
+    noo::Selection const& ref) {
 
     // is this an update?
-    auto iter = m_string_map.find(ns);
+    auto iter = m_string_map.find(name);
 
     if (iter == m_string_map.end()) {
         // this is an add
-        return new_selection(ns, ref);
+        return new_selection(name, ref);
     }
 
     // this is an update. if empty, its a delete
     if (ref.rows.size() == 0 and ref.row_ranges.empty()) {
-        return del_selection(ns);
+        return del_selection(name);
     }
 
-    update_selection(ns, ref);
+    update_selection(name, ref);
 }
 
 SelectionsTableData::SelectionSlot const*
@@ -108,7 +107,7 @@ QVariant SelectionsTableData::data(QModelIndex const& index, int role) const {
 
     if (role != Qt::DisplayRole and role != Qt::EditRole) return {};
 
-    return QString::fromStdString(m_selections.at(index.row())->name);
+    return m_selections.at(index.row())->name;
 }
 
 Qt::ItemFlags SelectionsTableData::flags(QModelIndex const& index) const {
@@ -126,11 +125,10 @@ RemoteTableData::RemoteTableData(QObject* parent)
     m_selections = new SelectionsTableData(this);
 }
 
-void RemoteTableData::on_table_initialize(
-    noo::AnyVarListRef const& names,
-    noo::AnyVarRef            keys,
-    noo::AnyVarListRef const& data_cols,
-    noo::AnyVarListRef const& selections) {
+void RemoteTableData::on_table_initialize(QCborArray const& names,
+                                          QCborValue        keys,
+                                          QCborArray const& data_cols,
+                                          QCborArray const& selections) {
 
     qDebug() << Q_FUNC_INFO;
 
@@ -145,52 +143,42 @@ void RemoteTableData::on_table_initialize(
 
         auto data_col = data_cols[c_i];
 
-        if (data_col.has_real_list()) {
-            new_c      = noo::span_to_vector(data_col.to_real_list());
-            new_c.name = names[c_i].to_string();
-            continue;
-        }
-
-        if (!data_col.has_list()) { continue; }
+        if (!data_col.isArray()) { continue; }
 
         // probe first
 
-        auto list = data_col.to_vector();
+        auto list = data_col.toArray();
 
         if (list.size() == 0) continue;
 
         auto first = list[0];
 
-        if (first.has_real()) {
-            auto coerced = data_col.coerce_real_list();
+        if (first.isInteger() or first.isDouble()) {
+            auto coerced = noo::coerce_to_real_list(data_col);
 
-            auto* p = std::get_if<std::vector<double>>(&coerced.storage);
-
-            assert(p);
-
-            new_c      = std::move(*p);
-            new_c.name = names[c_i].to_string();
+            new_c      = coerced;
+            new_c.name = names[c_i].toString(QString("Column %1").arg(c_i));
             continue;
         }
 
-        if (!first.has_string()) continue;
+        if (!first.isString()) continue;
 
-        std::vector<std::string> strs(list.size());
+        QStringList strs(list.size());
 
-        for (size_t r_i = 0; r_i < list.size(); r_i++) {
-            strs[r_i] = list[r_i].to_string();
+        for (int r_i = 0; r_i < list.size(); r_i++) {
+            strs[r_i] = list[r_i].toString();
         }
 
         new_c      = std::move(strs);
-        new_c.name = names[c_i].to_string();
+        new_c.name = names[c_i].toString();
     }
 
     qDebug() << "Loaded data";
 
     {
-        auto lk = keys.coerce_int_list();
+        auto lk = noo::coerce_to_int_list(keys);
 
-        m_row_to_key_map.insert(m_row_to_key_map.end(), lk.begin(), lk.end());
+        m_row_to_key_map << lk;
 
         for (size_t ri = 0; ri < m_row_to_key_map.size(); ri++) {
             m_key_to_row_map[m_row_to_key_map[ri]] = ri;
@@ -200,14 +188,14 @@ void RemoteTableData::on_table_initialize(
     qDebug() << "Loaded keys" << m_row_to_key_map.size();
 
     for (size_t si = 0; si < selections.size(); si++) {
-        auto pair = selections[si].to_vector();
+        auto pair = selections[si].toArray();
 
         if (pair.size() < 2) continue;
 
-        auto key       = pair[0].to_string();
-        auto selection = noo::SelectionRef(pair[1]);
+        auto key       = pair[0].toString();
+        auto selection = noo::Selection(pair[1].toMap());
 
-        if (key.empty()) continue;
+        if (key.isEmpty()) continue;
 
         m_selections->on_table_selection_updated(key, selection);
     }
@@ -231,68 +219,34 @@ void RemoteTableData::on_table_reset() {
     endResetModel();
 }
 
-using CellType = std::variant<double, std::string_view>;
+using CellType = std::variant<double, QString>;
 
-static CellType get_item_single(noo::AnyVarRef v) {
-    qDebug() << Q_FUNC_INFO;
-    return VMATCH_W(
-        noo::visit,
-        v,
-        VCASE(int64_t sp) {
-            qDebug() << "INT";
-            return CellType((double)sp);
-        },
-        VCASE(double sp) {
-            qDebug() << "DBL";
-            return CellType(sp);
-        },
-        VCASE(std::string_view sp) {
-            qDebug() << "STR";
-            return CellType(sp);
-        },
-        VCASE(auto const& t) {
-            qDebug() << (typeid(t).name());
-            return CellType(0.0);
-        })
+static CellType get_item_single(QCborValue v) {
+    if (v.isInteger() or v.isDouble()) {
+        return v.toDouble();
+    } else {
+        return v.toString();
+    }
 }
 
-inline CellType get_cell_from_array(noo::AnyVarRef v, int i) {
-    qDebug() << Q_FUNC_INFO << i;
-    return VMATCH_W(
-        noo::visit,
-        v,
-        VCASE(std::span<int64_t const> sp) {
-            qDebug() << "INT";
-            return CellType((double)noo::get_or_default(sp, i));
-        },
-        VCASE(std::span<double const> sp) {
-            qDebug() << "DBL";
-            return CellType(noo::get_or_default(sp, i));
-        },
-        VCASE(noo::AnyVarListRef sp) {
-            qDebug() << "VLIST";
-            if (i < 0 or i >= sp.size()) { return CellType(0.0); }
+inline CellType get_cell_from_array(QCborValue lv, int i) {
 
-            auto c = sp[i];
-            return get_item_single(c);
-        },
-        VCASE(auto const& t) {
-            qDebug() << (typeid(t).name());
-            return CellType(0.0);
-        })
+    auto a = lv.toArray();
+
+    auto v = a.at(i);
+
+    return get_item_single(v);
 }
 
-void RemoteTableData::on_table_updated(noo::AnyVarRef keys,
-                                       noo::AnyVarRef columns) {
-    qDebug() << Q_FUNC_INFO << QString::fromStdString(keys.dump_string())
-             << QString::fromStdString(columns.dump_string());
+void RemoteTableData::on_table_updated(QCborValue keys, QCborValue columns) {
+    qDebug() << Q_FUNC_INFO << keys.toDiagnosticNotation()
+             << columns.toDiagnosticNotation();
     // TODO: optimize reset
     beginResetModel();
 
-    auto       actual_keys      = keys.coerce_int_list();
-    auto const actual_keys_span = actual_keys.span();
+    auto const actual_keys = noo::coerce_to_int_list(keys);
 
-    auto l = columns.to_vector();
+    auto const l = columns.toArray();
     if (l.size() != m_columns.size()) return;
 
 
@@ -302,37 +256,37 @@ void RemoteTableData::on_table_updated(noo::AnyVarRef keys,
 
     auto append_row = [&](int64_t ki) {
         qDebug() << "APPEND" << ki;
-        auto key = actual_keys_span[ki];
+        auto key = actual_keys[ki];
 
         auto current_row = rowCount();
 
         m_row_to_key_map.push_back(key);
         m_key_to_row_map[key] = current_row;
 
-
-        l.for_each([&](auto i, noo::AnyVarRef a) {
+        for (int i = 0; i < l.size(); i++) {
+            auto a    = l[i];
             auto cell = get_cell_from_array(a, ki);
 
-            std::visit([&](auto const& c) { m_columns.at(i).append(c); }, cell);
-        });
+            std::visit([&](auto const& c) { m_columns[i].append(c); }, cell);
+        }
     };
 
     auto update_row = [&](int64_t ki) {
         qDebug() << "UPDATE" << ki;
-        auto key = actual_keys_span[ki];
+        auto key = actual_keys[ki];
 
         auto row = m_key_to_row_map.at(key);
 
-        l.for_each([&](auto i, noo::AnyVarRef a) {
+        for (int i = 0; i < l.size(); i++) {
+            auto a    = l[i];
             auto cell = get_cell_from_array(a, ki);
 
-            std::visit([&](auto const& c) { m_columns.at(i).set(row, c); },
-                       cell);
-        });
+            std::visit([&](auto const& c) { m_columns[i].set(row, c); }, cell);
+        }
     };
 
-    for (size_t key_i = 0; key_i < actual_keys_span.size(); key_i++) {
-        auto key  = actual_keys_span[key_i];
+    for (size_t key_i = 0; key_i < actual_keys.size(); key_i++) {
+        auto key  = actual_keys[key_i];
         auto iter = m_key_to_row_map.find(key);
         if (iter == m_key_to_row_map.end()) {
             append_row(key_i);
@@ -346,9 +300,9 @@ void RemoteTableData::on_table_updated(noo::AnyVarRef keys,
     endResetModel();
 }
 
-void RemoteTableData::on_table_rows_removed(noo::AnyVarRef keys) {
+void RemoteTableData::on_table_rows_removed(QCborValue keys) {
     beginResetModel();
-    auto actual_keys = keys.coerce_int_list();
+    auto const actual_keys = noo::coerce_to_int_list(keys);
 
     // to delete we are finding the rows to remove, and then deleting the rows
     // from highest to lowest. this means we dont break index validity
@@ -381,8 +335,8 @@ void RemoteTableData::on_table_rows_removed(noo::AnyVarRef keys) {
     endResetModel();
 }
 
-void RemoteTableData::on_table_selection_updated(std::string_view         key,
-                                                 noo::SelectionRef const& sel) {
+void RemoteTableData::on_table_selection_updated(QString               key,
+                                                 noo::Selection const& sel) {
     m_selections->on_table_selection_updated(key, sel);
 }
 
@@ -390,7 +344,7 @@ QStringList RemoteTableData::column_names() const {
     QStringList ret;
 
     for (auto const& m : m_columns) {
-        ret << QString::fromStdString(m.name);
+        ret << m.name;
     }
 
     return ret;
@@ -406,7 +360,7 @@ QVariant RemoteTableData::headerData(int             section,
         return m_row_to_key_map.at(section);
     }
 
-    return QString::fromStdString(m_columns.at(section).name);
+    return m_columns.at(section).name;
 }
 
 
@@ -441,11 +395,11 @@ QVariant RemoteTableData::data(QModelIndex const& index, int role) const {
 
     if (column_data.is_string()) {
         auto const& item = column_data.as_string()[index.row()];
-        return QString::fromStdString(item);
-    } else {
-        auto item = column_data.as_doubles()[index.row()];
         return item;
     }
+
+    auto item = column_data.as_doubles()[index.row()];
+    return item;
 }
 
 
@@ -462,7 +416,7 @@ bool RemoteTableData::setData(QModelIndex const& index,
     // update so we get the current row, then we replace the new value in the
     // list, and send that along
 
-    noo::AnyVarList row;
+    QCborArray row;
 
     for (auto const& c : m_columns) {
         if (c.is_string()) {
@@ -478,7 +432,7 @@ bool RemoteTableData::setData(QModelIndex const& index,
     if (ok) {
         row[index.column()] = clean_value;
     } else {
-        row[index.column()] = value.toString().toStdString();
+        row[index.column()] = value.toString();
     }
 
     auto key = m_row_to_key_map[index.row()];

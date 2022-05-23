@@ -7,13 +7,12 @@
 #include <noo_client_interface.h>
 
 class ExSignal : public nooc::SignalDelegate {
-    QString     m_documentation;
-    QStringList m_argument_documentation;
+    QStringList m_cached_args;
 
 public:
     static QStringList header();
 
-    ExSignal(noo::SignalID id, nooc::SignalData const& md);
+    ExSignal(noo::SignalID id, nooc::SignalInit const& md);
 
     ~ExSignal();
 

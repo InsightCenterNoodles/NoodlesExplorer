@@ -9,17 +9,15 @@
 #include <QPhongMaterial>
 
 class ExMaterial : public nooc::MaterialDelegate {
-    nooc::MaterialData m_data;
+    //    nooc::MaterialData m_data;
 
-    UniqueQPtr<QInstancedMetalRoughMaterial> m_3d_entity;
-    UniqueQPtr<Qt3DExtras::QPhongMaterial>   m_2d_material;
+    //    UniqueQPtr<QInstancedMetalRoughMaterial> m_3d_entity;
+    //    UniqueQPtr<Qt3DExtras::QPhongMaterial>   m_2d_material;
 
 public:
     static QStringList header();
 
-    ExMaterial(noo::MaterialID           id,
-               nooc::MaterialData const& md,
-               Qt3DCore::QEntity*        scene_root);
+    ExMaterial(noo::MaterialID id, nooc::MaterialInit const& md);
 
     ~ExMaterial();
 
@@ -29,10 +27,11 @@ public:
     int      get_id_gen() const;
     QString  get_name() const;
     QVariant get_column(int c) const;
-    void     on_update(nooc::MaterialData const&) override;
+
+    void on_update(nooc::MaterialUpdate const&) override;
 
     // Qt3DExtras::QPhongMaterial*   get_2d_material();
-    QInstancedMetalRoughMaterial* get_3d_material();
+    // QInstancedMetalRoughMaterial* get_3d_material();
 };
 
 #endif // EXMATERIAL_H

@@ -1,6 +1,7 @@
 #ifndef ADDDATADIALOG_H
 #define ADDDATADIALOG_H
 
+#include <QCborArray>
 #include <QDialog>
 #include <QPointer>
 
@@ -10,12 +11,6 @@ class QTableWidgetItem;
 namespace Ui {
 class AddDataDialog;
 }
-
-namespace noo {
-class AnyVar;
-
-using AnyVarList = std::vector<AnyVar>;
-} // namespace noo
 
 class AddDataDialog : public QDialog {
     Q_OBJECT
@@ -30,7 +25,7 @@ public:
     explicit AddDataDialog(QPointer<ExTable>, QWidget* parent = nullptr);
     ~AddDataDialog();
 
-    noo::AnyVarList get_data() const;
+    QCborArray get_data() const;
 
 private slots:
     void setup();

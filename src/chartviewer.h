@@ -104,7 +104,7 @@ class ChartViewer : public QObject {
 
     SeriesTable m_series_table;
 
-    std::optional<std::string> m_editing_selection;
+    std::optional<QString> m_editing_selection;
 
     void setup_root();
     void setup_edit_page();

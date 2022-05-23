@@ -25,7 +25,10 @@ class TaggedNameObjectFilter;
 class ExSignal;
 class ExTable;
 class ExBuffer;
+class ExBufferView;
 class ExTexture;
+class ExSampler;
+class ExImage;
 class ExMaterial;
 class ExLight;
 class ExMesh;
@@ -51,16 +54,19 @@ class State : public QObject {
 
     AttachedMethodListModel m_document_methods;
 
-    ComponentListModel<ExMethod>*   m_method_list;
-    ComponentListModel<ExSignal>*   m_signal_list;
-    ComponentListModel<ExTable>*    m_table_list;
-    ComponentListModel<ExBuffer>*   m_buffer_list;
-    ComponentListModel<ExTexture>*  m_texture_list;
-    ComponentListModel<ExMaterial>* m_material_list;
-    ComponentListModel<ExLight>*    m_light_list;
-    ComponentListModel<ExMesh>*     m_mesh_list;
-    ComponentListModel<ExObject>*   m_object_list;
-    QPointer<ExDoc>                 m_current_doc;
+    ComponentListModel<ExMethod>*     m_method_list;
+    ComponentListModel<ExSignal>*     m_signal_list;
+    ComponentListModel<ExTable>*      m_table_list;
+    ComponentListModel<ExBuffer>*     m_buffer_list;
+    ComponentListModel<ExBufferView>* m_buffer_view_list;
+    ComponentListModel<ExTexture>*    m_texture_list;
+    ComponentListModel<ExSampler>*    m_sampler_list;
+    ComponentListModel<ExImage>*      m_image_list;
+    ComponentListModel<ExMaterial>*   m_material_list;
+    ComponentListModel<ExLight>*      m_light_list;
+    ComponentListModel<ExMesh>*       m_mesh_list;
+    ComponentListModel<ExObject>*     m_object_list;
+    QPointer<ExDoc>                   m_current_doc;
 
     EntityChangeNotifier* m_ent_notifier;
 

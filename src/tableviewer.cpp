@@ -110,16 +110,16 @@ void TableViewer::add_rows() {
 
     qDebug() << Q_FUNC_INFO;
     for (auto const& d : data) {
-        qDebug() << "COL" << QString::fromStdString(d.dump_string());
+        qDebug() << "COL" << QCborValue(d).toDiagnosticNotation();
     }
 
     m_attached_table->request_rows_insert(std::move(data));
 }
 
-std::vector<int64_t> TableViewer::get_keys_from_selection() {
+QVector<int64_t> TableViewer::get_keys_from_selection() {
     auto rows = m_ui_root->dataView->selectionModel()->selectedRows();
 
-    std::vector<int64_t> keys;
+    QVector<int64_t> keys;
     keys.reserve(rows.size());
 
     for (auto row : rows) {
@@ -173,14 +173,11 @@ void TableViewer::add_selection() {
         sel = dialog.get_selection();
     }
 
-    qDebug() << "Keys selected"
-             << QList<int64_t>(sel.rows.begin(), sel.rows.end());
-
-    auto local_str = name.toStdString();
+    qDebug() << "Keys selected" << sel.rows;
 
     if (name.isEmpty()) { name = QDateTime::currentDateTime().toString(); }
 
-    m_attached_table->request_selection_update(local_str, std::move(sel));
+    m_attached_table->request_selection_update(name, std::move(sel));
 }
 
 void TableViewer::del_selection() {
@@ -206,7 +203,7 @@ void TableViewer::update_selection() {
     auto name =
         m_attached_table->table_data()->selections()->slot_at(row.row())->name;
 
-    if (name.empty()) return;
+    if (name.isEmpty()) return;
 
     noo::Selection sel;
 

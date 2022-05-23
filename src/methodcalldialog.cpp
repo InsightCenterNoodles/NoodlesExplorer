@@ -89,10 +89,10 @@ void MethodCallDialog::execute_method() {
     qDebug() << Q_FUNC_INFO;
     if (!m_method) return;
 
-    noo::AnyVarList avlist;
+    QCborArray avlist;
 
     for (auto const& d : m_model->vector()) {
-        avlist.push_back(JSONEditDialog::parse_any(d.current_value));
+        avlist << JSONEditDialog::parse_any(d.current_value);
     }
 
 
@@ -136,9 +136,11 @@ void MethodCallDialog::method_failed(QString str) {
 // =============================================================================
 
 void NormalizeStringReply::interpret() {
-    auto str = m_var.dump_string();
-
-    emit recv(noo::to_qstring(str));
+    if (m_var.isString()) {
+        emit recv(m_var.toString());
+    } else {
+        emit recv(m_var.toDiagnosticNotation());
+    }
 }
 
 // =============================================================================

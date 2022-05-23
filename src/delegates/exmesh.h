@@ -6,33 +6,49 @@
 
 #include <noo_client_interface.h>
 
-struct QtGeomInfo {
-    UniqueQPtr<Qt3DCore::QGeometry>           geom;
-    UniqueQPtr<Qt3DRender::QGeometryRenderer> renderer;
+#include <QQuick3DGeometry>
 
-    QByteArray                       instance_data;
-    UniqueQPtr<Qt3DCore::QBuffer>    instance_buffer;
-    UniqueQPtr<Qt3DCore::QAttribute> instance_attribute;
+// struct QtGeomInfo {
+//    UniqueQPtr<Qt3DCore::QGeometry>           geom;
+//    UniqueQPtr<Qt3DRender::QGeometryRenderer> renderer;
 
-    bool is_2d = false;
+//    QByteArray                       instance_data;
+//    UniqueQPtr<Qt3DCore::QBuffer>    instance_buffer;
+//    UniqueQPtr<Qt3DCore::QAttribute> instance_attribute;
 
-    QtGeomInfo();
-    ~QtGeomInfo();
+//    bool is_2d = false;
 
-    QtGeomInfo(QtGeomInfo&&);
-    QtGeomInfo& operator=(QtGeomInfo&&);
+//    QtGeomInfo();
+//    ~QtGeomInfo();
+
+//    QtGeomInfo(QtGeomInfo&&);
+//    QtGeomInfo& operator=(QtGeomInfo&&);
+//};
+
+class ExMeshChangeNotifier;
+
+class ExMeshGeometry : public QQuick3DGeometry {
+    nooc::MeshInit m_data;
+
+public:
+    ExMeshGeometry(nooc::MeshInit const&);
 };
 
 class ExMesh : public nooc::MeshDelegate {
-    nooc::MeshData     m_data;
-    Qt3DCore::QEntity* m_scene_root;
+    Q_OBJECT
+
+    // nooc::MeshData             m_data;
+    size_t                     m_iteration = -1;
+    UniqueQPtr<ExMeshGeometry> m_geometry;
+
+    size_t m_views_waiting = 0;
 
 public:
     static QStringList header();
 
-    ExMesh(noo::MeshID           id,
-           nooc::MeshData const& md,
-           Qt3DCore::QEntity*    scene_root);
+    ExMesh(noo::GeometryID       id,
+           nooc::MeshInit const& md,
+           ExMeshChangeNotifier* notifier);
 
     ~ExMesh();
 
@@ -43,7 +59,26 @@ public:
     QString  get_name() const;
     QVariant get_column(int c) const;
 
-    QtGeomInfo make_new_info(std::span<glm::mat4> instances);
+    QStringList get_sub_info_header() const;
+    QStringList get_sub_info(int);
+
+    //    QtGeomInfo make_new_info(std::span<glm::mat4> instances);
+
+signals:
+    void ask_recreate(int64_t old_id, int64_t new_id, ExMeshGeometry* data);
+};
+
+// =============================================================================
+
+class ExMeshChangeNotifier : public QObject {
+    Q_OBJECT
+
+public:
+    explicit ExMeshChangeNotifier(QObject* parent = nullptr);
+    ~ExMeshChangeNotifier();
+
+signals:
+    void ask_recreate(int64_t old_id, int64_t new_id, ExMeshGeometry* data);
 };
 
 

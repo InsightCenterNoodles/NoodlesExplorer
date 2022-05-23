@@ -527,9 +527,7 @@ void ChartViewer::add_selection() {
 
     if (name.isEmpty()) { name = QDateTime::currentDateTime().toString(); }
 
-    auto local_str = name.toStdString();
-
-    m_attached_table->request_selection_update(local_str, std::move(sel));
+    m_attached_table->request_selection_update(name, std::move(sel));
 }
 
 void ChartViewer::del_selection() {

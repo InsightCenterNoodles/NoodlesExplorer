@@ -4,8 +4,6 @@
 #include "delegates/extable.h"
 #include "tabledata.h"
 
-#include <noo_any.h>
-
 void AddDataDialog::setup() {
     // m_ui_root->dataView->setModel(m_table->table_data().get());
 
@@ -64,13 +62,13 @@ AddDataDialog::~AddDataDialog() {
     delete ui;
 }
 
-noo::AnyVarList AddDataDialog::get_data() const {
+QCborArray AddDataDialog::get_data() const {
     // should be returned as a list of columns
 
-    noo::AnyVarList l;
+    QCborArray l;
 
     for (int ci = 0; ci < ui->tableWidget->columnCount(); ci++) {
-        noo::AnyVarList this_col;
+        QCborArray this_col;
 
         for (int ri = 0; ri < ui->tableWidget->rowCount() - 1; ri++) {
             auto* item = ui->tableWidget->item(ri, ci);
@@ -82,13 +80,13 @@ noo::AnyVarList AddDataDialog::get_data() const {
             auto value = d.toDouble(&ok);
 
             if (!ok) {
-                this_col.emplace_back(d.toString().toStdString());
+                this_col << d.toString();
             } else {
-                this_col.emplace_back(value);
+                this_col << value;
             }
         }
 
-        l.emplace_back(std::move(this_col));
+        l << std::move(this_col);
     }
 
     return l;

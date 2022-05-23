@@ -34,15 +34,18 @@ State::State(QObject* parent) : QObject(parent) {
 
     m_root_entity = new Qt3DCore::QEntity();
 
-    m_method_list   = new ComponentListModel<ExMethod>(this);
-    m_signal_list   = new ComponentListModel<ExSignal>(this);
-    m_table_list    = new ComponentListModel<ExTable>(this);
-    m_buffer_list   = new ComponentListModel<ExBuffer>(this);
-    m_texture_list  = new ComponentListModel<ExTexture>(this);
-    m_material_list = new ComponentListModel<ExMaterial>(this);
-    m_light_list    = new ComponentListModel<ExLight>(this);
-    m_mesh_list     = new ComponentListModel<ExMesh>(this);
-    m_object_list   = new ComponentListModel<ExObject>(this);
+    m_method_list      = new ComponentListModel<ExMethod>(this);
+    m_signal_list      = new ComponentListModel<ExSignal>(this);
+    m_table_list       = new ComponentListModel<ExTable>(this);
+    m_buffer_list      = new ComponentListModel<ExBuffer>(this);
+    m_buffer_view_list = new ComponentListModel<ExBufferView>(this);
+    m_texture_list     = new ComponentListModel<ExTexture>(this);
+    m_sampler_list     = new ComponentListModel<ExSampler>(this);
+    m_image_list       = new ComponentListModel<ExImage>(this);
+    m_material_list    = new ComponentListModel<ExMaterial>(this);
+    m_light_list       = new ComponentListModel<ExLight>(this);
+    m_mesh_list        = new ComponentListModel<ExMesh>(this);
+    m_object_list      = new ComponentListModel<ExObject>(this);
 
     m_ent_notifier = new EntityChangeNotifier(this);
 
@@ -122,35 +125,40 @@ bool State::start_connection(QString name, QString url) {
     delegates.client_name = name;
 
     delegates.tex_maker = [this](noo::TextureID           id,
-                                 nooc::TextureData const& md) {
+                                 nooc::TextureInit const& md) {
         return m_texture_list->add_item(id, md);
     };
     delegates.buffer_maker = [this](noo::BufferID           id,
-                                    nooc::BufferData const& md) {
-        return m_buffer_list->add_item(id, md, m_root_entity);
+                                    nooc::BufferInit const& md) {
+        return m_buffer_list->add_item(id, md);
     };
-    delegates.table_maker = [this](noo::TableID id, nooc::TableData const& md) {
+    delegates.buffer_view_maker = [this](noo::BufferViewID           id,
+                                         nooc::BufferViewInit const& md) {
+        return m_buffer_view_list->add_item(id, md);
+    };
+    delegates.table_maker = [this](noo::TableID id, nooc::TableInit const& md) {
         return m_table_list->add_item(id, md);
     };
-    delegates.light_maker = [this](noo::LightID id, nooc::LightData const& md) {
-        return m_light_list->add_item(id, md, m_root_entity);
+    delegates.light_maker = [this](noo::LightID id, nooc::LightInit const& md) {
+        return m_light_list->add_item(id, md);
     };
     delegates.mat_maker = [this](noo::MaterialID           id,
-                                 nooc::MaterialData const& md) {
-        return m_material_list->add_item(id, md, m_root_entity);
+                                 nooc::MaterialInit const& md) {
+        return m_material_list->add_item(id, md);
     };
-    delegates.mesh_maker = [this](noo::MeshID id, nooc::MeshData const& md) {
-        return m_mesh_list->add_item(id, md, m_root_entity);
+    delegates.mesh_maker = [this](noo::GeometryID       id,
+                                  nooc::MeshInit const& md) {
+        return m_mesh_list->add_item(id, md, nullptr);
     };
-    delegates.object_maker = [this](noo::ObjectID                 id,
-                                    nooc::ObjectUpdateData const& md) {
-        return m_object_list->add_item(id, md, m_root_entity, m_ent_notifier);
+    delegates.object_maker = [this](noo::EntityID           id,
+                                    nooc::EntityInit const& md) {
+        return m_object_list->add_item(id, md, m_ent_notifier);
     };
-    delegates.sig_maker = [this](noo::SignalID id, nooc::SignalData const& md) {
+    delegates.sig_maker = [this](noo::SignalID id, nooc::SignalInit const& md) {
         return m_signal_list->add_item(id, md);
     };
     delegates.method_maker = [this](noo::MethodID           id,
-                                    nooc::MethodData const& md) {
+                                    nooc::MethodInit const& md) {
         return m_method_list->add_item(id, md);
     };
     delegates.doc_maker = [this]() {

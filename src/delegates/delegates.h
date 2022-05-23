@@ -25,6 +25,16 @@ class QTreeWidgetItem;
 
 class QInstancedMetalRoughMaterial;
 
+class IterationCounter {
+    size_t m_counter = 0;
+
+public:
+    size_t next() {
+        m_counter++;
+        return m_counter;
+    }
+};
+
 
 template <class T>
 struct UniqueQPtr {
@@ -38,7 +48,7 @@ struct UniqueQPtr {
         if (pointer) { pointer->deleteLater(); }
     }
 
-    UniqueQPtr(UniqueQPtr const&) = delete;
+    UniqueQPtr(UniqueQPtr const&)            = delete;
     UniqueQPtr& operator=(UniqueQPtr const&) = delete;
 
     UniqueQPtr(UniqueQPtr&& other) {
@@ -95,23 +105,18 @@ QString ptr_to_id(T* ptr) {
     return ptr->id().to_qstring();
 }
 
-
 template <class T>
-QStringList build_id_list(std::vector<T*> const& methods) {
-    QStringList ret;
-
-    for (auto const& ptr : methods) {
-        ret << ptr->id().to_qstring();
-    }
-
-    return ret;
+QString ptr_to_id(std::optional<T> const& ptr) {
+    if (!ptr) return "None";
+    return ptr_to_id(*ptr);
 }
 
-template <class T>
-QStringList build_id_list(std::vector<QPointer<T>> const& methods) {
+
+template <class Container>
+QStringList build_id_list(Container const& things) {
     QStringList ret;
 
-    for (auto const& ptr : methods) {
+    for (auto const& ptr : things) {
         ret << ptr->id().to_qstring();
     }
 

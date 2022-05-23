@@ -10,15 +10,33 @@ import Qt.labs.settings 1.1
 import EntityShim 1.0
 
 Item {
+
+    var entity_list = {}
+
     Connections {
         target: entity_notifier
 
-        function onAsk_recreate(oid, nid, tf, mat, mesh, inst) {
-            console.log("REQUEST NEW GFX", oid, nid, tf, mat, mesh, inst)
+        function onAsk_delete(oid) {
+            entity_list[oid].destroy()
+            delete entity_list[oid]
+        }
+        function onAsk_create(oid) {
+            var comp = Qt.createComponent("RenderableEntity.qml")
+            var new_ent = comp.createObject(scene_3d, {})
+            entity_list[oid] = new_ent
+        }
+        function onAsk_set_parent(oid, pid) {// HOW DO WE DO THIS??
+        }
+        function onAsk_set_tf(oid, mat) {
+            entity_list[oid].transform.matrix = mat
+        }
+        function onAsk_set_render(oid) {
+            delete entity_list[oid]
         }
     }
 
     Scene3D {
+        id: scene_3d
         anchors.fill: parent
 
         focus: true
