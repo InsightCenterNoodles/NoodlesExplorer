@@ -8,17 +8,15 @@
 #include <span>
 
 
-class TableColumn : public std::variant<QVector<double>, QStringList> {
-public:
-    QString name;
-
-    using variant::variant;
+struct TableColumn {
+    QString                                    name;
+    std::variant<QVector<double>, QStringList> list;
 
     size_t size() const;
     bool   is_string() const;
 
     std::span<double const> as_doubles() const;
-    QStringList const&      as_string() const;
+    QStringList             as_string() const;
 
     void append(std::span<double const>);
     void append(QStringList const&);

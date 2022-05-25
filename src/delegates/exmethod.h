@@ -6,6 +6,8 @@
 #include <noo_client_interface.h>
 
 class ExMethod : public nooc::MethodDelegate {
+    Q_OBJECT
+
     QStringList m_argument_names;
     QStringList m_argument_details;
 
@@ -28,6 +30,9 @@ public:
     QStringList argument_details() const { return m_argument_details; }
 
     // void prepare_delete() override { unregister(); }
+
+signals:
+    void updated();
 };
 
 #endif // EXMETHOD_H

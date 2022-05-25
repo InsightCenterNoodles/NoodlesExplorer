@@ -11,7 +11,7 @@ import EntityShim 1.0
 
 Item {
 
-    var entity_list = {}
+    property var entity_list: ({})
 
     Connections {
         target: entity_notifier

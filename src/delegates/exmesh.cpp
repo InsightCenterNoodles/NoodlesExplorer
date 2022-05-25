@@ -447,7 +447,7 @@ QStringList ExMesh::get_sub_info_header() const {
 QStringList ExMesh::get_sub_info(int i) {
     if (i < 0 or i >= info().patches.size()) return {};
     info().patches.at(i);
-    QStringList() << "TBD";
+    return QStringList() << "TBD";
 }
 
 // QtGeomInfo ExMesh::make_new_info(std::span<glm::mat4> instances) {

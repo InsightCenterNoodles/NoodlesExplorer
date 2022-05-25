@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 
-Popup {
+Dialog {
     id: color_pick_pop
     property color picked_color: {
         return Qt.rgba(r_slider.value / 255., g_slider.value / 255.,

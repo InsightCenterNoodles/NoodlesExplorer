@@ -75,3 +75,45 @@ size_t ExBuffer::size() const {
 
 //    m_3d_entity->setData(buff);
 //}
+
+QStringList ExBufferView::header() {
+    return { "ID", "Name", "Size", "Ready" };
+}
+
+ExBufferView::ExBufferView(noo::BufferViewID id, nooc::BufferViewInit const& md)
+    : nooc::BufferViewDelegate(id, md) {
+
+    connect(this, &ExBufferView::data_ready, this, &ExBufferView::updated);
+}
+
+ExBufferView::~ExBufferView() = default;
+
+int ExBufferView::get_id() const {
+    return this->id().id_slot;
+}
+int ExBufferView::get_id_gen() const {
+    return this->id().id_gen;
+}
+QString ExBufferView::get_name() const {
+    return id().to_qstring();
+}
+
+QVariant ExBufferView::get_column(int c) const {
+    switch (c) {
+    case 0: return get_id();
+    case 1: return get_name();
+    case 2: return (qint64)size();
+    case 3: return is_data_ready();
+    }
+    return {};
+}
+
+size_t ExBufferView::size() const {
+    return info().length;
+}
+
+std::span<char const> ExBufferView::data() const {
+    if (!this->is_data_ready()) return {};
+    auto const& buff = info().source_buffer->data();
+    return std::span(buff).subspan(info().offset, info().length);
+}

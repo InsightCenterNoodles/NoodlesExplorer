@@ -4,6 +4,101 @@
 
 #include <QDebug>
 
+size_t TableColumn::size() const {
+    return std::visit([](auto const& a) { return a.size(); }, list);
+}
+bool TableColumn::is_string() const {
+    return std::holds_alternative<QStringList>(list);
+}
+
+std::span<double const> TableColumn::as_doubles() const {
+    return VMATCH(
+        list,
+        VCASE(QVector<double> const& d) { return std::span<double const>(d); },
+        VCASE(QStringList const&) { return std::span<double const>(); });
+}
+
+QStringList TableColumn::as_string() const {
+    return VMATCH(
+        list,
+        VCASE(QVector<double> const&) { return QStringList(); },
+        VCASE(QStringList d) { return d; });
+}
+
+void TableColumn::append(std::span<double const> s) {
+    VMATCH(
+        list,
+        VCASE(QVector<double> & vector) {
+            vector << QVector<double>(s.begin(), s.end());
+        },
+        VCASE(QStringList & vector) {
+            for (auto d : s) {
+                vector << QString::number(d);
+            }
+        });
+}
+void TableColumn::append(QStringList const& s) {
+    VMATCH(
+        list,
+        VCASE(QVector<double> & vector) {
+            for (auto const& v : s) {
+                vector << v.toDouble();
+            }
+        },
+        VCASE(QStringList & vector) { vector << s; });
+}
+void TableColumn::append(QCborArray const& s) {
+    VMATCH(
+        list,
+        VCASE(QVector<double> & vector) {
+            for (auto v : s) {
+                vector << v.toDouble();
+            }
+        },
+        VCASE(QStringList & vector) {
+            for (auto v : s) {
+                vector << v.toString();
+            }
+        });
+}
+void TableColumn::append(double d) {
+    append(std::span(&d, 1));
+}
+void TableColumn::append(QString s) {
+    append(QStringList() << s);
+}
+
+void TableColumn::set(size_t row, double d) {
+    VMATCH(
+        list,
+        VCASE(QVector<double> & vector) { vector[row] = d; },
+        VCASE(QStringList & vector) { vector[row] = QString::number(d); });
+}
+void TableColumn::set(size_t row, QCborValue a) {
+    VMATCH(
+        list,
+        VCASE(QVector<double> & vector) { vector[row] = a.toDouble(); },
+        VCASE(QStringList & vector) { vector[row] = a.toString(); });
+}
+void TableColumn::set(size_t row, QString s) {
+    VMATCH(
+        list,
+        VCASE(QVector<double> & vector) { vector[row] = s.toDouble(); },
+        VCASE(QStringList & vector) { vector[row] = s; });
+}
+
+void TableColumn::erase(size_t row) {
+    VMATCH(
+        list, VCASE(auto& vector) { vector.remove(row); });
+}
+
+void TableColumn::clear() {
+    VMATCH(
+        list, VCASE(auto& vector) { vector.clear(); });
+}
+
+// =============================================================================
+
 void SelectionsTableData::new_selection(QString const&        name,
                                         noo::Selection const& ref) {
     auto const location = m_selections.size();
@@ -156,7 +251,7 @@ void RemoteTableData::on_table_initialize(QCborArray const& names,
         if (first.isInteger() or first.isDouble()) {
             auto coerced = noo::coerce_to_real_list(data_col);
 
-            new_c      = coerced;
+            new_c.list = coerced;
             new_c.name = names[c_i].toString(QString("Column %1").arg(c_i));
             continue;
         }
@@ -169,7 +264,7 @@ void RemoteTableData::on_table_initialize(QCborArray const& names,
             strs[r_i] = list[r_i].toString();
         }
 
-        new_c      = std::move(strs);
+        new_c.list = std::move(strs);
         new_c.name = names[c_i].toString();
     }
 

@@ -7,6 +7,8 @@
 #include <noo_client_interface.h>
 
 class ExSignal : public nooc::SignalDelegate {
+    Q_OBJECT
+
     QStringList m_cached_args;
 
 public:
@@ -22,6 +24,8 @@ public:
     QVariant get_column(int c) const;
 
     // void prepare_delete() override { unregister(); }
+signals:
+    void updated();
 };
 
 #endif // EXSIGNAL_H

@@ -66,6 +66,7 @@ public:
 
 signals:
     void ask_recreate(int64_t old_id, int64_t new_id, ExMeshGeometry* data);
+    void updated();
 };
 
 // =============================================================================
@@ -74,8 +75,9 @@ class ExMeshChangeNotifier : public QObject {
     Q_OBJECT
 
 public:
-    explicit ExMeshChangeNotifier(QObject* parent = nullptr);
-    ~ExMeshChangeNotifier();
+    explicit ExMeshChangeNotifier(QObject* parent = nullptr)
+        : QObject(parent) { }
+    ~ExMeshChangeNotifier() = default;
 
 signals:
     void ask_recreate(int64_t old_id, int64_t new_id, ExMeshGeometry* data);
