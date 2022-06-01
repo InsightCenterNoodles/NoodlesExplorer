@@ -4,6 +4,9 @@
 #include <noo_client_interface.h>
 
 #include <QAbstractTableModel>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlTableModel>
 
 #include <span>
 
@@ -132,6 +135,31 @@ public:
 
 signals:
     void ask_update_row(int64_t key, QCborArray&);
+};
+
+
+// =============================================================================
+
+struct ExTableData {
+    QSqlDatabase   database;
+    QSqlTableModel model;
+
+    bool open() {
+        QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+        db.setDatabaseName(":memory:");
+        if (!db.open()) {
+            qCritical() << "unable to open database!";
+            return false;
+        }
+        return true;
+    }
+
+    ExTableData() = default;
+    ~ExTableData() {
+        if (database.isOpen()) { database.close(); }
+    }
+
+    QSqlQuery new_query() { return QSqlQuery(database); }
 };
 
 #endif // TABLEDATA_H

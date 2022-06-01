@@ -27,7 +27,7 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG afbff52a0f269d9f679a88f19f11156bc04a1076
+    GIT_TAG 6dd104234e712e4653a7bd9f0986ab44e6acc3cb
 )
 
 CPMAddPackage(
@@ -36,7 +36,7 @@ CPMAddPackage(
     GIT_TAG v0.8.0
 )
 
-find_package(Qt6 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts Quick3D)
+find_package(Qt6 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts Quick3D Sql)
 
 # Options ======================================================================
 
@@ -61,7 +61,7 @@ target_link_libraries(NoodlesExplorer PRIVATE noodles)
 target_link_libraries(NoodlesExplorer PUBLIC
     Qt::Gui Qt::Widgets Qt::Core
     Qt::3DCore Qt::3DExtras Qt::3DRender
-    Qt::Quick Qt::Charts Qt::Quick3D
+    Qt::Quick Qt::Charts Qt::Quick3D Qt::Sql
 )
 
 target_sources(NoodlesExplorer

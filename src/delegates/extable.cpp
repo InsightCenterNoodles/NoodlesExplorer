@@ -6,6 +6,9 @@
 
 #include <QDebug>
 
+
+// =============================================================================
+
 QStringList ExTable::header() {
     return { "ID", "Name" };
 }
@@ -33,16 +36,14 @@ QVariant ExTable::get_column(int c) const {
     return {};
 }
 
-void ExTable::on_update(nooc::TableUpdate const& md) {
+void ExTable::on_update(nooc::TableUpdate const& /*md*/) {
     // nothing atm
 }
 
-void ExTable::on_table_initialize(QCborArray const& names,
-                                  QCborValue        keys,
-                                  QCborArray const& data_cols,
-                                  QCborArray const& selections) {
-
-    m_subscribed = true;
+void ExTable::on_table_initialize(QVector<ColumnInfo> const& names,
+                                  QVector<int64_t>           keys,
+                                  QVector<QCborArray> const& data_cols,
+                                  QVector<noo::Selection>    selections) {
 
     qDebug() << Q_FUNC_INFO;
 
@@ -50,9 +51,13 @@ void ExTable::on_table_initialize(QCborArray const& names,
     if (names.size() != data_cols.size()) return;
     if (names.size() == 0) return;
 
-    m_data = std::make_shared<RemoteTableData>();
+    m_data = std::make_unique<ExTableData>();
 
-    m_data->on_table_initialize(names, keys, data_cols, selections);
+    bool ok = m_data->open();
+
+    if (!ok) return;
+
+    m_subscribed = true;
 
     connect(m_data.get(),
             &RemoteTableData::ask_update_row,
