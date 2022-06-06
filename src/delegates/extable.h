@@ -6,12 +6,12 @@
 
 #include <noo_client_interface.h>
 
-struct ExTableData;
+struct RemoteTableData;
 
 class ExTable : public nooc::TableDelegate {
     Q_OBJECT
 
-    std::unique_ptr<ExTableData> m_data;
+    std::unique_ptr<RemoteTableData> m_data;
 
     bool m_subscribed = false;
 
@@ -32,6 +32,7 @@ public:
     void on_update(nooc::TableUpdate const&) override;
 
     QAbstractTableModel* table_data() const;
+    QAbstractTableModel* selections_model() const;
 
     bool is_subscribed() const { return m_subscribed; }
 
@@ -44,7 +45,7 @@ public:
     void on_table_reset() override;
     void on_table_updated(QVector<int64_t> keys, QCborArray columns) override;
     void on_table_rows_removed(QVector<int64_t> keys) override;
-    void on_table_selection_updated(QString, noo::Selection const&) override;
+    void on_table_selection_updated(noo::Selection const&) override;
 
 signals:
     void fetch_new_remote_table_data();

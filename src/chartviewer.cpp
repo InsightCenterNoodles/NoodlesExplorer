@@ -68,8 +68,13 @@ void ChartSeriesPart::rebuild(ChartViewer& chart_view) {
 
     if (a_col < 0 or b_col < 0) return;
 
-    auto& data_a = chart_view.current_data()->column(a_col);
-    auto& data_b = chart_view.current_data()->column(b_col);
+    auto source_table =
+        qobject_cast<RemoteTableData*>(chart_view.current_data());
+
+    if (!source_table) return;
+
+    auto& data_a = source_table->column(a_col);
+    auto& data_b = source_table->column(b_col);
 
     if (data_a.is_string() or data_b.is_string()) return;
 
@@ -401,6 +406,16 @@ void ChartViewer::setup_chart_page() {
             &ChartPlotView::set_selection_mode);
 }
 
+static QStringList make_column_names(QAbstractTableModel* model) {
+    QStringList ret;
+
+    for (auto i = 0; i < model->columnCount(); i++) {
+        ret << model->headerData(i, Qt::Orientation::Horizontal).toString();
+    }
+
+    return ret;
+}
+
 ChartViewer::ChartViewer(QPointer<ExTable> t, QObject* parent)
     : QObject(parent),
       m_attached_table(t),
@@ -434,8 +449,8 @@ void ChartViewer::on_table_changed() {
     m_ui_root->xColumn->clear();
     m_ui_root->yColumn->clear();
 
-    m_ui_root->xColumn->addItems(m_data->column_names());
-    m_ui_root->yColumn->addItems(m_data->column_names());
+    m_ui_root->xColumn->addItems(make_column_names(m_data));
+    m_ui_root->yColumn->addItems(make_column_names(m_data));
 
     m_series_table.clear();
 
@@ -462,8 +477,9 @@ void ChartViewer::on_table_changed() {
 
     // selections
 
-    if (m_data->selections()) {
-        m_ui_root->selectionsListView->setModel(m_data->selections());
+    if (m_attached_table->selections_model()) {
+        m_ui_root->selectionsListView->setModel(
+            m_attached_table->selections_model());
     }
 }
 
@@ -493,10 +509,7 @@ void ChartViewer::on_edit_selection_clicked(bool down) {
 
         auto row = rows.value(0);
 
-        auto name = m_attached_table->table_data()
-                        ->selections()
-                        ->slot_at(row.row())
-                        ->name;
+        auto name = m_attached_table->selections_model()->data(row).toString();
 
         m_editing_selection = name;
 
@@ -511,7 +524,9 @@ void ChartViewer::on_edit_selection_clicked(bool down) {
 
 void ChartViewer::add_selection() {
     // auto populate with the first row
-    auto key = m_attached_table->table_data()->key_for_row(0);
+    auto key = m_attached_table->table_data()
+                   ->headerData(0, Qt::Orientation::Vertical)
+                   .toInt();
 
     if (key < 0) return;
 
@@ -520,14 +535,16 @@ void ChartViewer::add_selection() {
     sel.rows.push_back(key);
 
 
-    auto name = QInputDialog::getText(m_widget,
-                                      "New selection name",
-                                      "New selection name:",
-                                      QLineEdit::Normal);
+    sel.name = QInputDialog::getText(m_widget,
+                                     "New selection name",
+                                     "New selection name:",
+                                     QLineEdit::Normal);
 
-    if (name.isEmpty()) { name = QDateTime::currentDateTime().toString(); }
+    if (sel.name.isEmpty()) {
+        sel.name = QDateTime::currentDateTime().toString();
+    }
 
-    m_attached_table->request_selection_update(name, std::move(sel));
+    m_attached_table->request_selection_update(std::move(sel));
 }
 
 void ChartViewer::del_selection() {
@@ -537,8 +554,10 @@ void ChartViewer::del_selection() {
 
     auto row = rows.value(0);
 
-    auto name =
-        m_attached_table->table_data()->selections()->slot_at(row.row())->name;
+    auto name = m_attached_table->selections_model()->data(row).toString();
 
-    m_attached_table->request_selection_update(name, {});
+    noo::Selection sel;
+    sel.name = name;
+
+    m_attached_table->request_selection_update(sel);
 }

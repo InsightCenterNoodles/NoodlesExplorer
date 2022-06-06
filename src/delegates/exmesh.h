@@ -28,10 +28,10 @@
 class ExMeshChangeNotifier;
 
 class ExMeshGeometry : public QQuick3DGeometry {
-    nooc::MeshInit m_data;
+    QPointer<nooc::MeshInit const> m_data;
 
 public:
-    ExMeshGeometry(nooc::MeshInit const&);
+    ExMeshGeometry(nooc::MeshInit const*);
 };
 
 class ExMesh : public nooc::MeshDelegate {

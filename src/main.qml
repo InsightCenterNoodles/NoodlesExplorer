@@ -189,11 +189,5 @@ ApplicationWindow {
 
             Material.foreground: settings.clear_color.hslLightness > .5 ? "black" : "white"
         }
-
-        //        Image {
-        //            anchors.fill: parent
-        //            source: "qrc:/img/test.png"
-        //            mipmap: true
-        //        }
     }
 }

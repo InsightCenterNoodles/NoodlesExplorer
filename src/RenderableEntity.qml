@@ -34,5 +34,6 @@ Entity {
         rotation: fromAxisAndAngle(Qt.vector3d(1, 0, 0), 0)
     }
 
-    components: [mesh, material, transform, picker]
+    //components: [mesh, material, transform, picker]
+    components: [mesh, material, transform]
 }

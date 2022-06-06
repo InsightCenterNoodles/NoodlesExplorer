@@ -4,10 +4,20 @@
 #include "delegates/extable.h"
 #include "tabledata.h"
 
+static QStringList make_column_names(QAbstractTableModel* model) {
+    QStringList ret;
+
+    for (auto i = 0; i < model->columnCount(); i++) {
+        ret << model->headerData(i, Qt::Orientation::Horizontal).toString();
+    }
+
+    return ret;
+}
+
 void AddDataDialog::setup() {
     // m_ui_root->dataView->setModel(m_table->table_data().get());
 
-    auto names = m_table->table_data()->column_names();
+    auto names = make_column_names(m_table->table_data());
 
     ui->tableWidget->setColumnCount(names.size());
 
@@ -24,7 +34,7 @@ void AddDataDialog::double_clicked(QTableWidgetItem* item) {
 
     ui->tableWidget->insertRow(new_row_item->row());
 
-    auto names = m_table->table_data()->column_names();
+    auto names = make_column_names(m_table->table_data());
 
     ui->tableWidget->setSpan(
         new_row_item->row(), new_row_item->column(), 1, names.size());

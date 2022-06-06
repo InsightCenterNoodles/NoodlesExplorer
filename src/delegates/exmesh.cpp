@@ -64,7 +64,7 @@ void copy_to(nooc::Attribute const& ref, std::span<char> dest) {
     std::memcpy(dest.data(), source_ptr, copy_size);
 }
 
-ExMeshGeometry::ExMeshGeometry(nooc::MeshInit const& d) : m_data(d) {
+ExMeshGeometry::ExMeshGeometry(nooc::MeshInit const* d) : m_data(d) {
     QByteArray new_buffer;
 
     // lets do the repack dance
@@ -389,7 +389,7 @@ ExMesh::ExMesh(noo::GeometryID       id,
                nooc::MeshInit const& md,
                ExMeshChangeNotifier* notifier)
     : nooc::MeshDelegate(id, md) {
-    m_geometry.reset(new ExMeshGeometry(md));
+    m_geometry.reset(new ExMeshGeometry(&md));
 
     connect(this,
             &ExMesh::ask_recreate,
@@ -400,14 +400,13 @@ ExMesh::ExMesh(noo::GeometryID       id,
     m_iteration = exmesh_object_counter.next();
 
     {
-        for (auto const& patch : info().patches) {
-            for (auto const& attrib : patch.attributes) {
+        for (auto const& patch : info()->patches) {
+            for (auto const& attrib : patch->attributes) {
                 m_views_waiting += !attrib.view->is_data_ready();
             }
 
-            if (patch.indicies) {
-                m_views_waiting +=
-                    !patch.indicies.value().view->is_data_ready();
+            if (patch->indicies) {
+                m_views_waiting += !patch->indicies->view->is_data_ready();
             }
         }
     }
@@ -434,7 +433,7 @@ QVariant ExMesh::get_column(int c) const {
     case 0: return get_id();
     case 1: return get_name();
     case 2: {
-        return info().patches.size();
+        return info()->patches.size();
     }
     }
     return {};
@@ -445,8 +444,8 @@ QStringList ExMesh::get_sub_info_header() const {
     return s;
 }
 QStringList ExMesh::get_sub_info(int i) {
-    if (i < 0 or i >= info().patches.size()) return {};
-    info().patches.at(i);
+    if (i < 0 or i >= info()->patches.size()) return {};
+    info()->patches.at(i);
     return QStringList() << "TBD";
 }
 

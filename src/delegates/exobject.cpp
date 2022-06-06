@@ -58,40 +58,38 @@ QString WebPart::info_string() const {
 //    qDebug() << Q_FUNC_INFO << "END" << !!m_att_mesh_details << !!m_material;
 //}
 
-RenderPart::RenderPart(Qt3DCore::QEntity*         p_entity,
-                       ExMaterial*                ma,
-                       ExMesh*                    me,
-                       std::span<glm::mat4 const> inst,
-                       QObject*                   parent)
+RenderPart::RenderPart( // Qt3DCore::QEntity*         p_entity,
+    ExMesh*                    me,
+    std::span<glm::mat4 const> inst,
+    QObject*                   parent)
     : RepresentationPart(parent), m_instances(inst.begin(), inst.end()) {
 
-    m_3d_entity = new Qt3DCore::QEntity();
-    m_3d_entity->setParent(p_entity);
+    //    m_3d_entity = new Qt3DCore::QEntity();
+    //    m_3d_entity->setParent(p_entity);
 
-    qDebug() << Q_FUNC_INFO << p_entity << m_3d_entity.data();
+    // qDebug() << Q_FUNC_INFO << p_entity << m_3d_entity.data();
 
-    m_material.set(ma);
-    m_mesh.set(me);
+    m_mesh = me;
 
-    connect(&m_material,
-            &AttachmentBase::attachment_changed,
-            this,
-            &RenderPart::material_changed);
+    //    connect(&m_material,
+    //            &AttachmentBase::attachment_changed,
+    //            this,
+    //            &RenderPart::material_changed);
 
-    connect(&m_material,
-            &AttachmentBase::attachment_updated,
-            this,
-            &RenderPart::material_changed);
+    //    connect(&m_material,
+    //            &AttachmentBase::attachment_updated,
+    //            this,
+    //            &RenderPart::material_changed);
 
-    connect(&m_mesh,
-            &AttachmentBase::attachment_changed,
-            this,
-            &RenderPart::mesh_changed);
+    //    connect(&m_mesh,
+    //            &AttachmentBase::attachment_changed,
+    //            this,
+    //            &RenderPart::mesh_changed);
 
-    connect(&m_mesh,
-            &AttachmentBase::attachment_updated,
-            this,
-            &RenderPart::mesh_changed);
+    //    connect(&m_mesh,
+    //            &AttachmentBase::attachment_updated,
+    //            this,
+    //            &RenderPart::mesh_changed);
 
 
     //    remake_mesh_attachment();
@@ -100,8 +98,7 @@ RenderPart::RenderPart(Qt3DCore::QEntity*         p_entity,
 RenderPart::~RenderPart() { }
 
 QString RenderPart::info_string() const {
-    return QString("Render: Mesh %1, Mat %2, Inst %3")
-        .arg(ptr_to_id(m_material.get()))
+    return QString("Render: Mesh %1, Inst %2")
         .arg(ptr_to_id(m_mesh.get()))
         .arg(m_instances.size());
 }
@@ -148,6 +145,7 @@ void ExObject::update_from(nooc::EntityUpdateData const& md) {
 
         emit ask_set_tf(get_id(), tf.transposed());
     }
+#endif
 
     if (md.definition) {
         if (m_attached_part) {
@@ -155,21 +153,24 @@ void ExObject::update_from(nooc::EntityUpdateData const& md) {
             m_attached_part = {};
         }
 
-        VMATCH(
-            *md.definition,
-            VCASE(std::monostate) {},
-            VCASE(nooc::ObjectTextDefinition const&) {},
-            VCASE(nooc::ObjectWebpageDefinition const&) {},
-            VCASE(nooc::ObjectRenderableDefinition const& def) {
-                auto new_material = dynamic_cast<ExMaterial*>(def.material);
-                auto new_mesh     = dynamic_cast<ExMesh*>(def.mesh);
+        VMATCH(*md.definition,
+               VCASE(std::monostate) {},
+               VCASE(nooc::EntityTextDefinition const&) {},
+               VCASE(nooc::EntityWebpageDefinition const&) {},
+               VCASE(nooc::EntityRenderableDefinition const& def) {
+                   //                        def.
+                   //                auto new_mesh     =
+                   //                dynamic_cast<ExMesh*>(def.mesh);
 
-                emit ask_set_render(get_id(), -1, -1, -1);
+                   //                emit ask_set_render(get_id(), -1, -1, -1);
 
-                m_attached_part = new RenderPart(
-                    m_3d_entity, new_material, new_mesh, def.instances, this);
-            });
+                   //                m_attached_part = new RenderPart(
+                   //                    m_3d_entity, new_material, new_mesh,
+                   //                    def.instances, this);
+               });
     }
+
+#if 0
 
     //    if (md.lights) {
     //        for (auto& ptr : m_lights) {
@@ -296,6 +297,8 @@ QVariant ExObject::get_column(int c) const {
     }
     return {};
 }
+
+void ExObject::on_complete() { }
 
 void ExObject::on_update(nooc::EntityUpdateData const& md) {
     update_from(md);

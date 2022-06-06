@@ -31,7 +31,7 @@ private slots:
     void del_selection();
     void update_selection();
 
-    void selection_double_clicked(QModelIndex const&);
+    // void selection_double_clicked(QModelIndex const&);
 signals:
 };
 

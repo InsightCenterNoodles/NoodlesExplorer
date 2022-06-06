@@ -40,6 +40,14 @@ void ExTable::on_update(nooc::TableUpdate const& /*md*/) {
     // nothing atm
 }
 
+QAbstractTableModel* ExTable::table_data() const {
+    return m_data.get();
+}
+QAbstractTableModel* ExTable::selections_model() const {
+    if (m_data) return m_data->selections();
+    return nullptr;
+}
+
 void ExTable::on_table_initialize(QVector<ColumnInfo> const& names,
                                   QVector<int64_t>           keys,
                                   QVector<QCborArray> const& data_cols,
@@ -51,11 +59,9 @@ void ExTable::on_table_initialize(QVector<ColumnInfo> const& names,
     if (names.size() != data_cols.size()) return;
     if (names.size() == 0) return;
 
-    m_data = std::make_unique<ExTableData>();
+    m_data = std::make_unique<RemoteTableData>();
 
-    bool ok = m_data->open();
-
-    if (!ok) return;
+    m_data->on_table_initialize(names, keys, data_cols, selections);
 
     m_subscribed = true;
 
@@ -73,16 +79,16 @@ void ExTable::on_table_reset() {
     if (m_data) m_data->on_table_reset();
 }
 
-void ExTable::on_table_updated(QCborValue keys, QCborValue columns) {
+void ExTable::on_table_updated(QVector<int64_t> keys, QCborArray columns) {
     qDebug() << Q_FUNC_INFO;
     if (m_data) m_data->on_table_updated(keys, columns);
 }
 
-void ExTable::on_table_rows_removed(QCborValue keys) {
+void ExTable::on_table_rows_removed(QVector<int64_t> keys) {
     qDebug() << Q_FUNC_INFO;
     if (m_data) m_data->on_table_rows_removed(keys);
 }
-void ExTable::on_table_selection_updated(QString s, noo::Selection const& r) {
+void ExTable::on_table_selection_updated(noo::Selection const& r) {
     qDebug() << Q_FUNC_INFO;
-    if (m_data) m_data->on_table_selection_updated(s, r);
+    if (m_data) m_data->on_table_selection_updated(r);
 }

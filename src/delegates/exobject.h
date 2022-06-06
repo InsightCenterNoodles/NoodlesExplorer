@@ -56,21 +56,19 @@ public:
 
 class RenderPart : public RepresentationPart {
     Q_OBJECT
-    AttachmentPoint<ExMaterial> m_material;
-    AttachmentPoint<ExMesh>     m_mesh;
-    std::vector<glm::mat4>      m_instances;
+    QPointer<ExMesh>       m_mesh;
+    std::vector<glm::mat4> m_instances;
 
-    UniqueQPtr<Qt3DCore::QEntity> m_3d_entity;
+    // UniqueQPtr<Qt3DCore::QEntity> m_3d_entity;
 
     //    std::optional<QtGeomInfo> m_att_mesh_details;
     //    void                      remake_mesh_attachment();
 
 public:
-    RenderPart(Qt3DCore::QEntity* p_entity,
-               ExMaterial*,
-               ExMesh*,
-               std::span<glm::mat4 const>,
-               QObject*);
+    RenderPart( // Qt3DCore::QEntity* p_entity,
+        ExMesh*,
+        std::span<glm::mat4 const>,
+        QObject*);
 
     ~RenderPart();
 
@@ -121,6 +119,7 @@ public:
 
     AttachedMethodListModel* attached_method_list() const;
 
+    void on_complete() override;
     void on_update(nooc::EntityUpdateData const&) override;
 
     //    Qt3DCore::QEntity* entity();

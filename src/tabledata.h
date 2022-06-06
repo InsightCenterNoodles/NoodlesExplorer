@@ -4,9 +4,6 @@
 #include <noo_client_interface.h>
 
 #include <QAbstractTableModel>
-#include <QSqlDatabase>
-#include <QSqlQuery>
-#include <QSqlTableModel>
 
 #include <span>
 
@@ -41,24 +38,25 @@ class SelectionsTableData : public QAbstractTableModel {
     Q_OBJECT
 
     struct SelectionSlot {
-        QString        name;
         noo::Selection selection;
         size_t         index;
     };
 
     using SelectionSlotPtr = std::shared_ptr<SelectionSlot>;
 
-    std::vector<SelectionSlotPtr>    m_selections;
+    QVector<SelectionSlotPtr>        m_selections;
     QHash<QString, SelectionSlotPtr> m_string_map;
 
-    void new_selection(QString const&, noo::Selection const&);
-    void update_selection(QString const&, noo::Selection const&);
+    void new_selection(noo::Selection const&);
+    void update_selection(noo::Selection const&);
     void del_selection(QString const&);
 
 public:
     explicit SelectionsTableData(QObject* parent = nullptr);
 
-    void on_table_selection_updated(QString, noo::Selection const&);
+    void set(QVector<noo::Selection>);
+
+    void on_table_selection_updated(noo::Selection const&);
 
     SelectionSlot const* slot_at(size_t) const;
 
@@ -94,15 +92,16 @@ public:
     explicit RemoteTableData(QObject* parent = nullptr);
 
 public:
-    void on_table_initialize(QCborArray const& names,
-                             QCborValue        keys,
-                             QCborArray const& data_cols,
-                             QCborArray const& selections);
+    void
+    on_table_initialize(QVector<nooc::TableDelegate::ColumnInfo> const& names,
+                        QVector<int64_t>                                keys,
+                        QVector<QCborArray> const& data_cols,
+                        QVector<noo::Selection>    selections);
 
     void on_table_reset();
-    void on_table_updated(QCborValue keys, QCborValue columns);
-    void on_table_rows_removed(QCborValue keys);
-    void on_table_selection_updated(QString, noo::Selection const&);
+    void on_table_updated(QVector<int64_t> keys, QCborArray columns);
+    void on_table_rows_removed(QVector<int64_t> keys);
+    void on_table_selection_updated(noo::Selection const&);
 
 
 public:
@@ -137,29 +136,9 @@ signals:
     void ask_update_row(int64_t key, QCborArray&);
 };
 
-
 // =============================================================================
 
-struct ExTableData {
-    QSqlDatabase   database;
-    QSqlTableModel model;
+class SelectedDataModel : public QAbstractTableModel { };
 
-    bool open() {
-        QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-        db.setDatabaseName(":memory:");
-        if (!db.open()) {
-            qCritical() << "unable to open database!";
-            return false;
-        }
-        return true;
-    }
-
-    ExTableData() = default;
-    ~ExTableData() {
-        if (database.isOpen()) { database.close(); }
-    }
-
-    QSqlQuery new_query() { return QSqlQuery(database); }
-};
 
 #endif // TABLEDATA_H
