@@ -20,6 +20,15 @@
 
 // =============================================================================
 
+EntityChangeNotifier::EntityChangeNotifier(QObject* parent)
+    : QObject(parent) { }
+
+EntityChangeNotifier::~EntityChangeNotifier() {
+    qDebug() << "Destroying entity notifier";
+}
+
+// =============================================================================
+
 RepresentationPart::RepresentationPart(QObject* p) : QObject(p) { }
 RepresentationPart::~RepresentationPart() = default;
 
@@ -58,44 +67,32 @@ QString WebPart::info_string() const {
 //    qDebug() << Q_FUNC_INFO << "END" << !!m_att_mesh_details << !!m_material;
 //}
 
-RenderPart::RenderPart( // Qt3DCore::QEntity*         p_entity,
-    ExMesh*                    me,
-    std::span<glm::mat4 const> inst,
-    QObject*                   parent)
-    : RepresentationPart(parent), m_instances(inst.begin(), inst.end()) {
+RenderPart::RenderPart(EntityChangeNotifier*                   n,
+                       nooc::EntityRenderableDefinition const& def,
+                       ExObject*                               parent)
+    : RepresentationPart(parent), m_notifier(n) {
 
-    //    m_3d_entity = new Qt3DCore::QEntity();
-    //    m_3d_entity->setParent(p_entity);
+    // for each patch, make a sub object (for now)
 
-    // qDebug() << Q_FUNC_INFO << p_entity << m_3d_entity.data();
+    auto mesh_delegate = dynamic_cast<ExMesh*>(def.mesh.get());
 
-    m_mesh = me;
+    if (!mesh_delegate) return;
 
-    //    connect(&m_material,
-    //            &AttachmentBase::attachment_changed,
-    //            this,
-    //            &RenderPart::material_changed);
+    for (int i = 0; i < mesh_delegate->qt_geom_count(); i++) {
+        auto* geom = mesh_delegate->qt_geom(i);
 
-    //    connect(&m_material,
-    //            &AttachmentBase::attachment_updated,
-    //            this,
-    //            &RenderPart::material_changed);
+        auto id = n->new_id();
 
-    //    connect(&m_mesh,
-    //            &AttachmentBase::attachment_changed,
-    //            this,
-    //            &RenderPart::mesh_changed);
-
-    //    connect(&m_mesh,
-    //            &AttachmentBase::attachment_updated,
-    //            this,
-    //            &RenderPart::mesh_changed);
-
-
-    //    remake_mesh_attachment();
+        n->ask_create(id, parent->internal_root(), nullptr, geom);
+    }
 }
 
-RenderPart::~RenderPart() { }
+RenderPart::~RenderPart() {
+    for (auto id : m_sub_ids) {
+        m_notifier->ask_delete(id);
+        m_notifier->return_id(id);
+    }
+}
 
 QString RenderPart::info_string() const {
     return QString("Render: Mesh %1, Inst %2")
@@ -113,7 +110,9 @@ void RenderPart::mesh_changed() {
 
 // =============================================================================
 
-void ExObject::update_from(nooc::EntityUpdateData const& md) {
+void ExObject::rebuild(bool representation, bool methods) {
+
+
     /*
     qDebug() << Q_FUNC_INFO << !!md.name << !!md.parent << !!md.transform
              << !!md.material << !!md.mesh << !!md.lights << !!md.tables
@@ -147,27 +146,19 @@ void ExObject::update_from(nooc::EntityUpdateData const& md) {
     }
 #endif
 
-    if (md.definition) {
-        if (m_attached_part) {
-            delete m_attached_part;
-            m_attached_part = {};
-        }
-
-        VMATCH(*md.definition,
-               VCASE(std::monostate) {},
-               VCASE(nooc::EntityTextDefinition const&) {},
-               VCASE(nooc::EntityWebpageDefinition const&) {},
-               VCASE(nooc::EntityRenderableDefinition const& def) {
-                   //                        def.
-                   //                auto new_mesh     =
-                   //                dynamic_cast<ExMesh*>(def.mesh);
-
-                   //                emit ask_set_render(get_id(), -1, -1, -1);
-
-                   //                m_attached_part = new RenderPart(
-                   //                    m_3d_entity, new_material, new_mesh,
-                   //                    def.instances, this);
-               });
+    if (representation) {
+        VMATCH(
+            info().definition,
+            VCASE(std::monostate) { m_attached_part.reset(); },
+            VCASE(nooc::EntityTextDefinition const&) {
+                m_attached_part.reset();
+            },
+            VCASE(nooc::EntityWebpageDefinition const&) {
+                m_attached_part.reset();
+            },
+            VCASE(nooc::EntityRenderableDefinition const& def) {
+                m_attached_part = new RenderPart(m_notifier, def, this);
+            });
     }
 
 #if 0
@@ -198,10 +189,7 @@ void ExObject::update_from(nooc::EntityUpdateData const& md) {
     }
 #endif
 
-    if (md.methods_list) {
-        qDebug() << "update method list" << md.methods_list->size();
-        m_attached_methods->set(*md.methods_list);
-    }
+    if (methods) { m_attached_methods->set(info().methods_list); }
 }
 
 QStringList ExObject::header() {
@@ -214,43 +202,10 @@ ExObject::ExObject(noo::EntityID           id,
                    nooc::EntityInit const& md,
                    // Qt3DCore::QEntity*            scene_root,
                    EntityChangeNotifier* notifier)
-    : nooc::EntityDelegate(id, md) {
-
-    // wnat to connect this before we do any set up...
-
-    connect(this,
-            &ExObject::ask_delete,
-            notifier,
-            &EntityChangeNotifier::ask_delete);
-
-    connect(this,
-            &ExObject::ask_create,
-            notifier,
-            &EntityChangeNotifier::ask_create);
-
-    connect(this,
-            &ExObject::ask_set_tf,
-            notifier,
-            &EntityChangeNotifier::ask_set_tf);
-
-    connect(this,
-            &ExObject::ask_set_render,
-            notifier,
-            &EntityChangeNotifier::ask_set_render);
-
-    //    m_3d_entity    = new Qt3DCore::QEntity(scene_root);
-    //    m_3d_transform = new Qt3DCore::QTransform(m_3d_entity.data());
+    : nooc::EntityDelegate(id, md), m_notifier(notifier) {
 
     m_attached_methods = new AttachedMethodListModel(this);
 
-    //    m_3d_entity->addComponent(m_3d_transform);
-
-    //    m_name = id.to_qstring();
-
-
-    // temp add to scene root
-    //    m_3d_entity->setParent(scene_root);
-    //    m_3d_entity->setObjectName(m_name);
 
     qDebug() << "New object" << id.id_slot;
 
@@ -262,15 +217,17 @@ ExObject::ExObject(noo::EntityID           id,
                 dialog->setVisible(true);
             });
 
-    //    update_from(md);
-
-    emit ask_create(id.id_slot);
+    m_root = notifier->new_id();
+    m_notifier->ask_create(m_root);
 }
 
 ExObject::~ExObject() {
     qDebug() << Q_FUNC_INFO << this;
 
-    emit ask_delete(id().id_slot);
+    if (m_notifier) {
+        m_notifier->ask_delete(m_root);
+        m_notifier->return_id(m_root);
+    }
 }
 
 int ExObject::get_id() const {
@@ -286,22 +243,24 @@ QString ExObject::get_name() const {
 QVariant ExObject::get_column(int c) const {
     switch (c) {
     case 0: return get_id();
-    case 1: return get_name();
+    case 1: return get_name().isEmpty() ? id().to_qstring() : get_name();
     case 2: return ptr_to_id(info().parent);
 
     case 3: return m_attached_part ? m_attached_part->info_string() : "None";
     case 4: return build_id_list(m_lights.get());
 
-    case 5: return m_tags;
+    case 5: return info().tags;
     case 6: return QVariant::fromValue(m_attached_methods);
     }
     return {};
 }
 
-void ExObject::on_complete() { }
+void ExObject::on_complete() {
+    rebuild(true, true);
+}
 
 void ExObject::on_update(nooc::EntityUpdateData const& md) {
-    update_from(md);
+    rebuild(md.definition.has_value(), md.methods_list.has_value());
 }
 
 // Qt3DCore::QEntity* ExObject::entity() {
@@ -403,11 +362,3 @@ void TaggedNameObjectFilter::set_filter(QString const& new_filter) {
 
     emit filter_changed();
 }
-
-// =============================================================================
-
-
-EntityChangeNotifier::EntityChangeNotifier(QObject* parent)
-    : QObject(parent) { }
-
-EntityChangeNotifier::~EntityChangeNotifier() { }

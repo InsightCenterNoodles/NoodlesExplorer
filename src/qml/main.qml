@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.Material
+//import QtQuick.Controls.Material
 import QtQuick.Layouts
 
 import Qt.labs.qmlmodels 1.0
@@ -36,10 +36,6 @@ ApplicationWindow {
         source: "qrc:/fa-solid-900.ttf"
     }
 
-    SideDrawer {
-        id: drawer
-    }
-
     Popup {
         id: connection_pop
 
@@ -49,8 +45,7 @@ ApplicationWindow {
         x: Math.round((parent.width - width) / 2)
         y: Math.round((parent.height - height) / 2)
 
-        width: parent.width * .75
-
+        //width: parent.width * .75
         closePolicy: Popup.NoAutoClose
 
         ColumnLayout {
@@ -102,7 +97,7 @@ ApplicationWindow {
                 Button {
                     text: "Cancel"
 
-                    Material.background: Material.Pink
+                    //Material.background: Material.Pink
                     onClicked: connection_pop.close()
                 }
                 Button {
@@ -175,19 +170,26 @@ ApplicationWindow {
             anchors.fill: parent
         }
 
-        ToolButton {
-            text: "\uf013"
-            font.family: icon_solid.name
-            font.styleName: "Solid"
+        //        NSButton {
+        //            text: "\uf013"
+        //            font.family: icon_solid.name
+        //            font.styleName: "Solid"
 
-            visible: !drawer.visible
+        //            visible: !drawer.visible
 
-            onClicked: drawer.visible ? drawer.close() : drawer.open()
+        //            onClicked: drawer.visible ? drawer.close() : drawer.open()
 
-            anchors.top: parent.top
-            anchors.right: parent.right
+        //            anchors.top: parent.top
+        //            anchors.right: parent.right
+        //        }
+    }
 
-            Material.foreground: settings.clear_color.hslLightness > .5 ? "black" : "white"
-        }
+    SideDrawer {
+        id: drawer
+
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        anchors.margins: 10
     }
 }

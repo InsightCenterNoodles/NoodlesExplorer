@@ -28,18 +28,22 @@
 class ExMeshChangeNotifier;
 
 class ExMeshGeometry : public QQuick3DGeometry {
-    QPointer<nooc::MeshInit const> m_data;
+    Q_OBJECT
+    QPointer<nooc::MeshPatch const> m_data;
 
 public:
-    ExMeshGeometry(nooc::MeshInit const*);
+    ExMeshGeometry(nooc::MeshPatch const*);
+
+public slots:
+    void update_data();
 };
 
 class ExMesh : public nooc::MeshDelegate {
     Q_OBJECT
 
     // nooc::MeshData             m_data;
-    size_t                     m_iteration = -1;
-    UniqueQPtr<ExMeshGeometry> m_geometry;
+    size_t                                  m_iteration = -1;
+    std::vector<UniqueQPtr<ExMeshGeometry>> m_geometry;
 
     size_t m_views_waiting = 0;
 
@@ -62,10 +66,12 @@ public:
     QStringList get_sub_info_header() const;
     QStringList get_sub_info(int);
 
-    //    QtGeomInfo make_new_info(std::span<glm::mat4> instances);
+    ExMeshGeometry* qt_geom(int i) const { return m_geometry.at(i); }
+    int             qt_geom_count() const { return m_geometry.size(); }
+
+    void on_complete() override;
 
 signals:
-    void ask_recreate(int64_t old_id, int64_t new_id, ExMeshGeometry* data);
     void updated();
 };
 

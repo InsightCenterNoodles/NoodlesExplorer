@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.Material
+//import QtQuick.Controls.Material
 import QtQuick.Layouts
 
 import Qt.labs.qmlmodels 1.0
@@ -110,17 +110,16 @@ ColumnLayout {
         Layout.preferredHeight: 200
         Layout.rightMargin: 6
 
-        color: Material.backgroundColor
+        //color: Material.backgroundColor
         opacity: .8
-        border.color: Material.frameColor
+        //border.color: Material.frameColor
         border.width: 1
         radius: 5
 
         GroupBox {
             title: "Tables"
 
-            Material.elevation: 3
-
+            //Material.elevation: 3
             anchors.fill: parent
             anchors.margins: 6
 
@@ -153,7 +152,7 @@ ColumnLayout {
                         anchors.rightMargin: 6
                         anchors.bottom: parent.bottom
                         width: parent.width - 12
-                        color: Material.frameColor
+                        //color: Material.frameColor
                     }
 
                     Label {
@@ -214,17 +213,16 @@ ColumnLayout {
         Layout.preferredHeight: 200
         Layout.rightMargin: 6
 
-        color: Material.backgroundColor
+        //color: Material.backgroundColor
         opacity: .8
-        border.color: Material.frameColor
+        //border.color: Material.frameColor
         border.width: 1
         radius: 5
 
         GroupBox {
             title: "Methods"
 
-            Material.elevation: 3
-
+            //Material.elevation: 3
             anchors.fill: parent
             anchors.margins: 6
 
@@ -257,7 +255,7 @@ ColumnLayout {
                         anchors.rightMargin: 6
                         anchors.bottom: parent.bottom
                         width: parent.width - 12
-                        color: Material.frameColor
+                        //color: Material.frameColor
                     }
 
                     Label {

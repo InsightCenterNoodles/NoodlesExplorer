@@ -7,12 +7,8 @@
 #include "delegates/delegates.h"
 #include "delegates/exdoc.h"
 
-
-#include <QEntity>
 #include <QObject>
 #include <QPointer>
-
-#include <Qt3DCore/QEntity>
 
 class QQmlContext;
 
@@ -46,13 +42,12 @@ class State : public QObject {
 
     int m_connection_state;
 
-    UniqueQPtr<Qt3DCore::QEntity> m_root_entity;
-
-
     QPointer<ExMethod> m_current_doc_method;
     ArgumentTableModel m_argument_table_model;
 
     AttachedMethodListModel m_document_methods;
+
+    EntityChangeNotifier* m_ent_notifier;
 
     ComponentListModel<ExMethod>*     m_method_list;
     ComponentListModel<ExSignal>*     m_signal_list;
@@ -68,7 +63,6 @@ class State : public QObject {
     ComponentListModel<ExObject>*     m_object_list;
     QPointer<ExDoc>                   m_current_doc;
 
-    EntityChangeNotifier* m_ent_notifier;
 
     TaggedNameObjectFilter* m_object_filter;
 
@@ -88,8 +82,6 @@ public slots:
 
     QString get_hostname();
 
-    Qt3DCore::QEntity* scene_root();
-
     void exec_debug();
 
     void launch_table_view(int);
@@ -106,12 +98,4 @@ signals:
 
     void debug_tree();
 };
-
-
-class EntityShim : public Qt3DCore::QEntity {
-public:
-    EntityShim(Qt3DCore::QNode* n = nullptr);
-    ~EntityShim();
-};
-
 #endif // STATE_H

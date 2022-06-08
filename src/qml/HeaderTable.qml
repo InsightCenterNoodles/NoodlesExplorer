@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.Material
+//import QtQuick.Controls.Material
 import QtQuick.Layouts
 
 import Qt.labs.qmlmodels 1.0
@@ -39,7 +39,7 @@ ColumnLayout {
         Layout.fillWidth: true
         height: 18
 
-        color: Material.backgroundColor
+        //color: Material.backgroundColor
 
         Row {
             anchors.fill: parent

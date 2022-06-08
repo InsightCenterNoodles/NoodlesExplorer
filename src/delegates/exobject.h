@@ -12,25 +12,47 @@
 class ExMaterial;
 class ExMesh;
 class ExLight;
+class ExObject;
 class AttachedMethodListModel;
 
 
 // =============================================================================
 
+// we will use a sub-render object to handle multiples and such.
+// thus, these are internal ids
+
 class EntityChangeNotifier : public QObject {
     Q_OBJECT
+
+    int32_t              m_next = 0;
+    std::vector<int32_t> m_free_list;
 
 public:
     explicit EntityChangeNotifier(QObject* parent = nullptr);
     ~EntityChangeNotifier();
 
+    int32_t new_id() {
+        if (m_free_list.empty()) {
+            int32_t ret = m_next;
+            m_next++;
+            return ret;
+        }
+        int32_t ret = m_free_list.back();
+        m_free_list.pop_back();
+        return ret;
+    }
+
+    void return_id(int32_t id) { m_free_list.push_back(id); }
+
 signals:
     void ask_delete(int32_t);
-    void ask_create(int32_t);
-    void ask_set_parent(int32_t child, int32_t parent);
+    void ask_create(int32_t           new_id,
+                    int32_t           parent_id = -1,
+                    QObject*          material  = nullptr,
+                    QQuick3DGeometry* mesh      = nullptr,
+                    QObject*          instances = nullptr);
     void ask_set_tf(int32_t, QMatrix4x4 transform);
-    void
-    ask_set_render(int32_t, int32_t material, int32_t mesh, int32_t instances);
+    void ask_set_parent(int32_t new_id, int32_t parent_id);
 };
 
 // =============================================================================
@@ -56,19 +78,18 @@ public:
 
 class RenderPart : public RepresentationPart {
     Q_OBJECT
+
+    QPointer<EntityChangeNotifier> m_notifier;
+
     QPointer<ExMesh>       m_mesh;
     std::vector<glm::mat4> m_instances;
 
-    // UniqueQPtr<Qt3DCore::QEntity> m_3d_entity;
-
-    //    std::optional<QtGeomInfo> m_att_mesh_details;
-    //    void                      remake_mesh_attachment();
+    QVector<int32_t> m_sub_ids;
 
 public:
-    RenderPart( // Qt3DCore::QEntity* p_entity,
-        ExMesh*,
-        std::span<glm::mat4 const>,
-        QObject*);
+    RenderPart(EntityChangeNotifier*,
+               nooc::EntityRenderableDefinition const& def,
+               ExObject*);
 
     ~RenderPart();
 
@@ -84,24 +105,16 @@ private slots:
 class ExObject : public nooc::EntityDelegate {
     Q_OBJECT
 
-    //    Qt3DCore::QEntity*            m_3d_root;
-    //    UniqueQPtr<Qt3DCore::QEntity> m_3d_entity;
-    //    Qt3DCore::QTransform*         m_3d_transform;
-
-    //    QString            m_name;
-    //    QPointer<ExObject> m_parent;
-    //    glm::mat4          m_transform;
-
-    QPointer<RepresentationPart> m_attached_part;
+    UniqueQPtr<RepresentationPart> m_attached_part;
+    QPointer<EntityChangeNotifier> m_notifier;
 
     AttachmentVector<ExLight>             m_lights;
     AttachmentVector<nooc::TableDelegate> m_tables;
 
-    QStringList m_tags;
-
     AttachedMethodListModel* m_attached_methods;
 
-    void update_from(nooc::EntityUpdateData const& md);
+    void    rebuild(bool representation, bool methods);
+    int32_t m_root = -1;
 
 public:
     static QStringList header();
@@ -119,18 +132,10 @@ public:
 
     AttachedMethodListModel* attached_method_list() const;
 
+    int32_t internal_root() const { return m_root; }
+
     void on_complete() override;
     void on_update(nooc::EntityUpdateData const&) override;
-
-    //    Qt3DCore::QEntity* entity();
-
-signals:
-    void ask_delete(int32_t);
-    void ask_create(int32_t);
-    void ask_set_parent(int32_t child, int32_t parent);
-    void ask_set_tf(int32_t, QMatrix4x4 transform);
-    void
-    ask_set_render(int32_t, int32_t material, int32_t mesh, int32_t instances);
 };
 
 // =============================================================================

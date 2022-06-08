@@ -23,7 +23,6 @@
 #include <QUrl>
 
 #include <QQmlEngine>
-#include <Qt3DCore/QComponent>
 
 static State* current_state = nullptr;
 
@@ -31,8 +30,6 @@ State::State(QObject* parent) : QObject(parent) {
     current_state = this;
 
     set_connection_state(-1);
-
-    m_root_entity = new Qt3DCore::QEntity();
 
     m_method_list      = new ComponentListModel<ExMethod>(this);
     m_signal_list      = new ComponentListModel<ExSignal>(this);
@@ -65,7 +62,9 @@ State::State(QObject* parent) : QObject(parent) {
             });
 }
 
-State::~State() { }
+State::~State() {
+    qDebug() << "Destroying state";
+}
 
 void State::link(QQmlContext* c) {
     c->setContextProperty("app_state", this);
@@ -87,8 +86,6 @@ void State::link(QQmlContext* c) {
     c->setContextProperty("entity_notifier", m_ent_notifier);
 
     c->setContextProperty("document_methods", &m_document_methods);
-
-    qmlRegisterType<EntityShim>("EntityShim", 1, 0, "EntityShim");
 }
 
 bool State::start_connection(QString name, QString url) {
@@ -191,11 +188,6 @@ QString State::get_hostname() {
     return QHostInfo::localHostName();
 }
 
-Qt3DCore::QEntity* State::scene_root() {
-    Q_ASSERT(m_root_entity);
-    return m_root_entity;
-}
-
 void State::exec_debug() {
     emit debug_tree();
 }
@@ -259,52 +251,4 @@ void State::launch_chart_view(int i) {
 
 
     new ChartViewer(del_ptr, this);
-}
-
-
-// =============================================================================
-
-static void node_debug(Qt3DCore::QNode* n, int d) {
-    {
-        auto deb = qDebug();
-
-        QString r;
-
-        for (int i = 0; i < d; i++) {
-            r += QString("-");
-        }
-
-        auto ent = dynamic_cast<Qt3DCore::QEntity*>(n);
-
-        QStringList comp;
-
-        deb << r << n->objectName() << n;
-
-        if (ent) {
-            for (auto comp : ent->components()) {
-                deb << comp;
-            }
-        }
-    }
-
-    auto c = n->childNodes();
-
-    for (auto cn : c) {
-        node_debug(cn, d + 1);
-    }
-}
-
-EntityShim::EntityShim(Qt3DCore::QNode* n) : Qt3DCore::QEntity(n) {
-    qDebug() << Q_FUNC_INFO << n;
-
-    connect(
-        current_state, &State::debug_tree, [this]() { node_debug(this, 0); });
-
-    current_state->scene_root()->setParent(this);
-
-    this->setObjectName("Test");
-}
-
-EntityShim::~EntityShim() {
-    qDebug() << Q_FUNC_INFO;
 }
