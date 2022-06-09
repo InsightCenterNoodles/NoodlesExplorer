@@ -27,7 +27,7 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG c4ddb18e5d4596b41ba2060e8f17f0f6f7a2bf12
+    GIT_TAG 4dc20e5e191f2f775f70f226afcac26d1c086d84
 )
 
 CPMAddPackage(
@@ -78,10 +78,6 @@ PRIVATE
     state.h
     delegates/delegates.h
     delegates/delegates.cpp
-    instance_material/qinstancedmetalroughmaterial.cpp
-    instance_material/qinstancedmetalroughmaterial.h
-    instance_material/instancetable.cpp
-    instance_material/instancetable.h
     attachedmethodlistmodel.cpp
     attachedmethodlistmodel.h
     tabledata.cpp

@@ -5,21 +5,6 @@
         <file>fa-solid-900.ttf</file>
         <file>fa-regular-400.ttf</file>
         <file>Roboto-Regular.ttf</file>
-        <file>instance_material/shaders/es3/coordinatesystems.inc</file>
-        <file>instance_material/shaders/es3/default.vert</file>
-        <file>instance_material/shaders/es3/light.inc.frag</file>
-        <file>instance_material/shaders/es3/metalrough.inc.frag</file>
-        <file>instance_material/shaders/gl3/coordinatesystems.inc</file>
-        <file>instance_material/shaders/gl3/default.vert</file>
-        <file>instance_material/shaders/gl3/light.inc.frag</file>
-        <file>instance_material/shaders/gl3/metalrough.inc.frag</file>
-        <file>instance_material/shaders/graphs/metalrough.frag.json</file>
-        <file>instance_material/shaders/rhi/coordinatesystems.inc</file>
-        <file>instance_material/shaders/rhi/default.vert</file>
-        <file>instance_material/shaders/rhi/defaultuniforms.inc</file>
-        <file>instance_material/shaders/rhi/light.inc.frag</file>
-        <file>instance_material/shaders/rhi/metalrough.inc.frag</file>
-        <file>instance_material/shaders/gl3/metalrough.frag</file>
         <file>qml/ColorPicker.qml</file>
         <file>qml/DrawerContent.qml</file>
         <file>qml/HeaderTable.qml</file>
@@ -34,5 +19,9 @@
         <file>qml/SettingsPopup.qml</file>
         <file>qml/SideDrawer.qml</file>
         <file>qml/Style.qml</file>
+        <file>qml/NSRoundedButton.qml</file>
+        <file>qml/WindowControls.qml</file>
+        <file>qml/NSGroupBox.qml</file>
+        <file>qml/NSTextField.qml</file>
     </qresource>
 </RCC>

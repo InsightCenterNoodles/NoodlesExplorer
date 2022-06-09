@@ -1,7 +1,5 @@
 #include "exmaterial.h"
 
-#include "instance_material/qinstancedmetalroughmaterial.h"
-
 #include <QEntity>
 
 QStringList ExMaterial::header() {

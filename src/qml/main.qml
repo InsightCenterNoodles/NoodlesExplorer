@@ -12,6 +12,14 @@ ApplicationWindow {
     height: 600
     visible: true
     title: qsTr("Noodles Viewer")
+    color: "transparent"
+
+    // hacky, but needed to deal with bugs in WASDcontroller
+    property bool allow_wasd_mouse: !(window_controls.has_mouse
+                                      || title_dragger.has_mouse
+                                      || drawer.has_mouse)
+
+    flags: Qt.FramelessWindowHint
 
     Settings {
         id: settings
@@ -25,11 +33,6 @@ ApplicationWindow {
 
         property bool orbit_cam: true
         property color clear_color: "#111111"
-    }
-
-    FontLoader {
-        id: icon_regular
-        source: "qrc:/fa-regular-400.ttf"
     }
     FontLoader {
         id: icon_solid
@@ -124,19 +127,6 @@ ApplicationWindow {
         }
     }
 
-    //    Popup {
-    //        id: call_method_pop
-    //        modal: true
-
-    //        x: Math.round((parent.width - width) / 2)
-    //        y: Math.round((parent.height - height) / 2)
-    //        width: window.width * .9
-
-    //        //height: window.height * .9
-    //        MethodCallUI {
-    //            anchors.fill: parent
-    //        }
-    //    }
     Dialog {
         id: message_recv_dialog
         title: "Message Result"
@@ -160,36 +150,93 @@ ApplicationWindow {
         parent: Overlay.overlay
     }
 
-    Item {
-        id: main_content
-        anchors.fill: parent
+    Rectangle {
+        id: window_bezel
 
-        anchors.rightMargin: drawer.pinned ? drawer.width : 0
+        radius: 5
+        color: "black"
+
+        anchors.fill: parent
+        anchors.margins: 5
 
         SceneViewComponent {
+            id: main_content
             anchors.fill: parent
+            anchors.margins: 5
         }
 
-        //        NSButton {
-        //            text: "\uf013"
-        //            font.family: icon_solid.name
-        //            font.styleName: "Solid"
+        SideDrawer {
+            id: drawer
 
-        //            visible: !drawer.visible
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.right: parent.right
+            anchors.margins: 5
+        }
 
-        //            onClicked: drawer.visible ? drawer.close() : drawer.open()
+        Rectangle {
+            id: title_dragger
+            radius: 5
 
-        //            anchors.top: parent.top
-        //            anchors.right: parent.right
-        //        }
+            color: Style.set_alpha(Style.grey3, .75)
+
+            opacity: window_drag_area.containsMouse ? 1 : .75
+
+            height: 25
+
+            width: window.width * .4
+
+            property bool has_mouse: window_drag_area.containsMouse
+                                     || window_drag_area.pressed
+
+            anchors.top: parent.top
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.topMargin: 5
+
+            Label {
+                anchors.centerIn: parent
+                text: window.title
+
+                font.bold: true
+            }
+
+            MouseArea {
+                id: window_drag_area
+                anchors.fill: parent
+
+                property int dx
+                property int dy
+                onPressed: {
+                    dx = mouseX
+                    dy = mouseY
+                }
+
+                onPositionChanged: {
+                    window.x += mouseX - dx
+                    window.y += mouseY - dy
+                }
+            }
+        }
+
+        WindowControls {
+            id: window_controls
+
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.margins: 5
+        }
     }
 
-    SideDrawer {
-        id: drawer
-
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
+    MouseArea {
         anchors.right: parent.right
-        anchors.margins: 10
+        anchors.bottom: parent.bottom
+
+        width: 16
+        height: width
+
+        onPressed: {
+            let resize = window.startSystemResize(Qt.RightEdge | Qt.BottomEdge)
+            console.log(resize)
+        }
     }
 }

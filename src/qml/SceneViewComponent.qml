@@ -15,11 +15,11 @@ Item {
         Node {
             PerspectiveCamera {
                 id: main_cam
-                x: 5
+                x: -5
                 y: 1
                 clipFar: 1000
                 clipNear: .1
-                eulerRotation.y: 90
+                eulerRotation.y: -90
             }
         }
 
@@ -42,7 +42,7 @@ Item {
                     baseColor: Qt.rgba(0.8, 0.8, 0.8, 1.0)
                     metalness: 0.1
                     roughness: 0.1
-                    opacity: .25
+                    opacity: .50
                 }
             ]
         }
@@ -71,6 +71,12 @@ Item {
 
             if (mesh) {
                 init_props["geometry"] = mesh
+            }
+
+            if (instances) {
+                init_props["instanceRoot"] = seek_parent(pid)
+                init_props["instancing"] = instances
+                //init_props["instancing"] = randomInstancing
             }
 
             var new_ent = comp.createObject(root_node, init_props)
@@ -106,5 +112,8 @@ Item {
     WasdController {
         controlledObject: main_cam
         speed: .01
+        shiftSpeed: .05
+
+        enabled: window.allow_wasd_mouse
     }
 }

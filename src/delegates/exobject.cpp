@@ -4,19 +4,10 @@
 #include "exlight.h"
 #include "exmaterial.h"
 #include "exmesh.h"
-#include "instance_material/qinstancedmetalroughmaterial.h"
 #include "methodcalldialog.h"
 #include "variant_tools.h"
 
 #include <noo_common.h>
-
-#include <QAbstractLight>
-#include <QEntity>
-#include <QGeometry>
-#include <QGeometryRenderer>
-#include <QMaterial>
-#include <Qt3DCore/QTransform>
-#include <Qt3DRender/QFrontFace>
 
 // =============================================================================
 
@@ -40,32 +31,93 @@ QString WebPart::info_string() const {
     return "Web Part";
 }
 
-// void RenderPart::remake_mesh_attachment() {
-//    qDebug() << Q_FUNC_INFO << "START" << !!m_mesh << !!m_material;
-//    // if (!m_mesh or !m_material) return;
+// =============================================================================
 
-//    if (m_att_mesh_details) {
-//        m_3d_entity->removeComponent(m_att_mesh_details->renderer);
-//    }
+QVector3D convert(glm::vec3 v) {
+    return QVector3D(v.x, v.y, v.z);
+}
+QQuaternion convert_r(glm::vec4 v) {
+    return QQuaternion(v.w, v.x, v.y, v.z);
+}
+QColor convert_c(glm::vec4 c) {
+    return QColor::fromRgbF(c.r, c.g, c.b, c.a);
+}
 
-//    if (m_material) {
-//        m_3d_entity->removeComponent(m_material->get_3d_material());
-//    }
+QMLInstanceTable::QMLInstanceTable(nooc::InstanceSource const& src) {
+    if (!src.view) return;
 
-//    if (!m_mesh or !m_material) return;
+    if (!src.view->is_data_ready()) {
+        connect(src.view,
+                &nooc::BufferViewDelegate::data_ready,
+                this,
+                &QMLInstanceTable::buffer_ready);
+    } else {
+        buffer_ready(src.view->get_sub_range());
+    }
+}
 
-//    m_att_mesh_details.emplace(m_mesh->make_new_info(m_instances));
+QMLInstanceTable::~QMLInstanceTable() {
+    qDebug() << Q_FUNC_INFO;
+}
 
-//    if (m_att_mesh_details) {
-//        m_3d_entity->addComponent(m_att_mesh_details->renderer);
-//    }
+QByteArray QMLInstanceTable::getInstanceBuffer(int* instanceCount) {
+    qDebug() << "Fetch instance data" << m_ready_instances
+             << m_instance_data.size() << instanceCountOverride();
 
-//    if (m_material) {
-//        m_3d_entity->addComponent(m_material->get_3d_material());
-//    }
+    if (instanceCount) *instanceCount = m_ready_instances;
+    return m_instance_data;
+}
 
-//    qDebug() << Q_FUNC_INFO << "END" << !!m_att_mesh_details << !!m_material;
-//}
+void QMLInstanceTable::buffer_ready(QByteArray array) {
+    auto mat_array = std::span((glm::mat4 const*)array.data(),
+                               array.size() / sizeof(glm::mat4));
+
+    m_instance_data.resize(sizeof(InstanceTableEntry) * mat_array.size());
+
+    auto* table_arr = (InstanceTableEntry*)m_instance_data.data();
+
+    for (int i = 0; i < mat_array.size(); i++) {
+
+        auto const& m = mat_array[i];
+
+        qDebug() << "P" << convert(glm::vec3(m[0]));
+        qDebug() << "S" << convert(glm::vec3(m[3]));
+        qDebug() << "R" << convert_r(m[2]);
+        qDebug() << "C" << convert_c(m[1]);
+
+        table_arr[i] = calculateTableEntry(convert(glm::vec3(m[0])),
+                                           convert(glm::vec3(m[3])),
+                                           convert_r(m[2]).toEulerAngles(),
+                                           convert_c(m[1]));
+    }
+
+    m_ready_instances = mat_array.size();
+
+    markAllDirty();
+
+    qDebug() << "Created table for" << m_ready_instances << "instances";
+}
+
+RenderSubObject::RenderSubObject(EntityChangeNotifier* n,
+                                 int32_t               parent_id,
+                                 nooc::EntityRenderableDefinition const& def,
+                                 ExMeshGeometry&                         geom)
+    : m_notifier(n) {
+
+    m_id = n->new_id();
+
+    if (def.instances) {
+        m_table = new QMLInstanceTable(def.instances.value());
+    }
+
+    n->ask_create(m_id, parent_id, nullptr, &geom, m_table);
+}
+RenderSubObject::~RenderSubObject() {
+    if (m_notifier) {
+        m_notifier->ask_delete(m_id);
+        m_notifier->return_id(m_id);
+    }
+}
 
 RenderPart::RenderPart(EntityChangeNotifier*                   n,
                        nooc::EntityRenderableDefinition const& def,
@@ -80,19 +132,12 @@ RenderPart::RenderPart(EntityChangeNotifier*                   n,
 
     for (int i = 0; i < mesh_delegate->qt_geom_count(); i++) {
         auto* geom = mesh_delegate->qt_geom(i);
-
-        auto id = n->new_id();
-
-        n->ask_create(id, parent->internal_root(), nullptr, geom);
+        m_sub_ids.emplace_back(std::make_unique<RenderSubObject>(
+            n, parent->internal_root(), def, *geom));
     }
 }
 
-RenderPart::~RenderPart() {
-    for (auto id : m_sub_ids) {
-        m_notifier->ask_delete(id);
-        m_notifier->return_id(id);
-    }
-}
+RenderPart::~RenderPart() { }
 
 QString RenderPart::info_string() const {
     return QString("Render: Mesh %1, Inst %2")

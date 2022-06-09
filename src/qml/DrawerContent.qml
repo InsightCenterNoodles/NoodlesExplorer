@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-//import QtQuick.Controls.Material
 import QtQuick.Layouts
 
 import Qt.labs.qmlmodels 1.0
@@ -9,10 +8,8 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        ToolButton {
+        NSRoundedButton {
             text: "\uf6ff"
-            font.family: icon_solid.name
-            font.styleName: "Solid"
 
             onClicked: conn_menu.open()
 
@@ -55,10 +52,8 @@ ColumnLayout {
                 }
             }
         }
-        ToolButton {
+        NSRoundedButton {
             text: "\uf188"
-            font.family: icon_solid.name
-            font.styleName: "Solid"
 
             onClicked: {
                 //renderer.showDebugOverlay = true
@@ -66,10 +61,8 @@ ColumnLayout {
             }
         }
 
-        ToolButton {
+        NSRoundedButton {
             text: "\uf1de"
-            font.family: icon_solid.name
-            font.styleName: "Solid"
 
             onClicked: settings_pop.open()
 
@@ -81,49 +74,38 @@ ColumnLayout {
         Item {
             Layout.fillWidth: true
         }
-        ToolButton {
+        NSRoundedButton {
             id: pin_button
             text: "\uf08d"
-            font.family: icon_solid.name
-            font.styleName: "Solid"
             checkable: true
-            onToggled: drawer.pinned = checked
+            //onToggled: window.allow_mouse = !checked
+
+            //Component.onCompleted: window.allow_mouse = !checked
         }
-        ToolButton {
+
+        NSRoundedButton {
             text: "\uf054"
-            font.family: icon_solid.name
-            font.styleName: "Solid"
-            enabled: !pin_button.checked
-            onClicked: if (!pin_button.checked)
-                           drawer.close()
+            //enabled: !pin_button.checked
+            //            onClicked: if (!pin_button.checked)
+            //                           drawer.close()
         }
     }
 
     ObjectBox {
         Layout.fillHeight: true
         Layout.fillWidth: true
-        Layout.rightMargin: 6
     }
 
-    Rectangle {
+    NSGroupBox {
+        title: "Tables"
+
         Layout.fillWidth: true
         Layout.preferredHeight: 200
-        Layout.rightMargin: 6
 
-        //color: Material.backgroundColor
-        opacity: .8
-        //border.color: Material.frameColor
-        border.width: 1
-        radius: 5
-
-        GroupBox {
-            title: "Tables"
-
+        Item {
             //Material.elevation: 3
             anchors.fill: parent
             anchors.margins: 6
-
-            background: Item {}
 
             ListView {
                 id: document_table_view
@@ -208,78 +190,63 @@ ColumnLayout {
         }
     }
 
-    Rectangle {
+    NSGroupBox {
         Layout.fillWidth: true
         Layout.preferredHeight: 200
-        Layout.rightMargin: 6
 
-        //color: Material.backgroundColor
-        opacity: .8
-        //border.color: Material.frameColor
-        border.width: 1
-        radius: 5
+        title: "Methods"
 
-        GroupBox {
-            title: "Methods"
-
-            //Material.elevation: 3
+        ListView {
+            id: document_method_view
             anchors.fill: parent
-            anchors.margins: 6
 
-            background: Item {}
+            model: document_methods
 
-            ListView {
-                id: document_method_view
-                anchors.fill: parent
+            delegate: Item {
+                id: method_delegate
 
-                model: document_methods
+                height: method_name_label.implicitHeight * 1.5
+                width: document_method_view.width
+                Label {
+                    id: method_name_label
+                    text: name
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: 12
+                    anchors.right: parent.right
+                    anchors.rightMargin: 6
+                }
 
-                delegate: Item {
-                    id: method_delegate
+                Rectangle {
+                    height: 1
+                    anchors.right: parent.right
+                    anchors.rightMargin: 6
+                    anchors.bottom: parent.bottom
+                    width: parent.width - 12
+                    //color: Material.frameColor
+                }
 
-                    height: method_name_label.implicitHeight * 1.5
-                    width: document_method_view.width
-                    Label {
-                        id: method_name_label
-                        text: name
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: parent.left
-                        anchors.leftMargin: 12
-                        anchors.right: parent.right
-                        anchors.rightMargin: 6
-                    }
+                Label {
+                    z: parent.z + 1
+                    visible: delegate_mouse_area.containsMouse
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.margins: 3
+                    width: height
 
-                    Rectangle {
-                        height: 1
-                        anchors.right: parent.right
-                        anchors.rightMargin: 6
-                        anchors.bottom: parent.bottom
-                        width: parent.width - 12
-                        //color: Material.frameColor
-                    }
+                    text: "\uf054"
+                    font.family: icon_solid.name
+                    font.styleName: "Solid"
+                }
 
-                    Label {
-                        z: parent.z + 1
-                        visible: delegate_mouse_area.containsMouse
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        anchors.margins: 3
-                        width: height
+                MouseArea {
+                    id: delegate_mouse_area
+                    hoverEnabled: true
+                    anchors.fill: parent
 
-                        text: "\uf054"
-                        font.family: icon_solid.name
-                        font.styleName: "Solid"
-                    }
-
-                    MouseArea {
-                        id: delegate_mouse_area
-                        hoverEnabled: true
-                        anchors.fill: parent
-
-                        onClicked: {
-                            document_method_view.model.ask_call(index)
-                        }
+                    onClicked: {
+                        document_method_view.model.ask_call(index)
                     }
                 }
             }

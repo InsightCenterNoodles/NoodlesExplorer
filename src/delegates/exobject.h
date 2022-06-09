@@ -8,6 +8,7 @@
 #include <noo_client_interface.h>
 
 #include <QMatrix4x4>
+#include <QQuick3DInstancing>
 
 class ExMaterial;
 class ExMesh;
@@ -46,11 +47,11 @@ public:
 
 signals:
     void ask_delete(int32_t);
-    void ask_create(int32_t           new_id,
-                    int32_t           parent_id = -1,
-                    QObject*          material  = nullptr,
-                    QQuick3DGeometry* mesh      = nullptr,
-                    QObject*          instances = nullptr);
+    void ask_create(int32_t             new_id,
+                    int32_t             parent_id = -1,
+                    QObject*            material  = nullptr,
+                    QQuick3DGeometry*   mesh      = nullptr,
+                    QQuick3DInstancing* instances = nullptr);
     void ask_set_tf(int32_t, QMatrix4x4 transform);
     void ask_set_parent(int32_t new_id, int32_t parent_id);
 };
@@ -66,14 +67,53 @@ public:
     virtual QString info_string() const = 0;
 };
 
+// =============================================================================
+
 class TextPart : public RepresentationPart {
 public:
     QString info_string() const override;
 };
 
+// =============================================================================
+
 class WebPart : public RepresentationPart {
 public:
     QString info_string() const override;
+};
+
+// =============================================================================
+
+class QMLInstanceTable : public QQuick3DInstancing {
+    Q_OBJECT
+
+    int        m_ready_instances = 0;
+    QByteArray m_instance_data;
+
+protected:
+    QByteArray getInstanceBuffer(int* instanceCount) override;
+
+public:
+    QMLInstanceTable(nooc::InstanceSource const& src);
+    ~QMLInstanceTable();
+
+private slots:
+    void buffer_ready(QByteArray);
+};
+
+
+class RenderSubObject {
+    QPointer<EntityChangeNotifier> m_notifier;
+
+    UniqueQPtr<QMLInstanceTable> m_table;
+
+    int32_t m_id;
+
+public:
+    RenderSubObject(EntityChangeNotifier*                   n,
+                    int32_t                                 parent_id,
+                    nooc::EntityRenderableDefinition const& def,
+                    ExMeshGeometry&                         geom);
+    ~RenderSubObject();
 };
 
 class RenderPart : public RepresentationPart {
@@ -84,7 +124,7 @@ class RenderPart : public RepresentationPart {
     QPointer<ExMesh>       m_mesh;
     std::vector<glm::mat4> m_instances;
 
-    QVector<int32_t> m_sub_ids;
+    std::vector<std::unique_ptr<RenderSubObject>> m_sub_ids;
 
 public:
     RenderPart(EntityChangeNotifier*,
