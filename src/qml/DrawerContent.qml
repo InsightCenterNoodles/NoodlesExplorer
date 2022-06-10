@@ -9,47 +9,30 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
         NSRoundedButton {
-            text: "\uf6ff"
-
-            onClicked: conn_menu.open()
-
-            Menu {
-                id: conn_menu
-                Action {
-                    text: "&Connect"
-                    onTriggered: connection_pop.open()
-                }
-                Action {
-                    text: "&Inspect"
-                    onTriggered: inspector_popup.open()
-                }
-                Action {
-                    text: "&Exit"
+            text: {
+                let s = app_state.connection_state
+                switch (s) {
+                case -1:
+                    return "\ue560"
+                case 0:
+                    return "\uf1e6"
+                case 1:
+                    return "\ue55b"
                 }
             }
 
-            Rectangle {
-                id: conn_indicator
+            ConnectionPopup {
+                id: connection_pop
+            }
 
-                width: 10
-                height: 10
-                radius: 5
+            onClicked: connection_pop.open()
+        }
+        NSRoundedButton {
+            text: "\uf2c2"
 
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.margins: 5
-
-                color: {
-                    let s = app_state.connection_state
-                    switch (s) {
-                    case -1:
-                        return "red"
-                    case 0:
-                        return "grey"
-                    case 1:
-                        return "green"
-                    }
-                }
+            onClicked: {
+                //renderer.showDebugOverlay = true
+                inspector_popup.open()
             }
         }
         NSRoundedButton {
@@ -78,16 +61,10 @@ ColumnLayout {
             id: pin_button
             text: "\uf08d"
             checkable: true
-            //onToggled: window.allow_mouse = !checked
-
-            //Component.onCompleted: window.allow_mouse = !checked
         }
 
         NSRoundedButton {
             text: "\uf054"
-            //enabled: !pin_button.checked
-            //            onClicked: if (!pin_button.checked)
-            //                           drawer.close()
         }
     }
 
@@ -134,7 +111,7 @@ ColumnLayout {
                         anchors.rightMargin: 6
                         anchors.bottom: parent.bottom
                         width: parent.width - 12
-                        //color: Material.frameColor
+                        color: Style.grey3
                     }
 
                     Label {
@@ -223,7 +200,7 @@ ColumnLayout {
                     anchors.rightMargin: 6
                     anchors.bottom: parent.bottom
                     width: parent.width - 12
-                    //color: Material.frameColor
+                    color: Style.grey3
                 }
 
                 Label {

@@ -30,6 +30,7 @@ class ExLight;
 class ExMesh;
 class ExObject;
 class EntityChangeNotifier;
+class MaterialChangeNotifier;
 
 
 class State : public QObject {
@@ -47,7 +48,8 @@ class State : public QObject {
 
     AttachedMethodListModel m_document_methods;
 
-    EntityChangeNotifier* m_ent_notifier;
+    EntityChangeNotifier*   m_ent_notifier;
+    MaterialChangeNotifier* m_mat_notifier;
 
     ComponentListModel<ExMethod>*     m_method_list;
     ComponentListModel<ExSignal>*     m_signal_list;

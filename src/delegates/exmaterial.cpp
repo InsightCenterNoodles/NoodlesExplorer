@@ -2,20 +2,36 @@
 
 #include <QEntity>
 
+MaterialChangeNotifier::MaterialChangeNotifier(QObject* parent)
+    : ChangeNotifierBase(parent) { }
+MaterialChangeNotifier::~MaterialChangeNotifier() { }
+
+
+// =============================================================================
+
 QStringList ExMaterial::header() {
     return { "ID", "Name", "PBR", "Light", "Misc" };
 }
 
-ExMaterial::ExMaterial(noo::MaterialID id, nooc::MaterialInit const& md)
-    : nooc::MaterialDelegate(id, md) {
+ExMaterial::ExMaterial(noo::MaterialID           id,
+                       nooc::MaterialInit const& md,
+                       MaterialChangeNotifier*   notifier)
+    : nooc::MaterialDelegate(id, md), m_notifier(notifier) {
 
-    // m_3d_entity->setObjectName(get_name());
-    // m_2d_material->setObjectName(get_name());
+    m_qt_mat_id = notifier->new_id();
 
-    // on_update(md);
+    m_notifier->ask_create(m_qt_mat_id,
+                           md.pbr_info.base_color,
+                           md.pbr_info.metallic,
+                           md.pbr_info.roughness);
 }
 
-ExMaterial::~ExMaterial() = default;
+ExMaterial::~ExMaterial() {
+    if (m_notifier) {
+        m_notifier->ask_delete(m_qt_mat_id);
+        m_notifier->return_id(m_qt_mat_id);
+    }
+}
 
 int ExMaterial::get_id() const {
     return this->id().id_slot;
@@ -33,7 +49,7 @@ static QString ptr_to_id(std::optional<nooc::TextureRef> const& c) {
 }
 
 static auto get_pbr(nooc::PBRInfo const& md) {
-    return QString("%1 %2 %3 %4 %5 %6")
+    return QString("%1 %2 %3 %4 %5")
         .arg(md.base_color.name())
         .arg(ptr_to_id(md.base_color_texture))
         .arg(md.metallic)

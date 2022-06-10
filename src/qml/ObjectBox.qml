@@ -5,8 +5,8 @@ import QtQuick.Layouts
 import Qt.labs.qmlmodels 1.0
 
 NSGroupBox {
-    title: "Objects"
 
+    //title: "Objects"
     StackView {
         id: object_view_stack
         anchors.fill: parent
@@ -64,7 +64,7 @@ NSGroupBox {
                         anchors.rightMargin: 6
                         anchors.bottom: parent.bottom
                         width: parent.width - 12
-                        //color: Material.frameColor
+                        color: Style.grey4
                     }
 
                     MouseArea {
@@ -136,6 +136,7 @@ NSGroupBox {
                         anchors.rightMargin: 6
                         anchors.bottom: parent.bottom
                         width: parent.width - 12
+                        color: Style.grey4
                         //color: Material.frameColor
                     }
 

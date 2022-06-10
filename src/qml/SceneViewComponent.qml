@@ -9,6 +9,8 @@ Item {
 
     property var entity_list: ({})
 
+    property var material_list: ({})
+
     Node {
         id: root_node
 
@@ -20,6 +22,11 @@ Item {
                 clipFar: 1000
                 clipNear: .1
                 eulerRotation.y: -90
+
+                Component.onCompleted: {
+                    //lookAt(0, 0, 0)
+                    lookAt(root_node)
+                }
             }
         }
 
@@ -48,6 +55,9 @@ Item {
         }
     }
 
+    property var entity_maker: Qt.createComponent("RenderableEntity.qml")
+    property var material_maker: Qt.createComponent("RenderableMaterial.qml")
+
     Connections {
         target: entity_notifier
 
@@ -62,12 +72,14 @@ Item {
             entity_list[oid].destroy()
             delete entity_list[oid]
         }
-        function onAsk_create(oid, pid, material, mesh, instances) {
-            var comp = Qt.createComponent("RenderableEntity.qml")
-
+        function onAsk_create(oid, pickable, pid, material, mesh, instances) {
             let init_props = {
-                "parent": seek_parent(pid)
+                "parent": seek_parent(pid),
+                "pickable": !!pickable,
+                "hosting_object": pickable
             }
+
+            console.log("NEW OBJECT", !!pickable, pickable)
 
             if (mesh) {
                 init_props["geometry"] = mesh
@@ -79,7 +91,17 @@ Item {
                 //init_props["instancing"] = randomInstancing
             }
 
-            var new_ent = comp.createObject(root_node, init_props)
+            var new_ent = entity_maker.createObject(root_node, init_props)
+
+            if (material >= 0) {
+                console.log("Creating new material for object",
+                            material_list[material])
+                var mat_ent = material_maker.createObject(
+                            new_ent, material_list[material])
+
+                new_ent.materials.push(new_ent)
+            }
+
             entity_list[oid] = new_ent
             console.log(oid, pid, material, mesh, instances)
             onAsk_set_parent(oid, pid)
@@ -89,6 +111,26 @@ Item {
         }
         function onAsk_set_parent(oid, pid) {
             entity_list[oid].parent = seek_parent(entity_list[pid])
+        }
+    }
+
+    Connections {
+        target: material_notifier
+
+        function onAsk_delete(oid) {
+            delete material_list[oid]
+        }
+        function onAsk_create(oid, color, metal, rough) {
+            var comp = Qt.createComponent("RenderableMaterial.qml")
+
+            let init_props = {
+                "baseColor": color,
+                "metalness": metal,
+                "roughness": rough
+            }
+
+            //var new_ent = comp.createObject(root_node, init_props)
+            material_list[oid] = init_props
         }
     }
 
@@ -109,7 +151,24 @@ Item {
         }
     }
 
-    WasdController {
+    MouseArea {
+        anchors.fill: scene_3d
+        anchors.margins: 20
+        acceptedButtons: Qt.RightButton
+
+        onClicked: mouse => {
+                       console.log(mouse.x, mouse.y)
+                       var result = scene_3d.pick(mouse.x, mouse.y)
+                       if (result.objectHit) {
+                           var obj = result.objectHit
+                           console.log(obj.hosting_object)
+                       } else {
+                           console.log("No hit")
+                       }
+                   }
+    }
+
+    FirstPersonController {
         controlledObject: main_cam
         speed: .01
         shiftSpeed: .05

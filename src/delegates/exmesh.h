@@ -34,6 +34,8 @@ class ExMeshGeometry : public QQuick3DGeometry {
 public:
     ExMeshGeometry(nooc::MeshPatch const*);
 
+    nooc::MeshPatch const* patch_info() const { return m_data.get(); }
+
 public slots:
     void update_data();
 };

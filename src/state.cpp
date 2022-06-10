@@ -45,6 +45,7 @@ State::State(QObject* parent) : QObject(parent) {
     m_object_list      = new ComponentListModel<ExObject>(this);
 
     m_ent_notifier = new EntityChangeNotifier(this);
+    m_mat_notifier = new MaterialChangeNotifier(this);
 
     m_object_filter = new TaggedNameObjectFilter(this);
 
@@ -84,6 +85,7 @@ void State::link(QQmlContext* c) {
     c->setContextProperty("filtered_object_list", m_object_filter);
 
     c->setContextProperty("entity_notifier", m_ent_notifier);
+    c->setContextProperty("material_notifier", m_mat_notifier);
 
     c->setContextProperty("document_methods", &m_document_methods);
 }
@@ -141,7 +143,7 @@ bool State::start_connection(QString name, QString url) {
     };
     delegates.mat_maker = [this](noo::MaterialID           id,
                                  nooc::MaterialInit const& md) {
-        return m_material_list->add_item(id, md);
+        return m_material_list->add_item(id, md, m_mat_notifier);
     };
     delegates.mesh_maker = [this](noo::GeometryID       id,
                                   nooc::MeshInit const& md) {
@@ -197,7 +199,7 @@ void State::handle_connect() {
 }
 
 void State::handle_disconnect() {
-    if (m_client_conn) delete m_client_conn.data();
+    if (m_client_conn) m_client_conn.data()->deleteLater();
     set_connection_state(-1);
 }
 

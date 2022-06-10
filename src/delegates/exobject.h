@@ -22,34 +22,19 @@ class AttachedMethodListModel;
 // we will use a sub-render object to handle multiples and such.
 // thus, these are internal ids
 
-class EntityChangeNotifier : public QObject {
+class EntityChangeNotifier : public ChangeNotifierBase {
     Q_OBJECT
-
-    int32_t              m_next = 0;
-    std::vector<int32_t> m_free_list;
 
 public:
     explicit EntityChangeNotifier(QObject* parent = nullptr);
     ~EntityChangeNotifier();
 
-    int32_t new_id() {
-        if (m_free_list.empty()) {
-            int32_t ret = m_next;
-            m_next++;
-            return ret;
-        }
-        int32_t ret = m_free_list.back();
-        m_free_list.pop_back();
-        return ret;
-    }
-
-    void return_id(int32_t id) { m_free_list.push_back(id); }
-
 signals:
     void ask_delete(int32_t);
     void ask_create(int32_t             new_id,
+                    ExObject*           cpp_obj,
                     int32_t             parent_id = -1,
-                    QObject*            material  = nullptr,
+                    int32_t             material  = -1,
                     QQuick3DGeometry*   mesh      = nullptr,
                     QQuick3DInstancing* instances = nullptr);
     void ask_set_tf(int32_t, QMatrix4x4 transform);
@@ -112,7 +97,8 @@ public:
     RenderSubObject(EntityChangeNotifier*                   n,
                     int32_t                                 parent_id,
                     nooc::EntityRenderableDefinition const& def,
-                    ExMeshGeometry&                         geom);
+                    ExMeshGeometry&                         geom,
+                    ExObject*                               cpp_obj);
     ~RenderSubObject();
 };
 

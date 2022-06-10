@@ -4,6 +4,8 @@ import QtQuick3D.Helpers
 
 Model {
 
+    property QtObject hosting_object: null
+
     materials: [
         PrincipledMaterial {
             baseColor: Qt.rgba(0.8, 0.8, 0.8, 1.0)

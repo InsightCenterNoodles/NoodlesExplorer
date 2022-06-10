@@ -12,7 +12,7 @@
 // =============================================================================
 
 EntityChangeNotifier::EntityChangeNotifier(QObject* parent)
-    : QObject(parent) { }
+    : ChangeNotifierBase(parent) { }
 
 EntityChangeNotifier::~EntityChangeNotifier() {
     qDebug() << "Destroying entity notifier";
@@ -101,7 +101,8 @@ void QMLInstanceTable::buffer_ready(QByteArray array) {
 RenderSubObject::RenderSubObject(EntityChangeNotifier* n,
                                  int32_t               parent_id,
                                  nooc::EntityRenderableDefinition const& def,
-                                 ExMeshGeometry&                         geom)
+                                 ExMeshGeometry&                         geom,
+                                 ExObject* cpp_obj)
     : m_notifier(n) {
 
     m_id = n->new_id();
@@ -110,7 +111,15 @@ RenderSubObject::RenderSubObject(EntityChangeNotifier* n,
         m_table = new QMLInstanceTable(def.instances.value());
     }
 
-    n->ask_create(m_id, parent_id, nullptr, &geom, m_table);
+    int32_t mat_id = -1;
+
+    if (geom.patch_info()->material) {
+        auto* m = qobject_cast<ExMaterial*>(geom.patch_info()->material.get());
+        if (m) mat_id = m->qt_mat_id();
+    }
+
+
+    n->ask_create(m_id, cpp_obj, parent_id, mat_id, &geom, m_table);
 }
 RenderSubObject::~RenderSubObject() {
     if (m_notifier) {
@@ -126,14 +135,23 @@ RenderPart::RenderPart(EntityChangeNotifier*                   n,
 
     // for each patch, make a sub object (for now)
 
+    bool pickable =
+        !(parent->info().tags.contains(noo::names::tag_noo_user_hidden));
+
+    qDebug() << "new render part" << parent->get_name() << parent << pickable;
+
     auto mesh_delegate = dynamic_cast<ExMesh*>(def.mesh.get());
 
     if (!mesh_delegate) return;
 
     for (int i = 0; i < mesh_delegate->qt_geom_count(); i++) {
         auto* geom = mesh_delegate->qt_geom(i);
-        m_sub_ids.emplace_back(std::make_unique<RenderSubObject>(
-            n, parent->internal_root(), def, *geom));
+        m_sub_ids.emplace_back(
+            std::make_unique<RenderSubObject>(n,
+                                              parent->internal_root(),
+                                              def,
+                                              *geom,
+                                              pickable ? parent : nullptr));
     }
 }
 
@@ -263,7 +281,7 @@ ExObject::ExObject(noo::EntityID           id,
             });
 
     m_root = notifier->new_id();
-    m_notifier->ask_create(m_root);
+    m_notifier->ask_create(m_root, nullptr);
 }
 
 ExObject::~ExObject() {
@@ -336,7 +354,8 @@ bool TaggedNameObjectFilter::filterAcceptsRow(
     if (src->columnCount() < max_h_size) return true;
 
     auto name = src->data(src->index(source_row, name_idx, source_parent))
-                    .value<QString>();
+                    .value<QString>()
+                    .toLower();
 
     auto tags = src->data(src->index(source_row, tag_idx, source_parent))
                     .value<QStringList>();
@@ -387,8 +406,10 @@ QString const& TaggedNameObjectFilter::filter() const {
 void TaggedNameObjectFilter::set_filter(QString const& new_filter) {
     qDebug() << Q_FUNC_INFO << new_filter;
 
-    if (m_filter == new_filter) return;
-    m_filter = new_filter;
+    auto l_new_filter = new_filter.toLower();
+
+    if (m_filter == l_new_filter) return;
+    m_filter = l_new_filter;
 
     m_tags.clear();
     m_names.clear();

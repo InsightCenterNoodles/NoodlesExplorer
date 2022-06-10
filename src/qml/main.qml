@@ -36,95 +36,7 @@ ApplicationWindow {
     }
     FontLoader {
         id: icon_solid
-        source: "qrc:/fa-solid-900.ttf"
-    }
-
-    Popup {
-        id: connection_pop
-
-        modal: true
-        dim: true
-
-        x: Math.round((parent.width - width) / 2)
-        y: Math.round((parent.height - height) / 2)
-
-        //width: parent.width * .75
-        closePolicy: Popup.NoAutoClose
-
-        ColumnLayout {
-            anchors.right: parent.right
-            anchors.left: parent.left
-            GridLayout {
-                rows: 2
-                columns: 2
-
-                Layout.fillWidth: true
-
-                Label {
-                    text: "Client Name:"
-                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                }
-
-                TextField {
-                    id: username_box
-                    placeholderText: "username"
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    Layout.fillWidth: true
-
-                    text: settings.last_user
-                }
-
-                Label {
-                    text: "Server Address:"
-                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                }
-
-                TextField {
-                    id: hostname_box
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    Layout.fillWidth: true
-
-                    text: settings.last_server
-
-                    validator: RegularExpressionValidator {
-                        regularExpression: /^(ws|wss):\/\/[^ "]+$/
-                    }
-                }
-            }
-            RowLayout {
-                Layout.fillWidth: true
-                Item {
-                    Layout.fillWidth: true
-                }
-
-                Button {
-                    text: "Cancel"
-
-                    //Material.background: Material.Pink
-                    onClicked: connection_pop.close()
-                }
-                Button {
-                    text: "Connect"
-
-                    onClicked: {
-
-                        if (!hostname_box.acceptableInput) {
-                            return
-                        }
-
-                        console.log(username_box.text, hostname_box.text)
-
-                        if (app_state.start_connection(username_box.text,
-                                                       hostname_box.text)) {
-                            connection_pop.close()
-                        }
-
-                        settings.last_user = username_box.text
-                        settings.last_server = hostname_box.text
-                    }
-                }
-            }
-        }
+        source: "qrc:/fa_solid_6.otf"
     }
 
     Dialog {
@@ -171,7 +83,6 @@ ApplicationWindow {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.right: parent.right
-            anchors.margins: 5
         }
 
         Rectangle {

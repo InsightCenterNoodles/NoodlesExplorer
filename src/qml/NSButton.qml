@@ -10,30 +10,21 @@ Button {
 
     icon.width: 24
     icon.height: 24
-    icon.color: control.checked
-                || control.highlighted ? control.palette.brightText : control.flat
-                                         && !control.down ? (control.visualFocus ? control.palette.highlight : control.palette.windowText) : control.palette.buttonText
-
-    contentItem: Label {
-        text: control.text
-        font: control.font
-        color: control.checked
-               || control.highlighted ? control.palette.brightText : control.flat
-                                        && !control.down ? (control.visualFocus ? control.palette.highlight : control.palette.windowText) : control.palette.buttonText
-    }
 
     background: Rectangle {
-        implicitWidth: 100
-        implicitHeight: 40
+        implicitWidth: contentItem.implicitWidth
+        implicitHeight: contentItem.implicitHeight
         visible: !control.flat || control.down || control.checked
                  || control.highlighted
 
-        /*
-        color: Color.blend(
-                   control.checked
-                   || control.highlighted ? Style.button_background_highlight : Style.button_background,
-                   control.palette.mid, control.down ? 0.5 : 0.0)
-                   */
-        color: Style.button_background
+        color: {
+            if (control.down)
+                return Style.grey
+            if (control.hovered)
+                return Style.button_background_highlight
+            return Style.button_background
+        }
+
+        radius: 5
     }
 }

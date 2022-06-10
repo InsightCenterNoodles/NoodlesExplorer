@@ -10,7 +10,7 @@ Item {
     readonly property real icon_text_size: 16
 
     readonly property color button_background_highlight: grey2
-    readonly property color button_background: grey4
+    readonly property color button_background: grey3
 
     readonly property color disabled_color: grey5
 
@@ -29,11 +29,6 @@ Item {
     readonly property color grey4: rgb(58, 58, 60)
     readonly property color grey5: rgb(44, 44, 46)
     readonly property color grey6: rgb(28, 28, 30)
-
-    FontLoader {
-        id: icon_solid
-        source: "qrc:/fa-solid-900.ttf"
-    }
 
     function set_alpha(color, alpha) {
         return Qt.hsla(color.hslHue, color.hslSaturation,

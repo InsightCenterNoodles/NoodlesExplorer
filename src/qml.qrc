@@ -2,8 +2,6 @@
     <qresource prefix="/">
         <file>qtquickcontrols2.conf</file>
         <file>img/test.png</file>
-        <file>fa-solid-900.ttf</file>
-        <file>fa-regular-400.ttf</file>
         <file>Roboto-Regular.ttf</file>
         <file>qml/ColorPicker.qml</file>
         <file>qml/DrawerContent.qml</file>
@@ -23,5 +21,10 @@
         <file>qml/WindowControls.qml</file>
         <file>qml/NSGroupBox.qml</file>
         <file>qml/NSTextField.qml</file>
+        <file>fa_solid_6.otf</file>
+        <file>qml/ConnectionPopup.qml</file>
+        <file>qml/RenderableMaterial.qml</file>
+        <file>qml/FirstPersonController.qml</file>
+        <file>qml/NSPopup.qml</file>
     </qresource>
 </RCC>

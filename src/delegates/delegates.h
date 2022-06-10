@@ -125,50 +125,6 @@ QStringList build_id_list(Container const& things) {
 
 // =============================================================================
 
-class AttachmentBase : public QObject {
-    Q_OBJECT
-
-signals:
-
-    // issued when the attached component is updated
-    void attachment_updated();
-
-    // issued when the attachment changes (swapped to a new component)
-    void attachment_changed();
-};
-
-template <class T>
-class AttachmentPoint : public AttachmentBase {
-    QPointer<T> m_attachment;
-
-    QMetaObject::Connection m_updated_link;
-
-public:
-    void set(T* p) {
-        if (m_updated_link) disconnect(m_updated_link);
-
-        m_attachment = p;
-        emit attachment_changed();
-
-        if constexpr (T::CAN_UPDATE) {
-            m_updated_link = connect(
-                p, &T::updated, this, &AttachmentBase::attachment_updated);
-        }
-    }
-
-    void operator=(T* p) { set(p); }
-
-    T* get() const { return m_attachment; }
-    T* get() { return m_attachment; }
-
-    operator bool() const { return !!m_attachment; }
-
-    T& operator*() { return *m_attachment; }
-    T* operator->() { return m_attachment; }
-};
-
-// =============================================================================
-
 class AttachmentVectorBase : public QObject {
     Q_OBJECT
 
@@ -230,5 +186,32 @@ public:
     auto begin() const { return m_attachment.begin(); }
     auto end() const { return m_attachment.end(); }
 };
+
+// =============================================================================
+
+class ChangeNotifierBase : public QObject {
+    Q_OBJECT
+
+    int32_t              m_next = 0;
+    std::vector<int32_t> m_free_list;
+
+public:
+    explicit ChangeNotifierBase(QObject* parent = nullptr) : QObject(parent) { }
+    ~ChangeNotifierBase() = default;
+
+    int32_t new_id() {
+        if (m_free_list.empty()) {
+            int32_t ret = m_next;
+            m_next++;
+            return ret;
+        }
+        int32_t ret = m_free_list.back();
+        m_free_list.pop_back();
+        return ret;
+    }
+
+    void return_id(int32_t id) { m_free_list.push_back(id); }
+};
+
 
 #endif // DELEGATES_H
