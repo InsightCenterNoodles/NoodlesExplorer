@@ -164,6 +164,8 @@ void SelectionsTableData::set(QVector<noo::Selection> sel_list) {
 void SelectionsTableData::on_table_selection_updated(
     noo::Selection const& ref) {
 
+    qDebug() << Q_FUNC_INFO << ref.name << ref.rows;
+
     // is this an update?
     auto iter = m_string_map.find(ref.name);
 
@@ -342,6 +344,10 @@ inline CellType get_cell_from_array(QCborValue lv, int i) {
 
 void RemoteTableData::on_table_updated(QVector<int64_t> keys,
                                        QCborArray       columns) {
+
+    qDebug() << Q_FUNC_INFO << keys
+             << columns.toCborValue().toDiagnosticNotation();
+
     // TODO: optimize reset
     beginResetModel();
 

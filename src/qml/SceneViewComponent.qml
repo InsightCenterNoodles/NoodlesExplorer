@@ -71,15 +71,15 @@ Item {
         function onAsk_delete(oid) {
             entity_list[oid].destroy()
             delete entity_list[oid]
+            console.log("Deleting", oid)
         }
         function onAsk_create(oid, pickable, pid, material, mesh, instances) {
+            console.log("Creating", oid)
             let init_props = {
                 "parent": seek_parent(pid),
                 "pickable": !!pickable,
                 "hosting_object": pickable
             }
-
-            console.log("NEW OBJECT", !!pickable, pickable)
 
             if (mesh) {
                 init_props["geometry"] = mesh
@@ -159,6 +159,8 @@ Item {
         onClicked: mouse => {
                        console.log(mouse.x, mouse.y)
                        var result = scene_3d.pick(mouse.x, mouse.y)
+                       console.log(result.distance, result.normal,
+                                   result.objectHit, result.position)
                        if (result.objectHit) {
                            var obj = result.objectHit
                            console.log(obj.hosting_object)

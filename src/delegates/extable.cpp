@@ -53,7 +53,12 @@ void ExTable::on_table_initialize(QVector<ColumnInfo> const& names,
                                   QVector<QCborArray> const& data_cols,
                                   QVector<noo::Selection>    selections) {
 
-    qDebug() << Q_FUNC_INFO;
+    QStringList all_cols;
+    for (auto const& info : names) {
+        all_cols << info.name;
+    }
+
+    qDebug() << Q_FUNC_INFO << all_cols;
 
 
     if (names.size() != data_cols.size()) return;

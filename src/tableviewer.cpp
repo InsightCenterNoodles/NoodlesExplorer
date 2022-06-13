@@ -182,6 +182,8 @@ void TableViewer::add_selection() {
 
     if (name.isEmpty()) { name = QDateTime::currentDateTime().toString(); }
 
+    sel.name = name;
+
     m_attached_table->request_selection_update(std::move(sel));
 }
 

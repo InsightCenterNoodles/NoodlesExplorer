@@ -136,7 +136,7 @@ RenderPart::RenderPart(EntityChangeNotifier*                   n,
     // for each patch, make a sub object (for now)
 
     bool pickable =
-        !(parent->info().tags.contains(noo::names::tag_noo_user_hidden));
+        !(parent->info().tags.contains(noo::names::tag_user_hidden));
 
     qDebug() << "new render part" << parent->get_name() << parent << pickable;
 
@@ -361,7 +361,7 @@ bool TaggedNameObjectFilter::filterAcceptsRow(
                     .value<QStringList>();
 
     // ick
-    static QString hidden_tag = noo::names::tag_noo_user_hidden;
+    static QString hidden_tag = noo::names::tag_user_hidden;
 
     if (tags.contains(hidden_tag)) {
         qDebug() << Q_FUNC_INFO << "Hidden!";
