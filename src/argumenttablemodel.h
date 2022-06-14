@@ -7,13 +7,11 @@ struct Argument {
     QString name;
     QString documentation;
     QString current_value;
-    bool    edited = false;
 
     static constexpr auto meta =
         std::tuple(MetaMember(&Argument::name, "name", false),
                    MetaMember(&Argument::documentation, "documentation", false),
-                   MetaMember(&Argument::current_value, "current_value", true),
-                   MetaMember(&Argument::edited, "edited", true));
+                   MetaMember(&Argument::current_value, "current_value", true));
 };
 
 class ArgumentTableModel : public StructTableModel<Argument> {
@@ -29,10 +27,12 @@ class ArgumentTableModel : public StructTableModel<Argument> {
     QString m_method_documentation;
 
 public:
-    ArgumentTableModel();
+    explicit ArgumentTableModel(QObject* parent = nullptr);
 
     QString method_name() const { return m_method_name; }
     QString method_documentation() const { return m_method_documentation; }
+
+    QVariant data(const QModelIndex& index, int role) const override;
 
 public slots:
     void set_method_name(QString method_name);

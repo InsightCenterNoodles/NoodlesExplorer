@@ -6,34 +6,42 @@
 
 #include <noo_client_interface.h>
 
-#include <QPhongMaterial>
+class MaterialChangeNotifier : public ChangeNotifierBase {
+    Q_OBJECT
 
-class ExMaterial : public nooc::MaterialDelegate, public ComponentListItem {
-    nooc::MaterialData m_data;
+public:
+    explicit MaterialChangeNotifier(QObject* parent = nullptr);
+    ~MaterialChangeNotifier();
 
-    UniqueQPtr<QInstancedMetalRoughMaterial> m_3d_entity;
-    UniqueQPtr<Qt3DExtras::QPhongMaterial>   m_2d_material;
+signals:
+    void ask_delete(int32_t);
+    void
+    ask_create(int32_t new_id, QColor base_color, float metal, float rough);
+};
+
+class ExMaterial : public nooc::MaterialDelegate {
+    Q_OBJECT
+
+    QPointer<MaterialChangeNotifier> m_notifier;
+    int32_t                          m_qt_mat_id = -1;
 
 public:
     static QStringList header();
 
-    ExMaterial(noo::MaterialID                     id,
-               nooc::MaterialData const&           md,
-               std::shared_ptr<ComponentListModel> list,
-               Qt3DCore::QEntity*                  scene_root);
+    ExMaterial(noo::MaterialID           id,
+               nooc::MaterialInit const& md,
+               MaterialChangeNotifier*   notifier);
 
     ~ExMaterial();
 
-    void prepare_delete() override { unregister(); }
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
 
-    int      get_id() const override;
-    int      get_id_gen() const override;
-    QString  get_name() const override;
-    QVariant get_column(int c) const override;
-    void     on_update(nooc::MaterialData const&) override;
+    void on_update(nooc::MaterialUpdate const&) override;
 
-    // Qt3DExtras::QPhongMaterial*   get_2d_material();
-    QInstancedMetalRoughMaterial* get_3d_material();
+    int32_t qt_mat_id() const { return m_qt_mat_id; }
 };
 
 #endif // EXMATERIAL_H

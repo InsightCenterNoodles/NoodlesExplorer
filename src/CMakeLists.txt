@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12...3.16)
+cmake_minimum_required(VERSION 3.16)
 
 project(NoodlesExplorer VERSION 0.2 LANGUAGES CXX)
 
@@ -27,10 +27,16 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG 3396e530a5948416fd364cc9ffa3f5bcbb8abc3b
+    GIT_TAG 0bc982ca956adfb7697d55bde524b059a8b9440b
 )
 
-find_package(Qt5 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts)
+CPMAddPackage(
+    NAME magic_enum
+    GITHUB_REPOSITORY Neargye/magic_enum
+    GIT_TAG v0.8.0
+)
+
+find_package(Qt6 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts Quick3D)
 
 # Options ======================================================================
 
@@ -48,14 +54,14 @@ target_compile_features(NoodlesExplorer PUBLIC cxx_std_20)
 target_compile_options(NoodlesExplorer PUBLIC ${sanitizer_compile_flag})
 target_link_options(NoodlesExplorer PUBLIC ${sanitizer_compile_flag})
 
-target_link_libraries(NoodlesExplorer PRIVATE glm)
+target_link_libraries(NoodlesExplorer PRIVATE glm magic_enum)
 
 target_link_libraries(NoodlesExplorer PRIVATE noodles)
 
 target_link_libraries(NoodlesExplorer PUBLIC
     Qt::Gui Qt::Widgets Qt::Core
     Qt::3DCore Qt::3DExtras Qt::3DRender
-    Qt::Quick Qt::Charts
+    Qt::Quick Qt::Charts Qt::Quick3D
 )
 
 target_sources(NoodlesExplorer
@@ -72,8 +78,6 @@ PRIVATE
     state.h
     delegates/delegates.h
     delegates/delegates.cpp
-    instance_material/qinstancedmetalroughmaterial.cpp
-    instance_material/qinstancedmetalroughmaterial.h
     attachedmethodlistmodel.cpp
     attachedmethodlistmodel.h
     tabledata.cpp
@@ -108,4 +112,15 @@ PRIVATE
     delegates/exdoc.h
     delegates/exlight.cpp
     delegates/exlight.h
+    newselectiondialog.cpp
+    newselectiondialog.h
+    newselectiondialog.ui
+    chartplotview.h
+    chartplotview.cpp
+    methodcalldialog.cpp
+    methodcalldialog.h
+    methodcalldialog.ui
+    jsoneditdialog.cpp
+    jsoneditdialog.h
+    jsoneditdialog.ui
 )

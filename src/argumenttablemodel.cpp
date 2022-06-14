@@ -1,21 +1,26 @@
 #include "argumenttablemodel.h"
 
+#include "jsoneditdialog.h"
+
 #include <QDebug>
 
-ArgumentTableModel::ArgumentTableModel() {
+ArgumentTableModel::ArgumentTableModel(QObject* parent)
+    : StructTableModel<Argument>(parent) { }
 
-    reset(QVector<Argument>()
-          << Argument { "title",
-                        "This is a long line of documentation for testing",
-                        "null",
-                        false }
-          << Argument { "table",
-                        "This is a longer line of documentation for testing",
-                        "null",
-                        false });
 
-    set_method_name("load_table");
-    set_method_documentation("This method loads a new table");
+QVariant ArgumentTableModel::data(const QModelIndex& index, int role) const {
+    if (role == Qt::BackgroundRole and index.column() == 2) {
+        auto text =
+            StructTableModel<Argument>::data(index, Qt::DisplayRole).toString();
+
+        bool ok = false;
+
+        auto parse_result = JSONEditDialog::parse_any(text, &ok);
+
+        return ok ? QColor("green") : QColor("red");
+    }
+
+    return StructTableModel<Argument>::data(index, role);
 }
 
 void ArgumentTableModel::set_method_name(QString method_name) {

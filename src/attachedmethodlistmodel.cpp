@@ -3,14 +3,13 @@
 AttachedMethodListModel::AttachedMethodListModel(QObject* parent)
     : QAbstractTableModel(parent) { }
 
-void AttachedMethodListModel::set(
-    std::vector<nooc::MethodDelegatePtr> const& l) {
+void AttachedMethodListModel::set(QVector<nooc::MethodDelegate*> const& l) {
     beginResetModel();
 
     m_list.clear();
 
     for (auto const& s : l) {
-        m_list.emplace_back(std::dynamic_pointer_cast<ExMethod>(s));
+        m_list.emplace_back(dynamic_cast<ExMethod*>(s));
     }
 
     endResetModel();
@@ -24,9 +23,9 @@ void AttachedMethodListModel::clear() {
     endResetModel();
 }
 
-std::shared_ptr<ExMethod> AttachedMethodListModel::get_method_row(int i) const {
+ExMethod* AttachedMethodListModel::get_method_row(int i) const {
     if (i < 0) return {};
-    if (i >= m_list.size()) return {};
+    if ((size_t)i >= m_list.size()) return {};
 
     return m_list[i];
 }
@@ -71,8 +70,7 @@ QVariant AttachedMethodListModel::data(const QModelIndex& index,
     }
 
     switch (role) {
-    case name:
-        return QString::fromLatin1(item->name().data(), item->name().size());
+    case name: return item->name();
     case slot: return item->id().id_slot;
     case gen: return item->id().id_gen;
     }
@@ -88,4 +86,12 @@ QHash<int, QByteArray> AttachedMethodListModel::roleNames() const {
     };
 
     return r;
+}
+
+void AttachedMethodListModel::ask_call(int index) {
+    auto p = get_method_row(index);
+    if (p) {
+        qDebug() << Q_FUNC_INFO << index << rowCount() << p;
+        emit wishes_to_call(p);
+    }
 }

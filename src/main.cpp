@@ -11,14 +11,16 @@
 #include <tuple>
 
 int main(int argc, char* argv[]) {
+    //    qputenv("QSG_RHI_BACKEND", "opengl");
 
-#if __APPLE__
-    QSurfaceFormat fmt;
-    fmt.setProfile(QSurfaceFormat::CoreProfile);
-    fmt.setVersion(4, 1);
+    //#if __APPLE__
+    //    QSurfaceFormat fmt;
+    //    fmt.setProfile(QSurfaceFormat::CoreProfile);
+    //    fmt.setVersion(4, 1);
+    //    fmt.setSamples(4);
 
-    QSurfaceFormat::setDefaultFormat(fmt);
-#endif
+    //    QSurfaceFormat::setDefaultFormat(fmt);
+    //#endif
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -26,7 +28,7 @@ int main(int argc, char* argv[]) {
 
     QCoreApplication::setOrganizationName("NREL");
     QCoreApplication::setOrganizationDomain("nrel.gov");
-    QCoreApplication::setApplicationName("NoodlesViewer");
+    QCoreApplication::setApplicationName("NoodlesExplorer");
 
     QApplication app(argc, argv);
 
@@ -44,7 +46,7 @@ int main(int argc, char* argv[]) {
 
     QQmlApplicationEngine engine;
 
-    QUrl const url(QStringLiteral("qrc:/main.qml"));
+    QUrl const url(QStringLiteral("qrc:/qml/main.qml"));
 
     QObject::connect(
         &engine,

@@ -8,41 +8,63 @@
 
 class QNetworkReply;
 
-class ExBuffer : public nooc::BufferDelegate, public ComponentListItem {
+class ExBuffer : public nooc::BufferDelegate {
     Q_OBJECT
 
-    QByteArray m_array;
+    //    Qt3DCore::QEntity*            m_scene_root = nullptr;
+    //    UniqueQPtr<Qt3DCore::QBuffer> m_3d_entity;
 
-    bool m_ready = false;
+public:
+    constexpr static bool CAN_UPDATE = true;
+    static QStringList    header();
 
-    Qt3DCore::QEntity*              m_scene_root = nullptr;
-    UniqueQPtr<Qt3DRender::QBuffer> m_3d_entity;
+    ExBuffer(noo::BufferID id, nooc::BufferInit const& md);
+
+    ~ExBuffer();
+
+    // void prepare_delete() override { unregister(); }
+
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
+
+    size_t size() const;
+
+    //    Qt3DCore::QBuffer* entity();
+
+signals:
+    void updated();
+};
+
+class ExBufferView : public nooc::BufferViewDelegate {
+    Q_OBJECT
+
+    //    Qt3DCore::QEntity*            m_scene_root = nullptr;
+    //    UniqueQPtr<Qt3DCore::QBuffer> m_3d_entity;
 
 public:
     static QStringList header();
 
-    ExBuffer(noo::BufferID                       id,
-             nooc::BufferData const&             md,
-             std::shared_ptr<ComponentListModel> list,
-             Qt3DCore::QEntity*                  scene_root);
+    ExBufferView(noo::BufferViewID id, nooc::BufferViewInit const& md);
 
-    ~ExBuffer();
+    ~ExBufferView();
 
-    void prepare_delete() override { unregister(); }
+    // void prepare_delete() override { unregister(); }
 
-    int      get_id() const override;
-    int      get_id_gen() const override;
-    QString  get_name() const override;
-    QVariant get_column(int c) const override;
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
 
-    size_t            size() const;
-    QByteArray const& byte_array() const { return m_array; }
+    size_t size() const;
 
-    Qt3DRender::QBuffer* entity();
+    std::span<char const> data() const;
 
+    //    Qt3DCore::QBuffer* entity();
 
-public slots:
-    void url_fetched(QNetworkReply*);
+signals:
+    void updated();
 };
 
 #endif // EXBUFFER_H

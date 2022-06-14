@@ -5,33 +5,34 @@
 
 #include <noo_client_interface.h>
 
-class ExMethod : public nooc::MethodDelegate, public ComponentListItem {
-    QString     m_documentation;
-    QString     m_return_documentation;
+class ExMethod : public nooc::MethodDelegate {
+    Q_OBJECT
+
     QStringList m_argument_names;
     QStringList m_argument_details;
 
 public:
     static QStringList header();
 
-    ExMethod(noo::MethodID                       id,
-             nooc::MethodData const&             md,
-             std::shared_ptr<ComponentListModel> list);
+    ExMethod(noo::MethodID id, nooc::MethodInit const& md);
 
     ~ExMethod();
 
-    int      get_id() const override;
-    int      get_id_gen() const override;
-    QString  get_name() const override;
-    QVariant get_column(int c) const override;
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
 
 
-    QString     documentation() const { return m_documentation; }
-    QString     return_documentation() const { return m_return_documentation; }
+    QString documentation() const { return info().documentation; }
+    QString return_documentation() const { return info().return_documentation; }
     QStringList argument_names() const { return m_argument_names; }
     QStringList argument_details() const { return m_argument_details; }
 
-    void prepare_delete() override { unregister(); }
+    // void prepare_delete() override { unregister(); }
+
+signals:
+    void updated();
 };
 
 #endif // EXMETHOD_H

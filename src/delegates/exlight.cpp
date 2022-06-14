@@ -1,28 +1,59 @@
 #include "exlight.h"
 
+#include "variant_tools.h"
+
+#include <QDirectionalLight>
 #include <QEntity>
 #include <QPointLight>
 
 QStringList ExLight::header() {
-    return { "ID", "Name", "Color", "Intensity" };
+    return { "ID", "Name", "Type", "Color", "Intensity" };
 }
 
-ExLight::ExLight(noo::LightID                        id,
-                 nooc::LightData const&              md,
-                 std::shared_ptr<ComponentListModel> list,
-                 Qt3DCore::QEntity*                  scene_root)
-    : nooc::LightDelegate(id, md), ComponentListItem(list), m_data(md) {
+static QColor get_color(std::optional<glm::vec3> const& c) {
+    auto vec = c.value_or(glm::vec3(1));
 
-    auto* p = new Qt3DRender::QPointLight(scene_root);
+    return QColor::fromRgbF(vec.r, vec.g, vec.b);
+}
 
-    auto c = QColor::fromRgbF(md.color.r, md.color.g, md.color.b);
+ExLight::ExLight(noo::LightID id, nooc::LightInit const& md)
+    : nooc::LightDelegate(id, md) {
 
-    qDebug() << Q_FUNC_INFO << id.to_qstring() << c;
+    qDebug() << "CREATE LIGHT" << id.to_qstring();
+#if 0
 
-    p->setColor(QColor::fromRgbF(md.color.r, md.color.g, md.color.b));
-    p->setIntensity(md.intensity);
+    switch (md.type.value_or(nooc::LightType::POINT)) {
+    case nooc::LightType::POINT: {
+        auto* p = new Qt3DRender::QPointLight(scene_root);
 
-    m_3d_entity.reset(p);
+        p->setColor(get_color(md.color));
+        p->setIntensity(md.intensity.value_or(0));
+
+        m_3d_entity.reset(p);
+        qDebug() << "HERE" << __LINE__;
+    } break;
+    case nooc::LightType::SUN: {
+        auto* p = new Qt3DRender::QDirectionalLight(scene_root);
+
+        p->setColor(get_color(md.color));
+        p->setIntensity(md.intensity.value_or(0));
+
+        glm::vec3 dir = md.spatial.value_or(glm::vec4());
+
+        p->setWorldDirection({ dir.x, dir.y, dir.z });
+
+        m_3d_entity.reset(p);
+        qDebug() << "HERE" << __LINE__;
+    } break;
+    }
+
+    qDebug() << "HERE" << __LINE__;
+
+    assert(m_3d_entity->isShareable());
+
+    m_3d_entity->setColor(QColor("red"));
+    m_3d_entity->setIntensity(100);
+#endif
 }
 
 ExLight::~ExLight() = default;
@@ -41,16 +72,30 @@ QVariant ExLight::get_column(int c) const {
     switch (c) {
     case 0: return get_id();
     case 1: return get_name();
-    case 2: return QColor(m_data.color.r, m_data.color.g, m_data.color.b);
-    case 3: return m_data.intensity;
+    case 2: {
+        return VMATCH(
+            info().type,
+            VCASE(nooc::PointLight l) {
+                return QString("Point (range %1)").arg(l.range);
+            },
+            VCASE(nooc::SpotLight l) {
+                return QString("Spot (range %1, angles %2 - %3)")
+                    .arg(l.range,
+                         l.inner_cone_angle_rad,
+                         l.outer_cone_angle_rad);
+            },
+            VCASE(nooc::DirectionLight l) {
+                return QString("Direction (range %1)").arg(l.range);
+            }, )
+    }
+    case 3: return info().color;
+    case 4: return info().intensity;
     }
     return {};
 }
 
-void ExLight::on_update(nooc::LightData const& md) {
-    m_data = md;
-}
+void ExLight::on_update(nooc::LightUpdate const& /*md*/) { }
 
-Qt3DRender::QAbstractLight* ExLight::entity() {
-    return m_3d_entity;
-}
+// Qt3DRender::QAbstractLight* ExLight::entity() {
+//     return m_3d_entity;
+// }

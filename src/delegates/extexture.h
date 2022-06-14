@@ -6,25 +6,57 @@
 
 #include <noo_client_interface.h>
 
-class ExTexture : public nooc::TextureDelegate, public ComponentListItem {
-    nooc::TextureData m_data;
-
+class ExTexture : public nooc::TextureDelegate {
+    Q_OBJECT
 public:
     static QStringList header();
 
-    ExTexture(noo::TextureID                      id,
-              nooc::TextureData const&            md,
-              std::shared_ptr<ComponentListModel> list);
+    ExTexture(noo::TextureID id, nooc::TextureInit const& md);
 
     ~ExTexture();
 
-    void prepare_delete() override { unregister(); }
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
 
-    int      get_id() const override;
-    int      get_id_gen() const override;
-    QString  get_name() const override;
-    QVariant get_column(int c) const override;
-    void     on_update(nooc::TextureData const&) override;
+signals:
+    void updated();
+};
+
+class ExSampler : public nooc::SamplerDelegate {
+    Q_OBJECT
+public:
+    static QStringList header();
+
+    ExSampler(noo::SamplerID id, nooc::SamplerInit const& md);
+
+    ~ExSampler();
+
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
+
+signals:
+    void updated();
+};
+
+class ExImage : public nooc::ImageDelegate {
+    Q_OBJECT
+public:
+    static QStringList header();
+
+    ExImage(noo::ImageID id, nooc::ImageInit const& md);
+
+    ~ExImage();
+
+    int      get_id() const;
+    int      get_id_gen() const;
+    QString  get_name() const;
+    QVariant get_column(int c) const;
+signals:
+    void updated();
 };
 
 #endif // EXTEXTURE_H

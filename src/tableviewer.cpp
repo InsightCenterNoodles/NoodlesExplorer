@@ -1,19 +1,22 @@
 #include "tableviewer.h"
 
 #include "delegates/extable.h"
+#include "newselectiondialog.h"
 #include "tabledata.h"
 
 #include "adddatadialog.h"
 
+#include <QDateTime>
 #include <QDebug>
 #include <QFont>
 #include <QHBoxLayout>
+#include <QInputDialog>
 #include <QPushButton>
 #include <QTabWidget>
 #include <QTableView>
 #include <QVBoxLayout>
 
-TableViewer::TableViewer(std::shared_ptr<ExTable> t, QObject* parent)
+TableViewer::TableViewer(QPointer<ExTable> t, QObject* parent)
     : QObject(parent), m_attached_table(t) {
     m_widget = new QWidget;
     m_widget->setAttribute(Qt::WA_DeleteOnClose);
@@ -23,7 +26,7 @@ TableViewer::TableViewer(std::shared_ptr<ExTable> t, QObject* parent)
 
     m_widget->setWindowTitle(t->get_name());
 
-    auto font = QFont("Font Awesome 5 Free", 14);
+    auto font = QFont(QStringList() << "Font Awesome 5 Free", 14);
     font.setStyleName("Solid");
 
     m_ui_root->addRows->setFont(font);
@@ -40,7 +43,7 @@ TableViewer::TableViewer(std::shared_ptr<ExTable> t, QObject* parent)
     connect(m_ui_root->delRows,
             &QToolButton::clicked,
             this,
-            &TableViewer::delete_selection);
+            &TableViewer::delete_selected_rows);
 
     m_ui_root->addSelection->setFont(font);
     m_ui_root->addSelection->setText(QChar(0xf067));
@@ -48,25 +51,48 @@ TableViewer::TableViewer(std::shared_ptr<ExTable> t, QObject* parent)
     m_ui_root->delSelection->setFont(font);
     m_ui_root->delSelection->setText(QChar(0xf068));
 
-    // m_ui_root->newChart->setFont(font);
-    // m_ui_root->newChart->setText(QChar(0xf080));
-
-    // connect(m_ui_root->newChart, &QToolButton::clicked, [this]() {
-    //    auto* this_p = this->parent();
-    //    new ChartViewer(m_attached_table, this_p);
-    //});
 
     connect(m_widget.data(), &QWidget::destroyed, [this](QObject*) {
         this->deleteLater();
     });
 
-    connect(t.get(), &ExTable::fetch_new_remote_table_data, [this]() {
-        m_ui_root->dataView->setModel(m_attached_table->table_data().get());
+    connect(t, &ExTable::fetch_new_remote_table_data, [this]() {
+        m_ui_root->dataView->setModel(m_attached_table->table_data());
+        m_ui_root->selectionListView->setModel(
+            m_attached_table->selections_model());
     });
 
     if (!m_attached_table->is_subscribed()) m_attached_table->subscribe();
 
-    m_ui_root->dataView->setModel(m_attached_table->table_data().get());
+    m_ui_root->dataView->setModel(m_attached_table->table_data());
+
+    if (m_attached_table and m_attached_table->table_data() and
+        m_attached_table->selections_model()) {
+        m_ui_root->selectionListView->setModel(
+            m_attached_table->selections_model());
+    }
+
+
+    //    connect(m_ui_root->selectionListView,
+    //            &QListView::doubleClicked,
+    //            this,
+    //            &TableViewer::selection_double_clicked);
+
+
+    connect(m_ui_root->addSelection,
+            &QPushButton::clicked,
+            this,
+            &TableViewer::add_selection);
+
+    connect(m_ui_root->updateSelection,
+            &QPushButton::clicked,
+            this,
+            &TableViewer::update_selection);
+
+    connect(m_ui_root->delSelection,
+            &QPushButton::clicked,
+            this,
+            &TableViewer::del_selection);
 
     m_widget->setVisible(true);
 }
@@ -84,28 +110,36 @@ void TableViewer::add_rows() {
 
     qDebug() << Q_FUNC_INFO;
     for (auto const& d : data) {
-        qDebug() << "COL" << QString::fromStdString(d.dump_string());
+        qDebug() << "COL" << QCborValue(d).toDiagnosticNotation();
     }
 
     m_attached_table->request_rows_insert(std::move(data));
 }
 
-void TableViewer::delete_selection() {
-    qDebug() << Q_FUNC_INFO;
-    // get the selected keys
-
+QVector<int64_t> TableViewer::get_keys_from_selection() {
     auto rows = m_ui_root->dataView->selectionModel()->selectedRows();
 
-    std::vector<int64_t> keys;
+    QVector<int64_t> keys;
     keys.reserve(rows.size());
 
     for (auto row : rows) {
-        auto key = m_attached_table->table_data()->key_for_row(row.row());
-        keys.push_back(key);
+        auto variant = m_attached_table->table_data()->headerData(
+            row.row(), Qt::Orientation::Vertical);
+
+        bool ok = false;
+        auto k  = variant.toInt(&ok);
+
+        if (ok) keys.push_back(k);
     }
 
+    return keys;
+}
 
-    // qDebug() << Q_FUNC_INFO << QVector<int64_t>::fromStdVector(keys);
+void TableViewer::delete_selected_rows() {
+    qDebug() << Q_FUNC_INFO;
+    // get the selected keys
+
+    auto keys = get_keys_from_selection();
 
     auto p = m_attached_table->request_deletion(keys);
 
@@ -117,3 +151,152 @@ void TableViewer::delete_selection() {
         m_ui_root->delRows->setEnabled(true);
     });
 }
+
+void TableViewer::add_selection() {
+    auto name = QInputDialog::getText(m_widget,
+                                      "New selection name",
+                                      "New selection name:",
+                                      QLineEdit::Normal);
+
+    noo::Selection sel;
+
+    sel.rows = get_keys_from_selection();
+
+    if (sel.rows.empty()) {
+        auto dialog = NewSelectionDialog(
+            "Enter a selection. You can also select items in the table view "
+            "and press the Add Selection button instead.",
+            m_widget);
+
+        auto dialog_ret = dialog.exec();
+
+        if (dialog_ret != QDialog::Accepted) {
+            // we dont want to add an empty one
+            return;
+        }
+
+        sel = dialog.get_selection();
+    }
+
+    qDebug() << "Keys selected" << sel.rows;
+
+    if (name.isEmpty()) { name = QDateTime::currentDateTime().toString(); }
+
+    sel.name = name;
+
+    m_attached_table->request_selection_update(std::move(sel));
+}
+
+void TableViewer::del_selection() {
+    auto rows = m_ui_root->selectionListView->selectionModel()->selectedRows();
+
+    if (rows.empty()) return;
+
+    auto row = rows.value(0);
+
+    auto variant = m_attached_table->selections_model()->data(row);
+
+    auto name = variant.toString();
+
+    auto blank_selection = noo::Selection();
+    blank_selection.name = name;
+
+    m_attached_table->request_selection_update(blank_selection);
+}
+
+void TableViewer::update_selection() {
+    auto rows = m_ui_root->selectionListView->selectionModel()->selectedRows();
+
+    if (rows.empty()) return;
+
+    auto row = rows.value(0);
+
+    auto variant = m_attached_table->selections_model()->data(row);
+
+    auto name = variant.toString();
+
+    if (name.isEmpty()) return;
+
+    noo::Selection sel;
+
+    sel.name = name;
+    sel.rows = get_keys_from_selection();
+
+    if (sel.rows.empty()) {
+        auto dialog = NewSelectionDialog(
+            "Enter a selection. You can also select items in the table view "
+            "and press the Add Selection button instead.",
+            m_widget);
+
+        auto dialog_ret = dialog.exec();
+
+        if (dialog_ret != QDialog::Accepted) {
+            // we dont want to add an empty one
+            return;
+        }
+
+        sel = dialog.get_selection();
+    }
+
+    m_attached_table->request_selection_update(sel);
+}
+
+// void TableViewer::selection_double_clicked(QModelIndex const& index) {
+//     qDebug() << Q_FUNC_INFO << index;
+//     auto row = index.row();
+
+//    auto slot = m_attached_table->table_data()->selections()->slot_at(row);
+
+//    qDebug() << slot;
+
+//    if (!slot) return;
+
+//    auto const& selection = slot->selection;
+
+//    QItemSelection new_selection;
+
+//    auto* model = m_attached_table->table_data().get();
+
+//    auto cols = std::max(model->columnCount() - 1, 0);
+
+//    qDebug() << QList<int64_t>(selection.rows.begin(), selection.rows.end());
+
+
+//    for (auto key : selection.rows) {
+//        auto row = model->row_for_key(key);
+
+//        qDebug() << key << row;
+
+//        if (row < 0) continue;
+
+//        auto index_s = model->index(row, 0);
+//        auto index_e = model->index(row, cols);
+
+//        qDebug() << index_s << index_e;
+
+//        new_selection.select(index_s, index_e);
+//    }
+
+//    for (auto const& range : selection.row_ranges) {
+//        // this is horrible, but for the moment it will work.
+
+//        for (auto key = range.first; key < range.second; key++) {
+//            auto row = model->row_for_key(key);
+
+//            qDebug() << key << row;
+
+//            if (row < 0) continue;
+
+//            auto index = model->index(row, cols);
+
+//            new_selection.select(index, index);
+//        }
+//    }
+
+//    qDebug() << new_selection;
+
+
+//    auto* selection_model = m_ui_root->dataView->selectionModel();
+
+//    selection_model->select(new_selection, QItemSelectionModel::Select);
+//}

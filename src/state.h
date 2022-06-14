@@ -7,17 +7,31 @@
 #include "delegates/delegates.h"
 #include "delegates/exdoc.h"
 
-#include <QEntity>
 #include <QObject>
 #include <QPointer>
-
-#include <Qt3DCore/QEntity>
 
 class QQmlContext;
 
 namespace nooc {
 class ClientConnection;
 }
+
+class TaggedNameObjectFilter;
+
+class ExSignal;
+class ExTable;
+class ExBuffer;
+class ExBufferView;
+class ExTexture;
+class ExSampler;
+class ExImage;
+class ExMaterial;
+class ExLight;
+class ExMesh;
+class ExObject;
+class EntityChangeNotifier;
+class MaterialChangeNotifier;
+
 
 class State : public QObject {
     Q_OBJECT
@@ -29,24 +43,30 @@ class State : public QObject {
 
     int m_connection_state;
 
-    UniqueQPtr<Qt3DCore::QEntity> m_root_entity;
-
-
-    std::shared_ptr<ExMethod> m_current_doc_method;
-    ArgumentTableModel        m_argument_table_model;
+    QPointer<ExMethod> m_current_doc_method;
+    ArgumentTableModel m_argument_table_model;
 
     AttachedMethodListModel m_document_methods;
 
-    std::shared_ptr<ComponentListModel> m_method_list;
-    std::shared_ptr<ComponentListModel> m_signal_list;
-    std::shared_ptr<ComponentListModel> m_table_list;
-    std::shared_ptr<ComponentListModel> m_buffer_list;
-    std::shared_ptr<ComponentListModel> m_texture_list;
-    std::shared_ptr<ComponentListModel> m_material_list;
-    std::shared_ptr<ComponentListModel> m_light_list;
-    std::shared_ptr<ComponentListModel> m_mesh_list;
-    std::shared_ptr<ComponentListModel> m_object_list;
-    std::shared_ptr<ExDoc>              m_current_doc;
+    EntityChangeNotifier*   m_ent_notifier;
+    MaterialChangeNotifier* m_mat_notifier;
+
+    ComponentListModel<ExMethod>*     m_method_list;
+    ComponentListModel<ExSignal>*     m_signal_list;
+    ComponentListModel<ExTable>*      m_table_list;
+    ComponentListModel<ExBuffer>*     m_buffer_list;
+    ComponentListModel<ExBufferView>* m_buffer_view_list;
+    ComponentListModel<ExTexture>*    m_texture_list;
+    ComponentListModel<ExSampler>*    m_sampler_list;
+    ComponentListModel<ExImage>*      m_image_list;
+    ComponentListModel<ExMaterial>*   m_material_list;
+    ComponentListModel<ExLight>*      m_light_list;
+    ComponentListModel<ExMesh>*       m_mesh_list;
+    ComponentListModel<ExObject>*     m_object_list;
+    QPointer<ExDoc>                   m_current_doc;
+
+
+    TaggedNameObjectFilter* m_object_filter;
 
 
 public:
@@ -59,15 +79,11 @@ public:
 
 public slots:
     bool start_connection(QString name, QString url);
+    void disconnect();
 
     void set_connection_state(int connection_state);
 
     QString get_hostname();
-
-    void ask_to_call_doc_method(int index);
-    void invoke_doc_method();
-
-    Qt3DCore::QEntity* scene_root();
 
     void exec_debug();
 
@@ -83,30 +99,6 @@ private slots:
 signals:
     void connection_state_changed(int connection_state);
 
-    void open_call_method_page();
-
-    void method_result_recieved(QString);
-    void method_error_recieved(QString);
-
     void debug_tree();
 };
-
-
-class EntityShim : public Qt3DCore::QEntity {
-public:
-    EntityShim(Qt3DCore::QNode* n = nullptr);
-    ~EntityShim();
-};
-
-class NormalizeStringReply : public nooc::PendingMethodReply {
-    Q_OBJECT
-
-public:
-    using PendingMethodReply::PendingMethodReply;
-
-    void interpret() override;
-signals:
-    void recv(QString);
-};
-
 #endif // STATE_H
