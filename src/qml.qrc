@@ -26,5 +26,6 @@
         <file>qml/RenderableMaterial.qml</file>
         <file>qml/FirstPersonController.qml</file>
         <file>qml/NSPopup.qml</file>
+        <file>qml/NSPopOver.qml</file>
     </qresource>
 </RCC>

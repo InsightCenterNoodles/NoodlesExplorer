@@ -29,6 +29,9 @@ public:
     explicit EntityChangeNotifier(QObject* parent = nullptr);
     ~EntityChangeNotifier();
 
+public slots:
+    void on_pick(ExObject*) { }
+
 signals:
     void ask_delete(int32_t);
     void ask_create(int32_t             new_id,

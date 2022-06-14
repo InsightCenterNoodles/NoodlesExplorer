@@ -24,7 +24,6 @@ Item {
                 eulerRotation.y: -90
 
                 Component.onCompleted: {
-                    //lookAt(0, 0, 0)
                     lookAt(root_node)
                 }
             }
@@ -34,6 +33,7 @@ Item {
             ambientColor: Qt.rgba(0.5, 0.5, 0.5, 1.0)
             brightness: 1.0
             eulerRotation.x: -25
+            castsShadow: true
         }
 
         Model {
@@ -52,6 +52,25 @@ Item {
                     opacity: .50
                 }
             ]
+
+            visible: settings.show_grid
+        }
+
+        Model {
+            id: cursor
+
+            source: "#Sphere"
+            scale: Qt.vector3d(.001, .001, .001)
+
+            materials: [
+                PrincipledMaterial {
+                    baseColor: Style.yellow
+                    metalness: 0.0
+                    roughness: 0.1
+                }
+            ]
+
+            visible: false
         }
     }
 
@@ -102,6 +121,8 @@ Item {
                 new_ent.materials.push(new_ent)
             }
 
+            console.log(new_ent.bounds.minimum, new_ent.bounds.maximum)
+
             entity_list[oid] = new_ent
             console.log(oid, pid, material, mesh, instances)
             onAsk_set_parent(oid, pid)
@@ -146,7 +167,7 @@ Item {
 
         environment: SceneEnvironment {
             antialiasingMode: SceneEnvironment.MSAA
-            clearColor: "black"
+            clearColor: settings.clear_color
             backgroundMode: SceneEnvironment.Color
         }
     }
@@ -156,18 +177,38 @@ Item {
         anchors.margins: 20
         acceptedButtons: Qt.RightButton
 
-        onClicked: mouse => {
-                       console.log(mouse.x, mouse.y)
-                       var result = scene_3d.pick(mouse.x, mouse.y)
-                       console.log(result.distance, result.normal,
-                                   result.objectHit, result.position)
-                       if (result.objectHit) {
-                           var obj = result.objectHit
-                           console.log(obj.hosting_object)
-                       } else {
-                           console.log("No hit")
-                       }
-                   }
+        onClicked: function (mouse) {
+            console.log("Click at", mouse.x, mouse.y)
+            var result_list = scene_3d.pickAll(mouse.x, mouse.y)
+
+            for (var i = 0; i < result_list.length; i++) {
+
+                result = result_list[i]
+
+                console.log(result.distance, result.normal, result.objectHit,
+                            result.position)
+                if (result.objectHit) {
+                    console.log("Hit!")
+                    var obj = result.objectHit
+                    console.log(obj.hosting_object)
+                    if (obj.hosting_object) {
+                        entity_notifier.on_pick(obj.hosting_object)
+                    }
+
+                    let new_pos = root_node.mapPositionFromScene(
+                            result.scenePosition)
+
+                    console.log("Moving cursor", new_pos)
+
+                    cursor.position = new_pos
+                    cursor.visible = true
+
+                    return
+                }
+
+                console.log("No hit")
+            }
+        }
     }
 
     FirstPersonController {

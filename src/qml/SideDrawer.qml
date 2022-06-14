@@ -17,16 +17,14 @@ Item {
     }
 
     Rectangle {
-        id: drawer
 
         anchors.fill: parent
         anchors.margins: 5
 
         radius: 5
 
-        opacity: 1
-
-        color: Style.set_alpha(Style.grey3, .6)
+        //opacity: 1
+        color: Style.set_alpha(Style.grey3, has_mouse ? .9 : .6)
 
         property bool has_mouse: hover_area.hovered
 

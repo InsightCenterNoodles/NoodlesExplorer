@@ -95,10 +95,8 @@ NSGroupBox {
             Row {
                 Layout.fillWidth: true
 
-                ToolButton {
+                NSRoundedButton {
                     text: "\uf104"
-                    font.family: icon_solid.name
-                    font.styleName: "Solid"
                     onClicked: object_view_stack.pop()
                 }
 

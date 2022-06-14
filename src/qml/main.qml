@@ -31,7 +31,7 @@ ApplicationWindow {
         property string last_user: app_state.get_hostname()
         property string last_server: "ws://localhost:50000"
 
-        property bool orbit_cam: true
+        property bool show_grid: true
         property color clear_color: "#111111"
     }
     FontLoader {
@@ -66,7 +66,7 @@ ApplicationWindow {
         id: window_bezel
 
         radius: 5
-        color: "black"
+        color: settings.clear_color
 
         anchors.fill: parent
         anchors.margins: 5
@@ -83,6 +83,47 @@ ApplicationWindow {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.right: parent.right
+
+            anchors.rightMargin: 0
+
+            states: State {
+                name: "hidden"
+                PropertyChanges {
+                    target: drawer
+                    anchors.rightMargin: -drawer.width
+                    //rotation: 50
+                }
+            }
+
+            transitions: Transition {
+                from: ""
+                to: "hidden"
+                reversible: true
+                ParallelAnimation {
+                    NumberAnimation {
+                        properties: "anchors.rightMargin"
+                        duration: 500
+                        easing.type: Easing.InOutQuad
+                    }
+                }
+            }
+        }
+
+        NSRoundedButton {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.topMargin: 6
+            text: "\uf0d9"
+            onClicked: drawer.state = ""
+            visible: drawer.state === "hidden"
+            opacity: drawer.state === "hidden"
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 200
+                    easing.type: Easing.InOutQuad
+                }
+            }
         }
 
         Rectangle {

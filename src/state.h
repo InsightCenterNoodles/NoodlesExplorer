@@ -79,6 +79,7 @@ public:
 
 public slots:
     bool start_connection(QString name, QString url);
+    void disconnect();
 
     void set_connection_state(int connection_state);
 

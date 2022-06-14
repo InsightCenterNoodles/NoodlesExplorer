@@ -2,18 +2,17 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-NSPopup {
+Item {
+    //NSPopOver {
     id: root
 
     //x: Math.round((parent.width - width) / 2)
     //y: Math.round((parent.height - height) / 2)
 
     //width: parent.width * .75
-    closePolicy: Popup.NoAutoClose
-
     ColumnLayout {
-        anchors.right: parent.right
-        anchors.left: parent.left
+        anchors.fill: parent
+
         GridLayout {
             rows: 2
             columns: 2
@@ -21,7 +20,7 @@ NSPopup {
             Layout.fillWidth: true
 
             Label {
-                text: "Client Name:"
+                text: "Name:"
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
             }
 
@@ -35,7 +34,7 @@ NSPopup {
             }
 
             Label {
-                text: "Server Address:"
+                text: "Address:"
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
             }
 
@@ -55,13 +54,6 @@ NSPopup {
             Layout.fillWidth: true
             Item {
                 Layout.fillWidth: true
-            }
-
-            NSButton {
-                text: "Cancel"
-
-                //Material.background: Material.Pink
-                onClicked: root.close()
             }
             NSButton {
                 text: "Connect"

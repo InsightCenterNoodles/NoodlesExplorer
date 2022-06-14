@@ -179,6 +179,10 @@ bool State::start_connection(QString name, QString url) {
     return true;
 }
 
+void State::disconnect() {
+    handle_disconnect();
+}
+
 void State::set_connection_state(int connection_state) {
     if (m_connection_state == connection_state) return;
 

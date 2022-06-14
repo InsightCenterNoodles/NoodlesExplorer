@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 
 Popup {
+    id: root
     enter: Transition {
         ParallelAnimation {
             //            PropertyAnimation {
@@ -30,7 +31,7 @@ Popup {
                 property: "opacity"
                 from: 1
                 to: 0
-                duration: 250
+                duration: 150
                 easing.type: Easing.Linear
             }
             //            PropertyAnimation {
@@ -42,5 +43,12 @@ Popup {
             //                easing.type: Easing.OutQuad
             //            }
         }
+    }
+
+    background: Rectangle {
+        //implicitWidth: 200
+        //implicitHeight: 200
+        radius: 5
+        color: root.palette.mid
     }
 }

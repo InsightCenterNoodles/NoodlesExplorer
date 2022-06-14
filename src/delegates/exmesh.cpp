@@ -35,6 +35,40 @@ void copy_attribute(std::span<char const> src,
     }
 }
 
+
+template <class Function>
+void compute_min_max(QVector3D&            min_p,
+                     QVector3D&            max_p,
+                     std::span<char const> src,
+                     size_t                src_stride,
+                     size_t                vertex_count,
+                     Function              transformer) {
+
+    if (src.empty()) return;
+
+    char const* source_ptr = src.data();
+
+    glm::vec3 lmin(std::numeric_limits<float>::max());
+    glm::vec3 lmax(std::numeric_limits<float>::lowest());
+
+    for (size_t i = 0; i < vertex_count; i++) {
+        assert(source_ptr < (src.data() + src.size()));
+
+        glm::vec4 dest;
+
+        transformer(source_ptr, (char*)&dest);
+
+        source_ptr += src_stride;
+
+        lmin = glm::min(lmin, glm::vec3(dest));
+        lmax = glm::max(lmax, glm::vec3(dest));
+    }
+
+    min_p = QVector3D(lmin.x, lmin.y, lmin.z);
+    max_p = QVector3D(lmax.x, lmax.y, lmax.z);
+}
+
+
 void tf_position(char const* source_ptr, char* dest_ptr) {
     // we are assuming VEC3
     *((glm::vec3*)dest_ptr) = *((glm::vec3 const*)source_ptr);
@@ -195,6 +229,8 @@ void ExMeshGeometry::update_data() {
 
     char* cursor = new_bytes.data();
 
+    QVector3D min_p, max_p;
+
     for (auto const& attrib : m_data->attributes) {
 
         auto* src_buff = attrib.view->source_buffer();
@@ -215,6 +251,10 @@ void ExMeshGeometry::update_data() {
                            dest_vertex_stride,
                            num_vertex,
                            tf_position);
+
+            compute_min_max(
+                min_p, max_p, src_span, attrib.stride, num_vertex, tf_position);
+
             break;
         case noo::AttributeSemantic::NORMAL:
             copy_attribute(src_span,
@@ -323,6 +363,8 @@ void ExMeshGeometry::update_data() {
     setStride(dest_vertex_stride);
 
     setPrimitiveType(convert_prim_type(m_data->type));
+
+    setBounds(min_p, max_p);
 
     qDebug() << "PRIM TYPE" << (int)m_data->type << (int)primitiveType();
 
