@@ -1,10 +1,17 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.Material
 import QtQuick.Layouts
 
-Popup {
+NSPopup {
     id: settings_pop
+
+    modal: true
+    dim: true
+
+    parent: Overlay.overlay
+
+    x: Math.round((parent.width - width) / 2)
+    y: Math.round((parent.height - height) / 2)
 
     margins: 0
 
@@ -12,32 +19,39 @@ Popup {
         columns: 2
 
         Label {
-            text: "Orbit:"
+            Layout.columnSpan: 2
+            text: "Settings"
+            font.pointSize: 24
+        }
+
+        Label {
+            text: "Show Grid:"
 
             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
         }
 
         Switch {
-            id: orbit_setting
+            id: show_grid_setting
 
             Binding {
-                target: orbit_setting
+                target: show_grid_setting
                 property: "checked"
-                value: settings.orbit_cam
+                value: settings.show_grid
             }
 
-            onCheckedChanged: settings.orbit_cam = checked
+            onCheckedChanged: settings.show_grid = checked
         }
 
         Label {
             text: "Background:"
+
+            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
         }
 
         Rectangle {
             id: color_well
             color: settings.clear_color
             border.width: 1
-            border.color: Material.primaryColor
 
             Layout.fillHeight: true
             Layout.fillWidth: true

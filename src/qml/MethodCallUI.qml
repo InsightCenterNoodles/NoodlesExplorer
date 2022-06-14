@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.Material
+//import QtQuick.Controls.Material
 import QtQuick.Layouts
 
 ColumnLayout {
@@ -34,13 +34,12 @@ ColumnLayout {
                         height: parent.height
                         width: parent.width
 
-                        color: Material.backgroundColor
-
+                        // color: Material.backgroundColor
                         border.width: 1
-                        border.color: edited ? Material.color(
-                                                   Material.Green) : Material.color(
-                                                   Material.Red)
 
+                        //border.color: edited ? Material.color(
+                        //                           Material.Green) : Material.color(
+                        //                         Material.Red)
                         radius: 5
 
                         Label {
@@ -143,7 +142,7 @@ ColumnLayout {
                                         id: json_edit_label
                                         text: arg_editor_fld.valid_json ? "OK" : "Parse Error"
                                         font.bold: !arg_editor_fld
-                                        Material.foreground: arg_editor_fld.valid_json ? Material.color(Material.Green) : Material.color(Material.Red)
+                                        //Material.foreground: arg_editor_fld.valid_json ? Material.color(Material.Green) : Material.color(Material.Red)
                                     }
                                 }
                             }

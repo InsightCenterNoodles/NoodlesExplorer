@@ -21,7 +21,7 @@ public:
 
     explicit AttachedMethodListModel(QObject* parent = nullptr);
 
-    void set(std::vector<nooc::MethodDelegate*> const&);
+    void set(QVector<nooc::MethodDelegate*> const&);
     void clear();
 
     ExMethod* get_method_row(int) const;

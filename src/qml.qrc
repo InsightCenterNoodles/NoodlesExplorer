@@ -1,34 +1,31 @@
 <RCC>
     <qresource prefix="/">
-        <file>main.qml</file>
         <file>qtquickcontrols2.conf</file>
-        <file>SideDrawer.qml</file>
-        <file>DrawerContent.qml</file>
         <file>img/test.png</file>
-        <file>MethodCallUI.qml</file>
-        <file>fa-solid-900.ttf</file>
-        <file>fa-regular-400.ttf</file>
         <file>Roboto-Regular.ttf</file>
-        <file>instance_material/shaders/es3/coordinatesystems.inc</file>
-        <file>instance_material/shaders/es3/default.vert</file>
-        <file>instance_material/shaders/es3/light.inc.frag</file>
-        <file>instance_material/shaders/es3/metalrough.inc.frag</file>
-        <file>instance_material/shaders/gl3/coordinatesystems.inc</file>
-        <file>instance_material/shaders/gl3/default.vert</file>
-        <file>instance_material/shaders/gl3/light.inc.frag</file>
-        <file>instance_material/shaders/gl3/metalrough.inc.frag</file>
-        <file>instance_material/shaders/graphs/metalrough.frag.json</file>
-        <file>instance_material/shaders/rhi/coordinatesystems.inc</file>
-        <file>instance_material/shaders/rhi/default.vert</file>
-        <file>instance_material/shaders/rhi/defaultuniforms.inc</file>
-        <file>instance_material/shaders/rhi/light.inc.frag</file>
-        <file>instance_material/shaders/rhi/metalrough.inc.frag</file>
-        <file>InspectorPopup.qml</file>
-        <file>HeaderTable.qml</file>
-        <file>SceneViewComponent.qml</file>
-        <file>SettingsPopup.qml</file>
-        <file>ColorPicker.qml</file>
-        <file>instance_material/shaders/gl3/metalrough.frag</file>
-        <file>ObjectBox.qml</file>
+        <file>qml/ColorPicker.qml</file>
+        <file>qml/DrawerContent.qml</file>
+        <file>qml/HeaderTable.qml</file>
+        <file>qml/InspectorPopup.qml</file>
+        <file>qml/main.qml</file>
+        <file>qml/MethodCallUI.qml</file>
+        <file>qml/NSButton.qml</file>
+        <file>qml/ObjectBox.qml</file>
+        <file>qml/qmldir</file>
+        <file>qml/RenderableEntity.qml</file>
+        <file>qml/SceneViewComponent.qml</file>
+        <file>qml/SettingsPopup.qml</file>
+        <file>qml/SideDrawer.qml</file>
+        <file>qml/Style.qml</file>
+        <file>qml/NSRoundedButton.qml</file>
+        <file>qml/WindowControls.qml</file>
+        <file>qml/NSGroupBox.qml</file>
+        <file>qml/NSTextField.qml</file>
+        <file>fa_solid_6.otf</file>
+        <file>qml/ConnectionPopup.qml</file>
+        <file>qml/RenderableMaterial.qml</file>
+        <file>qml/FirstPersonController.qml</file>
+        <file>qml/NSPopup.qml</file>
+        <file>qml/NSPopOver.qml</file>
     </qresource>
 </RCC>

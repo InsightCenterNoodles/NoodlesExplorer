@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.Material
+//import QtQuick.Controls.Material
 import QtQuick.Layouts
 
 import Qt.labs.qmlmodels 1.0
@@ -11,7 +11,7 @@ ColumnLayout {
 
     property var model
 
-    property int columnSpacing: 6
+    property int columnSpacing: 0
     property var relWidths: []
     property int defaultColumnWidth: 25
 
@@ -35,16 +35,15 @@ ColumnLayout {
 
     property var frac_widths: []
 
-    Rectangle {
+    Item {
         Layout.fillWidth: true
         height: 18
 
-        color: Material.backgroundColor
-
+        //color: Material.backgroundColor
         Row {
             anchors.fill: parent
             spacing: root.columnSpacing
-            z: 2
+            //z: 2
             Repeater {
                 model: table_view.columns > 0 ? table_view.columns : 1
                 Label {
@@ -91,9 +90,14 @@ ColumnLayout {
         //        }
         model: root.model
 
-        delegate: Label {
-            text: String(display).length ? String(display) : " "
-            elide: Label.ElideRight
+        delegate: Rectangle {
+            color: row % 2 == 0 ? Style.grey3 : Style.grey4
+            implicitHeight: 20
+            Label {
+                anchors.fill: parent
+                text: String(display).length ? String(display) : " "
+                elide: Label.ElideRight
+            }
         }
     }
 }

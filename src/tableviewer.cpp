@@ -57,26 +57,26 @@ TableViewer::TableViewer(QPointer<ExTable> t, QObject* parent)
     });
 
     connect(t, &ExTable::fetch_new_remote_table_data, [this]() {
-        m_ui_root->dataView->setModel(m_attached_table->table_data().get());
+        m_ui_root->dataView->setModel(m_attached_table->table_data());
         m_ui_root->selectionListView->setModel(
-            m_attached_table->table_data()->selections());
+            m_attached_table->selections_model());
     });
 
     if (!m_attached_table->is_subscribed()) m_attached_table->subscribe();
 
-    m_ui_root->dataView->setModel(m_attached_table->table_data().get());
+    m_ui_root->dataView->setModel(m_attached_table->table_data());
 
     if (m_attached_table and m_attached_table->table_data() and
-        m_attached_table->table_data()->selections()) {
+        m_attached_table->selections_model()) {
         m_ui_root->selectionListView->setModel(
-            m_attached_table->table_data()->selections());
+            m_attached_table->selections_model());
     }
 
 
-    connect(m_ui_root->selectionListView,
-            &QListView::doubleClicked,
-            this,
-            &TableViewer::selection_double_clicked);
+    //    connect(m_ui_root->selectionListView,
+    //            &QListView::doubleClicked,
+    //            this,
+    //            &TableViewer::selection_double_clicked);
 
 
     connect(m_ui_root->addSelection,
@@ -110,21 +110,26 @@ void TableViewer::add_rows() {
 
     qDebug() << Q_FUNC_INFO;
     for (auto const& d : data) {
-        qDebug() << "COL" << QString::fromStdString(d.dump_string());
+        qDebug() << "COL" << QCborValue(d).toDiagnosticNotation();
     }
 
     m_attached_table->request_rows_insert(std::move(data));
 }
 
-std::vector<int64_t> TableViewer::get_keys_from_selection() {
+QVector<int64_t> TableViewer::get_keys_from_selection() {
     auto rows = m_ui_root->dataView->selectionModel()->selectedRows();
 
-    std::vector<int64_t> keys;
+    QVector<int64_t> keys;
     keys.reserve(rows.size());
 
     for (auto row : rows) {
-        auto key = m_attached_table->table_data()->key_for_row(row.row());
-        keys.push_back(key);
+        auto variant = m_attached_table->table_data()->headerData(
+            row.row(), Qt::Orientation::Vertical);
+
+        bool ok = false;
+        auto k  = variant.toInt(&ok);
+
+        if (ok) keys.push_back(k);
     }
 
     return keys;
@@ -173,14 +178,13 @@ void TableViewer::add_selection() {
         sel = dialog.get_selection();
     }
 
-    qDebug() << "Keys selected"
-             << QList<int64_t>(sel.rows.begin(), sel.rows.end());
-
-    auto local_str = name.toStdString();
+    qDebug() << "Keys selected" << sel.rows;
 
     if (name.isEmpty()) { name = QDateTime::currentDateTime().toString(); }
 
-    m_attached_table->request_selection_update(local_str, std::move(sel));
+    sel.name = name;
+
+    m_attached_table->request_selection_update(std::move(sel));
 }
 
 void TableViewer::del_selection() {
@@ -190,10 +194,14 @@ void TableViewer::del_selection() {
 
     auto row = rows.value(0);
 
-    auto name =
-        m_attached_table->table_data()->selections()->slot_at(row.row())->name;
+    auto variant = m_attached_table->selections_model()->data(row);
 
-    m_attached_table->request_selection_update(name, {});
+    auto name = variant.toString();
+
+    auto blank_selection = noo::Selection();
+    blank_selection.name = name;
+
+    m_attached_table->request_selection_update(blank_selection);
 }
 
 void TableViewer::update_selection() {
@@ -203,13 +211,15 @@ void TableViewer::update_selection() {
 
     auto row = rows.value(0);
 
-    auto name =
-        m_attached_table->table_data()->selections()->slot_at(row.row())->name;
+    auto variant = m_attached_table->selections_model()->data(row);
 
-    if (name.empty()) return;
+    auto name = variant.toString();
+
+    if (name.isEmpty()) return;
 
     noo::Selection sel;
 
+    sel.name = name;
     sel.rows = get_keys_from_selection();
 
     if (sel.rows.empty()) {
@@ -228,65 +238,65 @@ void TableViewer::update_selection() {
         sel = dialog.get_selection();
     }
 
-    m_attached_table->request_selection_update(name, std::move(sel));
+    m_attached_table->request_selection_update(sel);
 }
 
-void TableViewer::selection_double_clicked(QModelIndex const& index) {
-    qDebug() << Q_FUNC_INFO << index;
-    auto row = index.row();
+// void TableViewer::selection_double_clicked(QModelIndex const& index) {
+//     qDebug() << Q_FUNC_INFO << index;
+//     auto row = index.row();
 
-    auto slot = m_attached_table->table_data()->selections()->slot_at(row);
+//    auto slot = m_attached_table->table_data()->selections()->slot_at(row);
 
-    qDebug() << slot;
+//    qDebug() << slot;
 
-    if (!slot) return;
+//    if (!slot) return;
 
-    auto const& selection = slot->selection;
+//    auto const& selection = slot->selection;
 
-    QItemSelection new_selection;
+//    QItemSelection new_selection;
 
-    auto* model = m_attached_table->table_data().get();
+//    auto* model = m_attached_table->table_data().get();
 
-    auto cols = std::max(model->columnCount() - 1, 0);
+//    auto cols = std::max(model->columnCount() - 1, 0);
 
-    qDebug() << QList<int64_t>(selection.rows.begin(), selection.rows.end());
-
-
-    for (auto key : selection.rows) {
-        auto row = model->row_for_key(key);
-
-        qDebug() << key << row;
-
-        if (row < 0) continue;
-
-        auto index_s = model->index(row, 0);
-        auto index_e = model->index(row, cols);
-
-        qDebug() << index_s << index_e;
-
-        new_selection.select(index_s, index_e);
-    }
-
-    for (auto const& range : selection.row_ranges) {
-        // this is horrible, but for the moment it will work.
-
-        for (auto key = range.first; key < range.second; key++) {
-            auto row = model->row_for_key(key);
-
-            qDebug() << key << row;
-
-            if (row < 0) continue;
-
-            auto index = model->index(row, cols);
-
-            new_selection.select(index, index);
-        }
-    }
-
-    qDebug() << new_selection;
+//    qDebug() << QList<int64_t>(selection.rows.begin(), selection.rows.end());
 
 
-    auto* selection_model = m_ui_root->dataView->selectionModel();
+//    for (auto key : selection.rows) {
+//        auto row = model->row_for_key(key);
 
-    selection_model->select(new_selection, QItemSelectionModel::Select);
-}
+//        qDebug() << key << row;
+
+//        if (row < 0) continue;
+
+//        auto index_s = model->index(row, 0);
+//        auto index_e = model->index(row, cols);
+
+//        qDebug() << index_s << index_e;
+
+//        new_selection.select(index_s, index_e);
+//    }
+
+//    for (auto const& range : selection.row_ranges) {
+//        // this is horrible, but for the moment it will work.
+
+//        for (auto key = range.first; key < range.second; key++) {
+//            auto row = model->row_for_key(key);
+
+//            qDebug() << key << row;
+
+//            if (row < 0) continue;
+
+//            auto index = model->index(row, cols);
+
+//            new_selection.select(index, index);
+//        }
+//    }
+
+//    qDebug() << new_selection;
+
+
+//    auto* selection_model = m_ui_root->dataView->selectionModel();
+
+//    selection_model->select(new_selection, QItemSelectionModel::Select);
+//}

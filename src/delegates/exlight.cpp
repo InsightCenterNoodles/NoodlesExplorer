@@ -1,5 +1,7 @@
 #include "exlight.h"
 
+#include "variant_tools.h"
+
 #include <QDirectionalLight>
 #include <QEntity>
 #include <QPointLight>
@@ -14,10 +16,8 @@ static QColor get_color(std::optional<glm::vec3> const& c) {
     return QColor::fromRgbF(vec.r, vec.g, vec.b);
 }
 
-ExLight::ExLight(noo::LightID           id,
-                 nooc::LightData const& md,
-                 Qt3DCore::QEntity*     scene_root)
-    : nooc::LightDelegate(id, md), m_data(md) {
+ExLight::ExLight(noo::LightID id, nooc::LightInit const& md)
+    : nooc::LightDelegate(id, md) {
 
     qDebug() << "CREATE LIGHT" << id.to_qstring();
 #if 0
@@ -72,17 +72,30 @@ QVariant ExLight::get_column(int c) const {
     switch (c) {
     case 0: return get_id();
     case 1: return get_name();
-    case 2: return (int)m_data.type.value_or(nooc::LightType::POINT);
-    case 3: return get_color(m_data.color);
-    case 4: return m_data.intensity.value_or(0);
+    case 2: {
+        return VMATCH(
+            info().type,
+            VCASE(nooc::PointLight l) {
+                return QString("Point (range %1)").arg(l.range);
+            },
+            VCASE(nooc::SpotLight l) {
+                return QString("Spot (range %1, angles %2 - %3)")
+                    .arg(l.range,
+                         l.inner_cone_angle_rad,
+                         l.outer_cone_angle_rad);
+            },
+            VCASE(nooc::DirectionLight l) {
+                return QString("Direction (range %1)").arg(l.range);
+            }, )
+    }
+    case 3: return info().color;
+    case 4: return info().intensity;
     }
     return {};
 }
 
-void ExLight::on_update(nooc::LightData const& md) {
-    m_data = md;
-}
+void ExLight::on_update(nooc::LightUpdate const& /*md*/) { }
 
-Qt3DRender::QAbstractLight* ExLight::entity() {
-    return m_3d_entity;
-}
+// Qt3DRender::QAbstractLight* ExLight::entity() {
+//     return m_3d_entity;
+// }

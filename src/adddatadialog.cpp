@@ -4,12 +4,20 @@
 #include "delegates/extable.h"
 #include "tabledata.h"
 
-#include <noo_any.h>
+static QStringList make_column_names(QAbstractTableModel* model) {
+    QStringList ret;
+
+    for (auto i = 0; i < model->columnCount(); i++) {
+        ret << model->headerData(i, Qt::Orientation::Horizontal).toString();
+    }
+
+    return ret;
+}
 
 void AddDataDialog::setup() {
     // m_ui_root->dataView->setModel(m_table->table_data().get());
 
-    auto names = m_table->table_data()->column_names();
+    auto names = make_column_names(m_table->table_data());
 
     ui->tableWidget->setColumnCount(names.size());
 
@@ -26,7 +34,7 @@ void AddDataDialog::double_clicked(QTableWidgetItem* item) {
 
     ui->tableWidget->insertRow(new_row_item->row());
 
-    auto names = m_table->table_data()->column_names();
+    auto names = make_column_names(m_table->table_data());
 
     ui->tableWidget->setSpan(
         new_row_item->row(), new_row_item->column(), 1, names.size());
@@ -64,13 +72,13 @@ AddDataDialog::~AddDataDialog() {
     delete ui;
 }
 
-noo::AnyVarList AddDataDialog::get_data() const {
+QCborArray AddDataDialog::get_data() const {
     // should be returned as a list of columns
 
-    noo::AnyVarList l;
+    QCborArray l;
 
     for (int ci = 0; ci < ui->tableWidget->columnCount(); ci++) {
-        noo::AnyVarList this_col;
+        QCborArray this_col;
 
         for (int ri = 0; ri < ui->tableWidget->rowCount() - 1; ri++) {
             auto* item = ui->tableWidget->item(ri, ci);
@@ -82,13 +90,13 @@ noo::AnyVarList AddDataDialog::get_data() const {
             auto value = d.toDouble(&ok);
 
             if (!ok) {
-                this_col.emplace_back(d.toString().toStdString());
+                this_col << d.toString();
             } else {
-                this_col.emplace_back(value);
+                this_col << value;
             }
         }
 
-        l.emplace_back(std::move(this_col));
+        l << std::move(this_col);
     }
 
     return l;

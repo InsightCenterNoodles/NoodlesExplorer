@@ -3,7 +3,6 @@
 
 #include "variant_tools.h"
 
-#include <noo_any.h>
 #include <noo_common.h>
 
 #include <QJsonArray>
@@ -12,60 +11,8 @@
 #include <QJsonValue>
 
 // Forward
-static noo::AnyVar from_json(QJsonValue const& s);
 
-static noo::AnyVar from_json(QJsonArray const& arr) {
-    // TODO: we can do better
-    bool all_reals = std::all_of(
-        arr.begin(), arr.end(), [](auto const& v) { return v.isDouble(); });
-
-    if (all_reals) {
-        std::vector<double> reals;
-        reals.reserve(arr.size());
-
-        for (auto const& v : arr) {
-            reals.push_back(v.toDouble());
-        }
-
-        return noo::AnyVar(std::move(reals));
-    }
-
-    noo::AnyVarList ret;
-
-    ret.reserve(arr.size());
-
-    for (auto const& v : arr) {
-        ret.push_back(from_json(v));
-    }
-
-    return std::move(ret);
-}
-
-static noo::AnyVar from_json(QJsonObject const& obj) {
-    noo::AnyVarMap ret;
-
-    for (auto iter = obj.begin(); iter != obj.end(); ++iter) {
-        ret.try_emplace(iter.key().toStdString(), from_json(iter.value()));
-    }
-
-    return ret;
-}
-
-static noo::AnyVar from_json(QJsonValue const& s) {
-    switch (s.type()) {
-    case QJsonValue::Null: return std::monostate();
-    case QJsonValue::Bool: return (int64_t)s.toBool();
-    case QJsonValue::Double: return s.toDouble();
-    case QJsonValue::String: return s.toString().toStdString();
-    case QJsonValue::Array: return from_json(s.toArray());
-    case QJsonValue::Object: return from_json(s.toObject());
-    case QJsonValue::Undefined: return std::monostate();
-    }
-
-    return std::monostate();
-}
-
-static std::variant<noo::AnyVar, QString> from_raw_string(QString const& s) {
+static std::variant<QCborValue, QString> from_raw_string(QString const& s) {
 
     auto ls = QString("[ %1 ]").arg(s);
 
@@ -76,7 +23,7 @@ static std::variant<noo::AnyVar, QString> from_raw_string(QString const& s) {
     auto doc = QJsonDocument::fromJson(ls.toLocal8Bit(), &error);
 
     if (error.error == QJsonParseError::NoError) {
-        return from_json(doc.array().at(0));
+        return QCborValue::fromJsonValue(doc.array().at(0));
     }
 
     int offset = error.offset - 2; // as we added the bracket and space...
@@ -88,18 +35,18 @@ static std::variant<noo::AnyVar, QString> from_raw_string(QString const& s) {
 
 // =============================================================================
 
-noo::AnyVar JSONEditDialog::parse_any(QString const& s, bool* ok) {
+QCborValue JSONEditDialog::parse_any(QString const& s, bool* ok) {
     auto parse_result = from_raw_string(s);
 
-    noo::AnyVar a = VMATCH(
+    QCborValue a = VMATCH(
         parse_result,
-        VCASE(noo::AnyVar & av) {
+        VCASE(QCborValue & av) {
             if (ok) *ok = true;
             return std::move(av);
         },
         VCASE(QString) {
             if (ok) *ok = false;
-            return noo::AnyVar();
+            return QCborValue();
         });
 
     return a;
@@ -128,7 +75,7 @@ QString JSONEditDialog::text() const {
     return ui->JSONBox->toPlainText();
 }
 
-noo::AnyVar JSONEditDialog::get_as_any(bool* ok) const {
+QCborValue JSONEditDialog::get_as_any(bool* ok) const {
     return parse_any(text(), ok);
 }
 
@@ -137,7 +84,7 @@ bool JSONEditDialog::evaluate_text() const {
 
     auto str = VMATCH(
         parse_result,
-        VCASE(noo::AnyVar&) { return QString(); },
+        VCASE(QCborValue&) { return QString(); },
         VCASE(QString a) { return a; });
 
     bool ok = str.isEmpty();

@@ -97,14 +97,14 @@ class ChartViewer : public QObject {
     QValueAxis*    m_x_axis;
     QValueAxis*    m_y_axis;
 
-    QPointer<ExTable>                m_attached_table;
-    std::shared_ptr<RemoteTableData> m_data;
+    QPointer<ExTable>             m_attached_table;
+    QPointer<QAbstractTableModel> m_data;
 
     std::vector<QMetaObject::Connection> m_table_obj_links;
 
     SeriesTable m_series_table;
 
-    std::optional<std::string> m_editing_selection;
+    std::optional<QString> m_editing_selection;
 
     void setup_root();
     void setup_edit_page();
@@ -113,10 +113,10 @@ class ChartViewer : public QObject {
 public:
     explicit ChartViewer(QPointer<ExTable>, QObject* parent = nullptr);
 
-    PlotChart*       chart() const { return m_chart; }
-    QValueAxis*      x_axis() const { return m_x_axis; }
-    QValueAxis*      y_axis() const { return m_y_axis; }
-    RemoteTableData* current_data() const { return m_data.get(); }
+    PlotChart*           chart() const { return m_chart; }
+    QValueAxis*          x_axis() const { return m_x_axis; }
+    QValueAxis*          y_axis() const { return m_y_axis; }
+    QAbstractTableModel* current_data() const { return m_data.get(); }
 
     void recompute_bounds() { m_series_table.recompute_bounds(); }
 

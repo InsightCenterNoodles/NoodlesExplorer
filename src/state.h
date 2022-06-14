@@ -7,12 +7,8 @@
 #include "delegates/delegates.h"
 #include "delegates/exdoc.h"
 
-
-#include <QEntity>
 #include <QObject>
 #include <QPointer>
-
-#include <Qt3DCore/QEntity>
 
 class QQmlContext;
 
@@ -25,11 +21,17 @@ class TaggedNameObjectFilter;
 class ExSignal;
 class ExTable;
 class ExBuffer;
+class ExBufferView;
 class ExTexture;
+class ExSampler;
+class ExImage;
 class ExMaterial;
 class ExLight;
 class ExMesh;
 class ExObject;
+class EntityChangeNotifier;
+class MaterialChangeNotifier;
+
 
 class State : public QObject {
     Q_OBJECT
@@ -41,24 +43,28 @@ class State : public QObject {
 
     int m_connection_state;
 
-    UniqueQPtr<Qt3DCore::QEntity> m_root_entity;
-
-
     QPointer<ExMethod> m_current_doc_method;
     ArgumentTableModel m_argument_table_model;
 
     AttachedMethodListModel m_document_methods;
 
-    ComponentListModel<ExMethod>*   m_method_list;
-    ComponentListModel<ExSignal>*   m_signal_list;
-    ComponentListModel<ExTable>*    m_table_list;
-    ComponentListModel<ExBuffer>*   m_buffer_list;
-    ComponentListModel<ExTexture>*  m_texture_list;
-    ComponentListModel<ExMaterial>* m_material_list;
-    ComponentListModel<ExLight>*    m_light_list;
-    ComponentListModel<ExMesh>*     m_mesh_list;
-    ComponentListModel<ExObject>*   m_object_list;
-    QPointer<ExDoc>                 m_current_doc;
+    EntityChangeNotifier*   m_ent_notifier;
+    MaterialChangeNotifier* m_mat_notifier;
+
+    ComponentListModel<ExMethod>*     m_method_list;
+    ComponentListModel<ExSignal>*     m_signal_list;
+    ComponentListModel<ExTable>*      m_table_list;
+    ComponentListModel<ExBuffer>*     m_buffer_list;
+    ComponentListModel<ExBufferView>* m_buffer_view_list;
+    ComponentListModel<ExTexture>*    m_texture_list;
+    ComponentListModel<ExSampler>*    m_sampler_list;
+    ComponentListModel<ExImage>*      m_image_list;
+    ComponentListModel<ExMaterial>*   m_material_list;
+    ComponentListModel<ExLight>*      m_light_list;
+    ComponentListModel<ExMesh>*       m_mesh_list;
+    ComponentListModel<ExObject>*     m_object_list;
+    QPointer<ExDoc>                   m_current_doc;
+
 
     TaggedNameObjectFilter* m_object_filter;
 
@@ -73,12 +79,11 @@ public:
 
 public slots:
     bool start_connection(QString name, QString url);
+    void disconnect();
 
     void set_connection_state(int connection_state);
 
     QString get_hostname();
-
-    Qt3DCore::QEntity* scene_root();
 
     void exec_debug();
 
@@ -96,12 +101,4 @@ signals:
 
     void debug_tree();
 };
-
-
-class EntityShim : public Qt3DCore::QEntity {
-public:
-    EntityShim(Qt3DCore::QNode* n = nullptr);
-    ~EntityShim();
-};
-
 #endif // STATE_H

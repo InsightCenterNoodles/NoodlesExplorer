@@ -7,10 +7,44 @@
 
 #include <noo_client_interface.h>
 
+#include <QMatrix4x4>
+#include <QQuick3DInstancing>
+
 class ExMaterial;
 class ExMesh;
 class ExLight;
+class ExObject;
 class AttachedMethodListModel;
+
+
+// =============================================================================
+
+// we will use a sub-render object to handle multiples and such.
+// thus, these are internal ids
+
+class EntityChangeNotifier : public ChangeNotifierBase {
+    Q_OBJECT
+
+public:
+    explicit EntityChangeNotifier(QObject* parent = nullptr);
+    ~EntityChangeNotifier();
+
+public slots:
+    void on_pick(ExObject*) { }
+
+signals:
+    void ask_delete(int32_t);
+    void ask_create(int32_t             new_id,
+                    ExObject*           cpp_obj,
+                    int32_t             parent_id = -1,
+                    int32_t             material  = -1,
+                    QQuick3DGeometry*   mesh      = nullptr,
+                    QQuick3DInstancing* instances = nullptr);
+    void ask_set_tf(int32_t, QMatrix4x4 transform);
+    void ask_set_parent(int32_t new_id, int32_t parent_id);
+};
+
+// =============================================================================
 
 class RepresentationPart : public QObject {
 
@@ -21,33 +55,70 @@ public:
     virtual QString info_string() const = 0;
 };
 
+// =============================================================================
+
 class TextPart : public RepresentationPart {
 public:
     QString info_string() const override;
 };
+
+// =============================================================================
 
 class WebPart : public RepresentationPart {
 public:
     QString info_string() const override;
 };
 
-class RenderPart : public RepresentationPart {
+// =============================================================================
+
+class QMLInstanceTable : public QQuick3DInstancing {
     Q_OBJECT
-    AttachmentPoint<ExMaterial> m_material;
-    AttachmentPoint<ExMesh>     m_mesh;
-    std::vector<glm::mat4>      m_instances;
 
-    UniqueQPtr<Qt3DCore::QEntity> m_3d_entity;
+    int        m_ready_instances = 0;
+    QByteArray m_instance_data;
 
-    std::optional<QtGeomInfo> m_att_mesh_details;
-    void                      remake_mesh_attachment();
+protected:
+    QByteArray getInstanceBuffer(int* instanceCount) override;
 
 public:
-    RenderPart(Qt3DCore::QEntity* p_entity,
-               ExMaterial*,
-               ExMesh*,
-               std::span<glm::mat4 const>,
-               QObject*);
+    QMLInstanceTable(nooc::InstanceSource const& src);
+    ~QMLInstanceTable();
+
+private slots:
+    void buffer_ready(QByteArray);
+};
+
+
+class RenderSubObject {
+    QPointer<EntityChangeNotifier> m_notifier;
+
+    UniqueQPtr<QMLInstanceTable> m_table;
+
+    int32_t m_id;
+
+public:
+    RenderSubObject(EntityChangeNotifier*                   n,
+                    int32_t                                 parent_id,
+                    nooc::EntityRenderableDefinition const& def,
+                    ExMeshGeometry&                         geom,
+                    ExObject*                               cpp_obj);
+    ~RenderSubObject();
+};
+
+class RenderPart : public RepresentationPart {
+    Q_OBJECT
+
+    QPointer<EntityChangeNotifier> m_notifier;
+
+    QPointer<ExMesh>       m_mesh;
+    std::vector<glm::mat4> m_instances;
+
+    std::vector<std::unique_ptr<RenderSubObject>> m_sub_ids;
+
+public:
+    RenderPart(EntityChangeNotifier*,
+               nooc::EntityRenderableDefinition const& def,
+               ExObject*);
 
     ~RenderPart();
 
@@ -60,35 +131,26 @@ private slots:
 
 // =============================================================================
 
-class ExObject : public nooc::ObjectDelegate {
+class ExObject : public nooc::EntityDelegate {
     Q_OBJECT
 
-    Qt3DCore::QEntity*            m_3d_root;
-    UniqueQPtr<Qt3DCore::QEntity> m_3d_entity;
-    Qt3DCore::QTransform*         m_3d_transform;
-
-    QString            m_name;
-    QPointer<ExObject> m_parent;
-    glm::mat4          m_transform;
-
-
-    QPointer<RepresentationPart> m_attached_part;
+    UniqueQPtr<RepresentationPart> m_attached_part;
+    QPointer<EntityChangeNotifier> m_notifier;
 
     AttachmentVector<ExLight>             m_lights;
     AttachmentVector<nooc::TableDelegate> m_tables;
 
-    QStringList m_tags;
-
     AttachedMethodListModel* m_attached_methods;
 
-    void update_from(nooc::ObjectUpdateData const& md);
+    void    rebuild(bool representation, bool methods);
+    int32_t m_root = -1;
 
 public:
     static QStringList header();
 
-    ExObject(noo::ObjectID                 id,
-             nooc::ObjectUpdateData const& md,
-             Qt3DCore::QEntity*            scene_root);
+    ExObject(noo::EntityID           id,
+             nooc::EntityInit const& md,
+             EntityChangeNotifier*   notifier);
 
     ~ExObject();
 
@@ -99,9 +161,10 @@ public:
 
     AttachedMethodListModel* attached_method_list() const;
 
-    void on_update(nooc::ObjectUpdateData const&) override;
+    int32_t internal_root() const { return m_root; }
 
-    Qt3DCore::QEntity* entity();
+    void on_complete() override;
+    void on_update(nooc::EntityUpdateData const&) override;
 };
 
 // =============================================================================
@@ -128,5 +191,6 @@ public:
 signals:
     void filter_changed();
 };
+
 
 #endif // EXOBJECT_H

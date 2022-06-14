@@ -6,23 +6,15 @@
 
 #include <QDebug>
 
-void ExTable::set_from(nooc::TableData const& md) {
-    if (md.name) {
-        m_name = noo::to_qstring(*md.name);
-    } else {
-        m_name = id().to_qstring();
-    }
-}
+
+// =============================================================================
 
 QStringList ExTable::header() {
     return { "ID", "Name" };
 }
 
-ExTable::ExTable(noo::TableID id, nooc::TableData const& md)
-    : nooc::TableDelegate(id, md) {
-
-    set_from(md);
-}
+ExTable::ExTable(noo::TableID id, nooc::TableInit const& md)
+    : nooc::TableDelegate(id, md) { }
 
 ExTable::~ExTable() = default;
 
@@ -33,7 +25,7 @@ int ExTable::get_id_gen() const {
     return this->id().id_gen;
 }
 QString ExTable::get_name() const {
-    return m_name;
+    return info().name;
 }
 
 QVariant ExTable::get_column(int c) const {
@@ -44,30 +36,43 @@ QVariant ExTable::get_column(int c) const {
     return {};
 }
 
-void ExTable::on_update(nooc::TableData const& md) {
-    set_from(md);
+void ExTable::on_update(nooc::TableUpdate const& /*md*/) {
+    // nothing atm
 }
 
-void ExTable::on_table_initialize(noo::AnyVarListRef const& names,
-                                  noo::AnyVarRef            keys,
-                                  noo::AnyVarListRef const& data_cols,
-                                  noo::AnyVarListRef const& selections) {
+QAbstractTableModel* ExTable::table_data() const {
+    return m_data.get();
+}
+QAbstractTableModel* ExTable::selections_model() const {
+    if (m_data) return m_data->selections();
+    return nullptr;
+}
 
-    m_subscribed = true;
+void ExTable::on_table_initialize(QVector<ColumnInfo> const& names,
+                                  QVector<int64_t>           keys,
+                                  QVector<QCborArray> const& data_cols,
+                                  QVector<noo::Selection>    selections) {
 
-    qDebug() << Q_FUNC_INFO;
+    QStringList all_cols;
+    for (auto const& info : names) {
+        all_cols << info.name;
+    }
+
+    qDebug() << Q_FUNC_INFO << all_cols;
 
 
     if (names.size() != data_cols.size()) return;
     if (names.size() == 0) return;
 
-    m_data = std::make_shared<RemoteTableData>();
+    m_data = std::make_unique<RemoteTableData>();
 
     m_data->on_table_initialize(names, keys, data_cols, selections);
 
+    m_subscribed = true;
+
     connect(m_data.get(),
             &RemoteTableData::ask_update_row,
-            [this](int64_t key, noo::AnyVarList& l) {
+            [this](int64_t key, QCborArray& l) {
                 this->request_row_update(key, std::move(l));
             });
 
@@ -79,17 +84,16 @@ void ExTable::on_table_reset() {
     if (m_data) m_data->on_table_reset();
 }
 
-void ExTable::on_table_updated(noo::AnyVarRef keys, noo::AnyVarRef columns) {
+void ExTable::on_table_updated(QVector<int64_t> keys, QCborArray columns) {
     qDebug() << Q_FUNC_INFO;
     if (m_data) m_data->on_table_updated(keys, columns);
 }
 
-void ExTable::on_table_rows_removed(noo::AnyVarRef keys) {
+void ExTable::on_table_rows_removed(QVector<int64_t> keys) {
     qDebug() << Q_FUNC_INFO;
     if (m_data) m_data->on_table_rows_removed(keys);
 }
-void ExTable::on_table_selection_updated(std::string_view         s,
-                                         noo::SelectionRef const& r) {
+void ExTable::on_table_selection_updated(noo::Selection const& r) {
     qDebug() << Q_FUNC_INFO;
-    if (m_data) m_data->on_table_selection_updated(s, r);
+    if (m_data) m_data->on_table_selection_updated(r);
 }

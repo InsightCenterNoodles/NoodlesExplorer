@@ -27,7 +27,13 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG bf0eb5ca8fc45a20d885e79f33232b8a75255711
+    GIT_TAG 0bc982ca956adfb7697d55bde524b059a8b9440b
+)
+
+CPMAddPackage(
+    NAME magic_enum
+    GITHUB_REPOSITORY Neargye/magic_enum
+    GIT_TAG v0.8.0
 )
 
 find_package(Qt6 COMPONENTS Gui Widgets WebSockets Core 3DCore 3DExtras 3DRender Quick Charts Quick3D)
@@ -48,7 +54,7 @@ target_compile_features(NoodlesExplorer PUBLIC cxx_std_20)
 target_compile_options(NoodlesExplorer PUBLIC ${sanitizer_compile_flag})
 target_link_options(NoodlesExplorer PUBLIC ${sanitizer_compile_flag})
 
-target_link_libraries(NoodlesExplorer PRIVATE glm)
+target_link_libraries(NoodlesExplorer PRIVATE glm magic_enum)
 
 target_link_libraries(NoodlesExplorer PRIVATE noodles)
 
@@ -72,10 +78,6 @@ PRIVATE
     state.h
     delegates/delegates.h
     delegates/delegates.cpp
-    instance_material/qinstancedmetalroughmaterial.cpp
-    instance_material/qinstancedmetalroughmaterial.h
-    instance_material/instancetable.cpp
-    instance_material/instancetable.h
     attachedmethodlistmodel.cpp
     attachedmethodlistmodel.h
     tabledata.cpp

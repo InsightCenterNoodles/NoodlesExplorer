@@ -23,7 +23,6 @@
 #include <QUrl>
 
 #include <QQmlEngine>
-#include <Qt3DCore/QComponent>
 
 static State* current_state = nullptr;
 
@@ -32,18 +31,21 @@ State::State(QObject* parent) : QObject(parent) {
 
     set_connection_state(-1);
 
-    m_root_entity = new Qt3DCore::QEntity();
+    m_method_list      = new ComponentListModel<ExMethod>(this);
+    m_signal_list      = new ComponentListModel<ExSignal>(this);
+    m_table_list       = new ComponentListModel<ExTable>(this);
+    m_buffer_list      = new ComponentListModel<ExBuffer>(this);
+    m_buffer_view_list = new ComponentListModel<ExBufferView>(this);
+    m_texture_list     = new ComponentListModel<ExTexture>(this);
+    m_sampler_list     = new ComponentListModel<ExSampler>(this);
+    m_image_list       = new ComponentListModel<ExImage>(this);
+    m_material_list    = new ComponentListModel<ExMaterial>(this);
+    m_light_list       = new ComponentListModel<ExLight>(this);
+    m_mesh_list        = new ComponentListModel<ExMesh>(this);
+    m_object_list      = new ComponentListModel<ExObject>(this);
 
-    m_method_list   = new ComponentListModel<ExMethod>(this);
-    m_signal_list   = new ComponentListModel<ExSignal>(this);
-    m_table_list    = new ComponentListModel<ExTable>(this);
-    m_buffer_list   = new ComponentListModel<ExBuffer>(this);
-    m_texture_list  = new ComponentListModel<ExTexture>(this);
-    m_material_list = new ComponentListModel<ExMaterial>(this);
-    m_light_list    = new ComponentListModel<ExLight>(this);
-    m_mesh_list     = new ComponentListModel<ExMesh>(this);
-    m_object_list   = new ComponentListModel<ExObject>(this);
-
+    m_ent_notifier = new EntityChangeNotifier(this);
+    m_mat_notifier = new MaterialChangeNotifier(this);
 
     m_object_filter = new TaggedNameObjectFilter(this);
 
@@ -61,7 +63,9 @@ State::State(QObject* parent) : QObject(parent) {
             });
 }
 
-State::~State() { }
+State::~State() {
+    qDebug() << "Destroying state";
+}
 
 void State::link(QQmlContext* c) {
     c->setContextProperty("app_state", this);
@@ -80,9 +84,10 @@ void State::link(QQmlContext* c) {
 
     c->setContextProperty("filtered_object_list", m_object_filter);
 
-    c->setContextProperty("document_methods", &m_document_methods);
+    c->setContextProperty("entity_notifier", m_ent_notifier);
+    c->setContextProperty("material_notifier", m_mat_notifier);
 
-    qmlRegisterType<EntityShim>("EntityShim", 1, 0, "EntityShim");
+    c->setContextProperty("document_methods", &m_document_methods);
 }
 
 bool State::start_connection(QString name, QString url) {
@@ -119,35 +124,40 @@ bool State::start_connection(QString name, QString url) {
     delegates.client_name = name;
 
     delegates.tex_maker = [this](noo::TextureID           id,
-                                 nooc::TextureData const& md) {
+                                 nooc::TextureInit const& md) {
         return m_texture_list->add_item(id, md);
     };
     delegates.buffer_maker = [this](noo::BufferID           id,
-                                    nooc::BufferData const& md) {
-        return m_buffer_list->add_item(id, md, m_root_entity);
+                                    nooc::BufferInit const& md) {
+        return m_buffer_list->add_item(id, md);
     };
-    delegates.table_maker = [this](noo::TableID id, nooc::TableData const& md) {
+    delegates.buffer_view_maker = [this](noo::BufferViewID           id,
+                                         nooc::BufferViewInit const& md) {
+        return m_buffer_view_list->add_item(id, md);
+    };
+    delegates.table_maker = [this](noo::TableID id, nooc::TableInit const& md) {
         return m_table_list->add_item(id, md);
     };
-    delegates.light_maker = [this](noo::LightID id, nooc::LightData const& md) {
-        return m_light_list->add_item(id, md, m_root_entity);
+    delegates.light_maker = [this](noo::LightID id, nooc::LightInit const& md) {
+        return m_light_list->add_item(id, md);
     };
     delegates.mat_maker = [this](noo::MaterialID           id,
-                                 nooc::MaterialData const& md) {
-        return m_material_list->add_item(id, md, m_root_entity);
+                                 nooc::MaterialInit const& md) {
+        return m_material_list->add_item(id, md, m_mat_notifier);
     };
-    delegates.mesh_maker = [this](noo::MeshID id, nooc::MeshData const& md) {
-        return m_mesh_list->add_item(id, md, m_root_entity);
+    delegates.mesh_maker = [this](noo::GeometryID       id,
+                                  nooc::MeshInit const& md) {
+        return m_mesh_list->add_item(id, md, nullptr);
     };
-    delegates.object_maker = [this](noo::ObjectID                 id,
-                                    nooc::ObjectUpdateData const& md) {
-        return m_object_list->add_item(id, md, m_root_entity);
+    delegates.object_maker = [this](noo::EntityID           id,
+                                    nooc::EntityInit const& md) {
+        return m_object_list->add_item(id, md, m_ent_notifier);
     };
-    delegates.sig_maker = [this](noo::SignalID id, nooc::SignalData const& md) {
+    delegates.sig_maker = [this](noo::SignalID id, nooc::SignalInit const& md) {
         return m_signal_list->add_item(id, md);
     };
     delegates.method_maker = [this](noo::MethodID           id,
-                                    nooc::MethodData const& md) {
+                                    nooc::MethodInit const& md) {
         return m_method_list->add_item(id, md);
     };
     delegates.doc_maker = [this]() {
@@ -169,6 +179,10 @@ bool State::start_connection(QString name, QString url) {
     return true;
 }
 
+void State::disconnect() {
+    handle_disconnect();
+}
+
 void State::set_connection_state(int connection_state) {
     if (m_connection_state == connection_state) return;
 
@@ -180,11 +194,6 @@ QString State::get_hostname() {
     return QHostInfo::localHostName();
 }
 
-Qt3DCore::QEntity* State::scene_root() {
-    Q_ASSERT(m_root_entity);
-    return m_root_entity;
-}
-
 void State::exec_debug() {
     emit debug_tree();
 }
@@ -194,7 +203,7 @@ void State::handle_connect() {
 }
 
 void State::handle_disconnect() {
-    if (m_client_conn) delete m_client_conn.data();
+    if (m_client_conn) m_client_conn.data()->deleteLater();
     set_connection_state(-1);
 }
 
@@ -248,52 +257,4 @@ void State::launch_chart_view(int i) {
 
 
     new ChartViewer(del_ptr, this);
-}
-
-
-// =============================================================================
-
-static void node_debug(Qt3DCore::QNode* n, int d) {
-    {
-        auto deb = qDebug();
-
-        QString r;
-
-        for (int i = 0; i < d; i++) {
-            r += QString("-");
-        }
-
-        auto ent = dynamic_cast<Qt3DCore::QEntity*>(n);
-
-        QStringList comp;
-
-        deb << r << n->objectName() << n;
-
-        if (ent) {
-            for (auto comp : ent->components()) {
-                deb << comp;
-            }
-        }
-    }
-
-    auto c = n->childNodes();
-
-    for (auto cn : c) {
-        node_debug(cn, d + 1);
-    }
-}
-
-EntityShim::EntityShim(Qt3DCore::QNode* n) : Qt3DCore::QEntity(n) {
-    qDebug() << Q_FUNC_INFO << n;
-
-    connect(
-        current_state, &State::debug_tree, [this]() { node_debug(this, 0); });
-
-    current_state->scene_root()->setParent(this);
-
-    this->setObjectName("Test");
-}
-
-EntityShim::~EntityShim() {
-    qDebug() << Q_FUNC_INFO;
 }

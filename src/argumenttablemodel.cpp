@@ -2,8 +2,6 @@
 
 #include "jsoneditdialog.h"
 
-#include <noo_any.h>
-
 #include <QDebug>
 
 ArgumentTableModel::ArgumentTableModel(QObject* parent)

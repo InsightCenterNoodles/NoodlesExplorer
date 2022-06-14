@@ -16,7 +16,7 @@ class TableViewer : public QObject {
 
     QPointer<ExTable> m_attached_table;
 
-    std::vector<int64_t> get_keys_from_selection();
+    QVector<int64_t> get_keys_from_selection();
 
 public:
     explicit TableViewer(QPointer<ExTable>, QObject* parent);
@@ -31,7 +31,7 @@ private slots:
     void del_selection();
     void update_selection();
 
-    void selection_double_clicked(QModelIndex const&);
+    // void selection_double_clicked(QModelIndex const&);
 signals:
 };
 

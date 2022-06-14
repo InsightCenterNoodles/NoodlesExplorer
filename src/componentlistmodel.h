@@ -118,12 +118,11 @@ public: // For ComponentListItem
                 this,
                 &ComponentListModel::unregister_item);
 
-        if constexpr (T::CAN_UPDATE) {
-            connect(ptr.get(),
-                    &T::updated,
-                    this,
-                    &ComponentListModel::item_in_list_updated);
-        }
+        connect(ptr.get(),
+                &T::updated,
+                this,
+                &ComponentListModel::item_in_list_updated);
+
         return ptr;
     }
 

@@ -25,6 +25,16 @@ class QTreeWidgetItem;
 
 class QInstancedMetalRoughMaterial;
 
+class IterationCounter {
+    size_t m_counter = 0;
+
+public:
+    size_t next() {
+        m_counter++;
+        return m_counter;
+    }
+};
+
 
 template <class T>
 struct UniqueQPtr {
@@ -38,7 +48,7 @@ struct UniqueQPtr {
         if (pointer) { pointer->deleteLater(); }
     }
 
-    UniqueQPtr(UniqueQPtr const&) = delete;
+    UniqueQPtr(UniqueQPtr const&)            = delete;
     UniqueQPtr& operator=(UniqueQPtr const&) = delete;
 
     UniqueQPtr(UniqueQPtr&& other) {
@@ -95,72 +105,23 @@ QString ptr_to_id(T* ptr) {
     return ptr->id().to_qstring();
 }
 
-
 template <class T>
-QStringList build_id_list(std::vector<T*> const& methods) {
+QString ptr_to_id(std::optional<T> const& ptr) {
+    if (!ptr) return "None";
+    return ptr_to_id(*ptr);
+}
+
+
+template <class Container>
+QStringList build_id_list(Container const& things) {
     QStringList ret;
 
-    for (auto const& ptr : methods) {
+    for (auto const& ptr : things) {
         ret << ptr->id().to_qstring();
     }
 
     return ret;
 }
-
-template <class T>
-QStringList build_id_list(std::vector<QPointer<T>> const& methods) {
-    QStringList ret;
-
-    for (auto const& ptr : methods) {
-        ret << ptr->id().to_qstring();
-    }
-
-    return ret;
-}
-
-// =============================================================================
-
-class AttachmentBase : public QObject {
-    Q_OBJECT
-
-signals:
-
-    // issued when the attached component is updated
-    void attachment_updated();
-
-    // issued when the attachment changes (swapped to a new component)
-    void attachment_changed();
-};
-
-template <class T>
-class AttachmentPoint : public AttachmentBase {
-    QPointer<T> m_attachment;
-
-    QMetaObject::Connection m_updated_link;
-
-public:
-    void set(T* p) {
-        if (m_updated_link) disconnect(m_updated_link);
-
-        m_attachment = p;
-        emit attachment_changed();
-
-        if constexpr (T::CAN_UPDATE) {
-            m_updated_link = connect(
-                p, &T::updated, this, &AttachmentBase::attachment_updated);
-        }
-    }
-
-    void operator=(T* p) { set(p); }
-
-    T* get() const { return m_attachment; }
-    T* get() { return m_attachment; }
-
-    operator bool() const { return !!m_attachment; }
-
-    T& operator*() { return *m_attachment; }
-    T* operator->() { return m_attachment; }
-};
 
 // =============================================================================
 
@@ -225,5 +186,32 @@ public:
     auto begin() const { return m_attachment.begin(); }
     auto end() const { return m_attachment.end(); }
 };
+
+// =============================================================================
+
+class ChangeNotifierBase : public QObject {
+    Q_OBJECT
+
+    int32_t              m_next = 0;
+    std::vector<int32_t> m_free_list;
+
+public:
+    explicit ChangeNotifierBase(QObject* parent = nullptr) : QObject(parent) { }
+    ~ChangeNotifierBase() = default;
+
+    int32_t new_id() {
+        if (m_free_list.empty()) {
+            int32_t ret = m_next;
+            m_next++;
+            return ret;
+        }
+        int32_t ret = m_free_list.back();
+        m_free_list.pop_back();
+        return ret;
+    }
+
+    void return_id(int32_t id) { m_free_list.push_back(id); }
+};
+
 
 #endif // DELEGATES_H

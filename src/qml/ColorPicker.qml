@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.Material
 import QtQuick.Layouts
 
 Dialog {
@@ -37,7 +36,7 @@ Dialog {
         Rectangle {
             color: color_pick_pop.picked_color
             border.width: 1
-            border.color: Material.primaryColor
+            //border.color: Material.primaryColor
 
             //Layout.fillHeight: true
             Layout.fillWidth: true
