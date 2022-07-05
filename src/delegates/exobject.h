@@ -89,7 +89,9 @@ private slots:
 };
 
 
-class RenderSubObject {
+class RenderSubObject : public QObject {
+    Q_OBJECT
+
     QPointer<EntityChangeNotifier> m_notifier;
 
     UniqueQPtr<QMLInstanceTable> m_table;
@@ -103,12 +105,17 @@ public:
                     ExMeshGeometry&                         geom,
                     ExObject*                               cpp_obj);
     ~RenderSubObject();
+
+private slots:
+    void rebuild() { }
 };
 
 class RenderPart : public RepresentationPart {
     Q_OBJECT
 
-    QPointer<EntityChangeNotifier> m_notifier;
+    QPointer<EntityChangeNotifier>          m_notifier;
+    nooc::EntityRenderableDefinition const& m_def;
+    ExObject*                               m_parent_exobject;
 
     QPointer<ExMesh>       m_mesh;
     std::vector<glm::mat4> m_instances;
@@ -125,8 +132,7 @@ public:
     QString info_string() const override;
 
 private slots:
-    void material_changed();
-    void mesh_changed();
+    void redo_subs();
 };
 
 // =============================================================================

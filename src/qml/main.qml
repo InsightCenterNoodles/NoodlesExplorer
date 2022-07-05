@@ -15,8 +15,7 @@ ApplicationWindow {
     color: "transparent"
 
     // hacky, but needed to deal with bugs in WASDcontroller
-    property bool allow_wasd_mouse: !(window_controls.has_mouse
-                                      || title_dragger.has_mouse
+    property bool allow_wasd_mouse: !(title_dragger.has_mouse
                                       || drawer.has_mouse)
 
     flags: Qt.FramelessWindowHint
@@ -82,16 +81,16 @@ ApplicationWindow {
 
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            anchors.right: parent.right
+            anchors.left: parent.left
 
-            anchors.rightMargin: 0
+            anchors.leftMargin: 0
 
             states: State {
                 name: "hidden"
                 PropertyChanges {
                     target: drawer
-                    anchors.rightMargin: -drawer.width
-                    //rotation: 50
+                    anchors.leftMargin: -drawer.width
+                    opacity: 0
                 }
             }
 
@@ -101,7 +100,7 @@ ApplicationWindow {
                 reversible: true
                 ParallelAnimation {
                     NumberAnimation {
-                        properties: "anchors.rightMargin"
+                        properties: "anchors.leftMargin,opacity"
                         duration: 500
                         easing.type: Easing.InOutQuad
                     }
@@ -109,73 +108,47 @@ ApplicationWindow {
             }
         }
 
-        NSRoundedButton {
+        TitleBar {
+            id: title_dragger
+            anchors.left: drawer.right
+            anchors.leftMargin: drawer.state === "hidden" ? 0 : 1
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.topMargin: 6
-            text: "\uf0d9"
-            onClicked: drawer.state = ""
-            visible: drawer.state === "hidden"
-            opacity: drawer.state === "hidden"
+            anchors.topMargin: 0
 
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 200
-                    easing.type: Easing.InOutQuad
-                }
-            }
+            topLeftCorner: drawer.state === "hidden"
         }
 
-        Rectangle {
-            id: title_dragger
-            radius: 5
-
-            color: Style.set_alpha(Style.grey3, .75)
-
-            opacity: window_drag_area.containsMouse ? 1 : .75
-
-            height: 25
-
-            width: window.width * .4
-
-            property bool has_mouse: window_drag_area.containsMouse
-                                     || window_drag_area.pressed
-
-            anchors.top: parent.top
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.topMargin: 5
-
-            Label {
-                anchors.centerIn: parent
-                text: window.title
-
-                font.bold: true
-            }
-
-            MouseArea {
-                id: window_drag_area
-                anchors.fill: parent
-
-                property int dx
-                property int dy
-                onPressed: {
-                    dx = mouseX
-                    dy = mouseY
-                }
-
-                onPositionChanged: {
-                    window.x += mouseX - dx
-                    window.y += mouseY - dy
-                }
-            }
-        }
-
-        WindowControls {
-            id: window_controls
-
-            anchors.top: parent.top
-            anchors.left: parent.left
+        ObjectInfoBox {
+            id: object_info_box
+            anchors.right: parent.right
+            anchors.top: title_dragger.bottom
             anchors.margins: 5
+
+            state: "hidden"
+
+            states: State {
+                name: "hidden"
+                PropertyChanges {
+                    target: object_info_box
+                    //anchors.leftMargin: -drawer.width
+                    opacity: 0
+                }
+            }
+
+            transitions: Transition {
+                from: ""
+                to: "hidden"
+                reversible: true
+                ParallelAnimation {
+                    NumberAnimation {
+                        //properties: "anchors.leftMargin,opacity"
+                        properties: "opacity"
+                        duration: 500
+                        easing.type: Easing.InOutQuad
+                    }
+                }
+            }
         }
     }
 

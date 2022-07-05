@@ -27,5 +27,8 @@
         <file>qml/FirstPersonController.qml</file>
         <file>qml/NSPopup.qml</file>
         <file>qml/NSPopOver.qml</file>
+        <file>qml/CustomRect.qml</file>
+        <file>qml/TitleBar.qml</file>
+        <file>qml/ObjectInfoBox.qml</file>
     </qresource>
 </RCC>

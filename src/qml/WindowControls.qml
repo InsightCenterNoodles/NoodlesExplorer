@@ -1,22 +1,11 @@
 import QtQuick
 import QtQuick.Controls
 
-Rectangle {
+Item {
     id: control
-    radius: 5
-
-    opacity: hover_area.hovered ? 1 : .75
-
-    color: Style.set_alpha(Style.grey3, .6)
 
     height: 25
     width: 65
-
-    property bool has_mouse: hover_area.hovered
-
-    HoverHandler {
-        id: hover_area
-    }
 
     Row {
         id: button_row
@@ -28,13 +17,14 @@ Rectangle {
         spacing: 5
 
         Rectangle {
-            color: Style.red
+            color: maximize_area.pressed ? Qt.lighter(Style.red, 2) : Style.red
 
             width: 14
             height: 14
             radius: 7
 
             MouseArea {
+                id: close_area
                 anchors.fill: parent
                 onClicked: Qt.quit()
             }
@@ -48,6 +38,7 @@ Rectangle {
             radius: 7
 
             MouseArea {
+                id: minimize_area
                 anchors.fill: parent
                 onClicked: window.visibility = Window.Minimized
             }
@@ -61,6 +52,7 @@ Rectangle {
             radius: 7
 
             MouseArea {
+                id: maximize_area
                 anchors.fill: parent
                 onClicked: window.visibility = window.visibility
                            === Window.FullScreen ? Window.AutomaticVisibility : Window.FullScreen

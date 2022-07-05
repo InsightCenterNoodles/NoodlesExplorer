@@ -105,6 +105,8 @@ RenderSubObject::RenderSubObject(EntityChangeNotifier* n,
                                  ExObject* cpp_obj)
     : m_notifier(n) {
 
+    qDebug() << Q_FUNC_INFO;
+
     m_id = n->new_id();
 
     if (def.instances) {
@@ -131,28 +133,22 @@ RenderSubObject::~RenderSubObject() {
 RenderPart::RenderPart(EntityChangeNotifier*                   n,
                        nooc::EntityRenderableDefinition const& def,
                        ExObject*                               parent)
-    : RepresentationPart(parent), m_notifier(n) {
+    : RepresentationPart(parent),
+      m_notifier(n),
+      m_def(def),
+      m_parent_exobject(parent) {
 
     // for each patch, make a sub object (for now)
 
-    bool pickable =
-        !(parent->info().tags.contains(noo::names::tag_user_hidden));
-
-    qDebug() << "new render part" << parent->get_name() << parent << pickable;
+    qDebug() << "new render part" << parent->get_name() << parent;
 
     auto mesh_delegate = dynamic_cast<ExMesh*>(def.mesh.get());
 
     if (!mesh_delegate) return;
 
-    for (int i = 0; i < mesh_delegate->qt_geom_count(); i++) {
-        auto* geom = mesh_delegate->qt_geom(i);
-        m_sub_ids.emplace_back(
-            std::make_unique<RenderSubObject>(n,
-                                              parent->internal_root(),
-                                              def,
-                                              *geom,
-                                              pickable ? parent : nullptr));
-    }
+    connect(mesh_delegate, &ExMesh::ready, this, &RenderPart::redo_subs);
+
+    if (mesh_delegate->is_complete()) { redo_subs(); }
 }
 
 RenderPart::~RenderPart() { }
@@ -163,12 +159,31 @@ QString RenderPart::info_string() const {
         .arg(m_instances.size());
 }
 
-void RenderPart::material_changed() {
-    //    remake_mesh_attachment();
-}
+void RenderPart::redo_subs() {
+    qDebug() << "REDO SUBS";
 
-void RenderPart::mesh_changed() {
-    //    remake_mesh_attachment();
+    m_sub_ids.clear();
+
+    auto mesh_delegate = dynamic_cast<ExMesh*>(m_def.mesh.get());
+
+    connect(mesh_delegate, &ExMesh::ready, this, &RenderPart::redo_subs);
+
+
+    bool pickable =
+        !(m_parent_exobject->info().tags.contains(noo::names::tag_user_hidden));
+
+    qDebug() << "redoing render subs" << m_parent_exobject->get_name()
+             << m_parent_exobject << pickable;
+
+    for (int i = 0; i < mesh_delegate->qt_geom_count(); i++) {
+        auto* geom = mesh_delegate->qt_geom(i);
+        m_sub_ids.emplace_back(std::make_unique<RenderSubObject>(
+            m_notifier,
+            m_parent_exobject->internal_root(),
+            m_def,
+            *geom,
+            pickable ? m_parent_exobject : nullptr));
+    }
 }
 
 // =============================================================================

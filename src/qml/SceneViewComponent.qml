@@ -30,7 +30,7 @@ Item {
         }
 
         DirectionalLight {
-            ambientColor: Qt.rgba(0.5, 0.5, 0.5, 1.0)
+            ambientColor: Qt.rgba(0.1, 0.1, 0.1, 1.0)
             brightness: 1.0
             eulerRotation.x: -25
             castsShadow: true

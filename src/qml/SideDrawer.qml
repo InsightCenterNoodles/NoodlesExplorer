@@ -16,15 +16,27 @@ Item {
         return optimal_drawer_size
     }
 
-    Rectangle {
+    CustomRect {
+
+        topLeftCorner: true
+        topRightCorner: false
+        bottomLeftCorner: true
+        bottomRightCorner: false
 
         anchors.fill: parent
-        anchors.margins: 5
+        anchors.margins: 0
 
-        radius: 5
+        Rectangle {
+            width: 1
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.left: parent.right
 
-        //opacity: 1
-        color: Style.set_alpha(Style.grey3, has_mouse ? .9 : .6)
+            color: "#000000"
+            border.width: 0
+        }
+
+        color: Style.set_alpha(Style.grey3, .75)
 
         property bool has_mouse: hover_area.hovered
 
@@ -32,25 +44,51 @@ Item {
             id: hover_area
         }
 
+        RowLayout {
+            id: primary_button_layout
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.leftMargin: 5
+
+            height: 35
+
+            WindowControls {
+                id: window_controls
+            }
+
+            NSRoundedButton {
+                id: start_conn_button
+                text: {
+                    let s = app_state.connection_state
+                    switch (s) {
+                    case -1:
+                        return "\ue560"
+                    case 0:
+                        return "\uf1e6"
+                    case 1:
+                        return "\ue55b"
+                    }
+                }
+
+                onClicked: app_state.disconnect()
+            }
+
+            NSRoundedButton {
+                text: "\uf188"
+
+                onClicked: {
+                    app_state.exec_debug()
+                }
+            }
+        }
+
         DrawerContent {
             id: drawer_content
-            anchors.fill: parent
+            anchors.top: primary_button_layout.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
             anchors.margins: 6
         }
     }
-
-    //    DropShadow {
-    //        enabled: hover_area.hovered
-    //        anchors.fill: drawer
-    //        radius: 10
-    //        source: drawer
-    //        //color: "red"
-    //        //cached: true
-    //        spread: .2
-    //        horizontalOffset: 0
-    //        verticalOffset: 0
-    //        transparentBorder: true
-    //        clip: true
-    //        opacity: drawer.opacity
-    //    }
 }
