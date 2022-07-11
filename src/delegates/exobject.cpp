@@ -9,6 +9,8 @@
 
 #include <noo_common.h>
 
+#include <glm/gtx/matrix_decompose.hpp>
+
 // =============================================================================
 
 EntityChangeNotifier::EntityChangeNotifier(QObject* parent)
@@ -197,32 +199,18 @@ void ExObject::rebuild(bool representation, bool methods) {
              << !!md.instances << !!md.tags << !!md.method_list
              << !!md.signal_list << !!md.text;
              */
-#if 0
-    if (md.parent) {
-        // qDebug() << "Reparenting";
 
-        // set
-        m_parent = dynamic_cast<ExObject*>(*md.parent);
+    //    if (info().parent) {
+    //        qDebug() << "Reparenting";
 
-        // set up the parent for the 3d scene
-        m_3d_entity->setParent(m_parent ? m_parent->entity() : m_3d_root);
+    //        // set
+    //        auto parent = dynamic_cast<ExObject*>(info().parent.get());
 
-        emit ask_set_parent(get_id(), m_parent ? m_parent->get_id() : -1);
+    //        emit m_notifier->ask_set_parent(m_root, parent->internal_root());
 
-        // qDebug() << this << "setting parent" << m_parent.get();
-    }
+    //        // qDebug() << this << "setting parent" << m_parent.get();
+    //    }
 
-    if (md.transform) {
-        m_transform = *md.transform;
-
-        auto tf = QMatrix4x4(glm::value_ptr(m_transform));
-
-
-        m_3d_transform->setMatrix(tf.transposed());
-
-        emit ask_set_tf(get_id(), tf.transposed());
-    }
-#endif
 
     if (representation) {
         VMATCH(
@@ -235,9 +223,34 @@ void ExObject::rebuild(bool representation, bool methods) {
                 m_attached_part.reset();
             },
             VCASE(nooc::EntityRenderableDefinition const& def) {
-                m_attached_part = new RenderPart(m_notifier, def, this);
+                auto* ptr = new RenderPart(m_notifier, def, this);
+
+                m_attached_part = ptr;
             });
     }
+
+
+    {
+        glm::vec3 scale, translation, skew;
+        glm::quat orientation;
+        glm::vec4 persp;
+
+        bool ok = glm::decompose(
+            info().transform, scale, orientation, translation, skew, persp);
+
+        if (!ok) { qCritical() << "Unable to decompose matrix"; }
+
+        auto qtranslate =
+            QVector3D(translation.x, translation.y, translation.z);
+
+        auto qscale = QVector3D(scale.x, scale.y, scale.z);
+
+        auto qquat = QQuaternion(
+            orientation.w, orientation.x, orientation.y, orientation.z);
+
+        emit m_notifier->ask_set_tf(m_root, qtranslate, qquat, qscale);
+    }
+
 
 #if 0
 
@@ -296,7 +309,11 @@ ExObject::ExObject(noo::EntityID           id,
             });
 
     m_root = notifier->new_id();
-    m_notifier->ask_create(m_root, nullptr);
+
+    ExObject* new_parent = dynamic_cast<ExObject*>(info().parent.get());
+
+    m_notifier->ask_create(
+        m_root, nullptr, new_parent ? new_parent->internal_root() : -1);
 }
 
 ExObject::~ExObject() {
@@ -338,6 +355,7 @@ void ExObject::on_complete() {
 }
 
 void ExObject::on_update(nooc::EntityUpdateData const& md) {
+    if (md.parent) { qFatal("UNABLE TO REPARENT AT THIS TIME"); }
     rebuild(md.definition.has_value(), md.methods_list.has_value());
 }
 

@@ -77,15 +77,15 @@ Item {
     property var entity_maker: Qt.createComponent("RenderableEntity.qml")
     property var material_maker: Qt.createComponent("RenderableMaterial.qml")
 
+    function seek_parent(pid) {
+        if (pid >= 0) {
+            return entity_list[pid]
+        }
+        return root_node
+    }
+
     Connections {
         target: entity_notifier
-
-        function seek_parent(pid) {
-            if (pid >= 0) {
-                return entity_list[pid]
-            }
-            return root_node
-        }
 
         function onAsk_delete(oid) {
             entity_list[oid].destroy()
@@ -95,10 +95,12 @@ Item {
         function onAsk_create(oid, pickable, pid, material, mesh, instances) {
             console.log("Creating", oid)
             let init_props = {
-                "parent": seek_parent(pid),
-                "pickable": !!pickable,
+                "pickable"//"parent": seek_parent(pid),
+                : !!pickable,
                 "hosting_object": pickable
             }
+
+            console.log("Hooking to parent", pid)
 
             if (mesh) {
                 init_props["geometry"] = mesh
@@ -110,7 +112,8 @@ Item {
                 //init_props["instancing"] = randomInstancing
             }
 
-            var new_ent = entity_maker.createObject(root_node, init_props)
+            var new_ent = entity_maker.createObject(seek_parent(pid),
+                                                    init_props)
 
             if (material >= 0) {
                 console.log("Creating new material for object",
@@ -121,16 +124,27 @@ Item {
                 new_ent.materials.push(new_ent)
             }
 
+            if (!mesh) {
+                new_ent.scale = Qt.vector3d(.05, .05, .05)
+            }
+
             console.log(new_ent.bounds.minimum, new_ent.bounds.maximum)
 
             entity_list[oid] = new_ent
             console.log(oid, pid, material, mesh, instances)
-            onAsk_set_parent(oid, pid)
+            //onAsk_set_parent(oid, pid)
         }
-        function onAsk_set_tf(oid, mat) {
-            entity_list[oid].transform.matrix = mat
+        function onAsk_set_tf(oid, translate, quat, scale) {
+            console.log("UPDATE TF", oid, translate, quat, scale)
+            let e = entity_list[oid]
+            e.position = translate
+            e.rotation = quat
+            e.scale = scale
+
+            console.log("UPDATE TF", oid, e, e.sceneTransform, e.scenePosition)
         }
         function onAsk_set_parent(oid, pid) {
+            console.log("REPARENT object", oid, "parent", pid)
             entity_list[oid].parent = seek_parent(entity_list[pid])
         }
     }

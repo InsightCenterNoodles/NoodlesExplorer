@@ -43,6 +43,7 @@ CustomRect {
         id: collapsed_controls
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
+        anchors.leftMargin: 5
         visible: drawer.state === "hidden"
 
         width: drawer.state === "hidden" ? 65 : 0
