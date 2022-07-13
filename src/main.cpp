@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setOrganizationName("NREL");
     QCoreApplication::setOrganizationDomain("nrel.gov");
     QCoreApplication::setApplicationName("NoodlesExplorer");
-    QCoreApplication::setApplicationVersion("0.3");
+    QCoreApplication::setApplicationVersion("0.4");
 
     QApplication app(argc, argv);
 
