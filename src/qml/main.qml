@@ -32,6 +32,7 @@ ApplicationWindow {
 
         property bool show_grid: true
         property color clear_color: "#111111"
+        property bool override_lights: true
     }
     FontLoader {
         id: icon_solid

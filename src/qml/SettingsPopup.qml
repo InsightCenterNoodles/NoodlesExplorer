@@ -43,6 +43,24 @@ NSPopup {
         }
 
         Label {
+            text: "Override Lights:"
+
+            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+        }
+
+        Switch {
+            id: show_lights_setting
+
+            Binding {
+                target: show_lights_setting
+                property: "checked"
+                value: settings.override_lights
+            }
+
+            onCheckedChanged: settings.override_lights = checked
+        }
+
+        Label {
             text: "Background:"
 
             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter

@@ -123,11 +123,11 @@ RenderSubObject::RenderSubObject(EntityChangeNotifier* n,
     }
 
 
-    n->ask_create(m_id, cpp_obj, parent_id, mat_id, &geom, m_table);
+    emit n->ask_create(m_id, cpp_obj, parent_id, mat_id, &geom, m_table);
 }
 RenderSubObject::~RenderSubObject() {
     if (m_notifier) {
-        m_notifier->ask_delete(m_id);
+        emit m_notifier->ask_delete(m_id);
         m_notifier->return_id(m_id);
     }
 }
@@ -238,7 +238,12 @@ void ExObject::rebuild(bool representation, bool methods) {
         bool ok = glm::decompose(
             info().transform, scale, orientation, translation, skew, persp);
 
-        if (!ok) { qCritical() << "Unable to decompose matrix"; }
+        if (!ok) {
+            qCritical() << "Unable to decompose matrix";
+            translation = glm::vec3(0);
+            scale       = glm::vec3(1);
+            orientation = glm::quat(1, glm::vec3(0));
+        }
 
         auto qtranslate =
             QVector3D(translation.x, translation.y, translation.z);
@@ -302,6 +307,7 @@ ExObject::ExObject(noo::EntityID           id,
 
     connect(m_attached_methods,
             &AttachedMethodListModel::wishes_to_call,
+            this,
             [this](ExMethod* ptr) {
                 auto* dialog = new MethodCallDialog(this, ptr);
 
@@ -312,7 +318,7 @@ ExObject::ExObject(noo::EntityID           id,
 
     ExObject* new_parent = dynamic_cast<ExObject*>(info().parent.get());
 
-    m_notifier->ask_create(
+    emit m_notifier->ask_create(
         m_root, nullptr, new_parent ? new_parent->internal_root() : -1);
 }
 
@@ -320,7 +326,7 @@ ExObject::~ExObject() {
     qDebug() << Q_FUNC_INFO << this;
 
     if (m_notifier) {
-        m_notifier->ask_delete(m_root);
+        emit m_notifier->ask_delete(m_root);
         m_notifier->return_id(m_root);
     }
 }

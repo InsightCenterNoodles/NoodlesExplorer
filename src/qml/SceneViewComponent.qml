@@ -17,11 +17,10 @@ Item {
         Node {
             PerspectiveCamera {
                 id: main_cam
-                x: -5
+                x: -4
                 y: 1
                 clipFar: 1000
                 clipNear: .1
-                eulerRotation.y: -90
 
                 Component.onCompleted: {
                     lookAt(root_node)
@@ -30,10 +29,27 @@ Item {
         }
 
         DirectionalLight {
-            ambientColor: Qt.rgba(0.1, 0.1, 0.1, 1.0)
-            brightness: 1.0
-            eulerRotation.x: -25
+            visible: settings.override_lights
+            color: Qt.rgba(1.0, 1.0, 1.0, 1.0)
+            brightness: .25
+            rotation: Quaternion.lookAt(Qt.vector3d(-1,0,0), Qt.vector3d(0,0,0))
             castsShadow: true
+        }
+
+        DirectionalLight {
+            visible: settings.override_lights
+            color: Qt.rgba(1.0, 1.0, 1.0, 1.0)
+            brightness: .1
+            rotation: Quaternion.lookAt(Qt.vector3d(0,0,-1), Qt.vector3d(0,0,0))
+            //castsShadow: true
+        }
+
+        DirectionalLight {
+            visible: settings.override_lights
+            color: Qt.rgba(1, 1, 1, 1.0)
+            brightness: 1
+            rotation: Quaternion.lookAt(Qt.vector3d(1,1,1), Qt.vector3d(0,0,0))
+            //castsShadow: true
         }
 
         Model {
@@ -42,14 +58,13 @@ Item {
                 verticalLines: 20
             }
 
-            scale: Qt.vector3d(10, 10, 10)
+            scale: Qt.vector3d(5, 5, 5)
             eulerRotation.x: -90
             materials: [
-                PrincipledMaterial {
-                    baseColor: Qt.rgba(0.8, 0.8, 0.8, 1.0)
-                    metalness: 0.1
-                    roughness: 0.1
-                    opacity: .50
+                DefaultMaterial {
+                    diffuseColor: Qt.rgba(0.8, 0.8, 0.8, 1.0)
+                    lighting: DefaultMaterial.NoLighting
+                    opacity: .25
                 }
             ]
 
@@ -95,8 +110,7 @@ Item {
         function onAsk_create(oid, pickable, pid, material, mesh, instances) {
             console.log("Creating", oid)
             let init_props = {
-                "pickable"//"parent": seek_parent(pid),
-                : !!pickable,
+                "pickable": !!pickable,
                 "hosting_object": pickable
             }
 
@@ -109,7 +123,6 @@ Item {
             if (instances) {
                 init_props["instanceRoot"] = seek_parent(pid)
                 init_props["instancing"] = instances
-                //init_props["instancing"] = randomInstancing
             }
 
             var new_ent = entity_maker.createObject(seek_parent(pid),
@@ -122,10 +135,6 @@ Item {
                             new_ent, material_list[material])
 
                 new_ent.materials.push(new_ent)
-            }
-
-            if (!mesh) {
-                new_ent.scale = Qt.vector3d(.05, .05, .05)
             }
 
             console.log(new_ent.bounds.minimum, new_ent.bounds.maximum)
@@ -143,10 +152,6 @@ Item {
 
             console.log("UPDATE TF", oid, e, e.sceneTransform, e.scenePosition)
         }
-        function onAsk_set_parent(oid, pid) {
-            console.log("REPARENT object", oid, "parent", pid)
-            entity_list[oid].parent = seek_parent(entity_list[pid])
-        }
     }
 
     Connections {
@@ -163,8 +168,6 @@ Item {
                 "metalness": metal,
                 "roughness": rough
             }
-
-            //var new_ent = comp.createObject(root_node, init_props)
             material_list[oid] = init_props
         }
     }
@@ -229,6 +232,9 @@ Item {
         controlledObject: main_cam
         speed: .01
         shiftSpeed: .05
+
+        xInvert: true
+        yInvert: false
 
         enabled: window.allow_wasd_mouse
     }
