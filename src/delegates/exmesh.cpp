@@ -233,6 +233,8 @@ void ExMeshGeometry::update_data() {
 
     for (auto const& attrib : m_data->attributes) {
 
+        qDebug() << "Copying attribute" << (int)attrib.semantic;
+
         auto* src_buff = attrib.view->source_buffer();
 
         auto& view_info = attrib.view->info();
@@ -399,24 +401,11 @@ QStringList ExMesh::header() {
     return { "ID", "Name", "# Patches" };
 }
 
-static IterationCounter exmesh_object_counter;
 
 ExMesh::ExMesh(noo::GeometryID       id,
                nooc::MeshInit const& md,
                ExMeshChangeNotifier* notifier)
     : nooc::MeshDelegate(id, md) {
-
-    {
-        for (auto const& patch : info()->patches) {
-            for (auto const& attrib : patch->attributes) {
-                m_views_waiting += !attrib.view->is_data_ready();
-            }
-
-            if (patch->indicies) {
-                m_views_waiting += !patch->indicies->view->is_data_ready();
-            }
-        }
-    }
 
     // emit ask_recreate(old, m_iteration, m_geometry);
 }
@@ -457,8 +446,10 @@ QStringList ExMesh::get_sub_info(int i) {
 }
 
 void ExMesh::on_complete() {
+    qDebug() << "EXMESH complete!";
     m_geometry.clear();
     for (auto const& p : info()->patches) {
+        qDebug() << "NEW EXMESHGEOM";
         m_geometry.push_back(new ExMeshGeometry(p));
     }
 

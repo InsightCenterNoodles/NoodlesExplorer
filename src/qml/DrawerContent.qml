@@ -8,68 +8,15 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        NSRoundedButton {
-            id: start_conn_button
-            text: {
-                let s = app_state.connection_state
-                switch (s) {
-                case -1:
-                    return "\ue560"
-                case 0:
-                    return "\uf1e6"
-                case 1:
-                    return "\ue55b"
-                }
-            }
 
-            //            ConnectionPopup {
-            //                id: connection_pop
-            //            }
-
-            //            //onClicked: connection_pop.openOn(start_conn_button)
-            //            onClicked: connection_pop.open()
-            onClicked: app_state.disconnect()
-        }
-        NSRoundedButton {
-            text: "\uf2c2"
-
-            onClicked: {
-                inspector_popup.open()
-            }
-        }
-        NSRoundedButton {
-            text: "\uf188"
-
-            onClicked: {
-                app_state.exec_debug()
-            }
-        }
-
-        NSRoundedButton {
-            text: "\uf1de"
-
-            onClicked: settings_pop.open()
-
-            SettingsPopup {
-                id: settings_pop
-            }
-        }
-
-        Item {
-            Layout.fillWidth: true
-        }
-        NSRoundedButton {
-            id: pin_button
-            text: "\uf08d"
-            checkable: true
-        }
-
-        NSRoundedButton {
-            text: "\uf054"
-            onClicked: {
-                drawer.state = "hidden"
-            }
-        }
+        //        Item {
+        //            Layout.fillWidth: true
+        //        }
+        //        NSRoundedButton {
+        //            id: pin_button
+        //            text: "\uf08d"
+        //            checkable: true
+        //        }
     }
 
     StackLayout {
@@ -112,7 +59,6 @@ ColumnLayout {
                 Layout.preferredHeight: 200
 
                 Item {
-                    //Material.elevation: 3
                     anchors.fill: parent
                     anchors.margins: 6
 

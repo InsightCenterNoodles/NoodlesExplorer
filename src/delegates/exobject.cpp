@@ -9,6 +9,8 @@
 
 #include <noo_common.h>
 
+#include <glm/gtx/matrix_decompose.hpp>
+
 // =============================================================================
 
 EntityChangeNotifier::EntityChangeNotifier(QObject* parent)
@@ -105,6 +107,8 @@ RenderSubObject::RenderSubObject(EntityChangeNotifier* n,
                                  ExObject* cpp_obj)
     : m_notifier(n) {
 
+    qDebug() << Q_FUNC_INFO;
+
     m_id = n->new_id();
 
     if (def.instances) {
@@ -119,11 +123,11 @@ RenderSubObject::RenderSubObject(EntityChangeNotifier* n,
     }
 
 
-    n->ask_create(m_id, cpp_obj, parent_id, mat_id, &geom, m_table);
+    emit n->ask_create(m_id, cpp_obj, parent_id, mat_id, &geom, m_table);
 }
 RenderSubObject::~RenderSubObject() {
     if (m_notifier) {
-        m_notifier->ask_delete(m_id);
+        emit m_notifier->ask_delete(m_id);
         m_notifier->return_id(m_id);
     }
 }
@@ -131,28 +135,22 @@ RenderSubObject::~RenderSubObject() {
 RenderPart::RenderPart(EntityChangeNotifier*                   n,
                        nooc::EntityRenderableDefinition const& def,
                        ExObject*                               parent)
-    : RepresentationPart(parent), m_notifier(n) {
+    : RepresentationPart(parent),
+      m_notifier(n),
+      m_def(def),
+      m_parent_exobject(parent) {
 
     // for each patch, make a sub object (for now)
 
-    bool pickable =
-        !(parent->info().tags.contains(noo::names::tag_user_hidden));
-
-    qDebug() << "new render part" << parent->get_name() << parent << pickable;
+    qDebug() << "new render part" << parent->get_name() << parent;
 
     auto mesh_delegate = dynamic_cast<ExMesh*>(def.mesh.get());
 
     if (!mesh_delegate) return;
 
-    for (int i = 0; i < mesh_delegate->qt_geom_count(); i++) {
-        auto* geom = mesh_delegate->qt_geom(i);
-        m_sub_ids.emplace_back(
-            std::make_unique<RenderSubObject>(n,
-                                              parent->internal_root(),
-                                              def,
-                                              *geom,
-                                              pickable ? parent : nullptr));
-    }
+    connect(mesh_delegate, &ExMesh::ready, this, &RenderPart::redo_subs);
+
+    if (mesh_delegate->is_complete()) { redo_subs(); }
 }
 
 RenderPart::~RenderPart() { }
@@ -163,12 +161,31 @@ QString RenderPart::info_string() const {
         .arg(m_instances.size());
 }
 
-void RenderPart::material_changed() {
-    //    remake_mesh_attachment();
-}
+void RenderPart::redo_subs() {
+    qDebug() << "REDO SUBS";
 
-void RenderPart::mesh_changed() {
-    //    remake_mesh_attachment();
+    m_sub_ids.clear();
+
+    auto mesh_delegate = dynamic_cast<ExMesh*>(m_def.mesh.get());
+
+    connect(mesh_delegate, &ExMesh::ready, this, &RenderPart::redo_subs);
+
+
+    bool pickable =
+        !(m_parent_exobject->info().tags.contains(noo::names::tag_user_hidden));
+
+    qDebug() << "redoing render subs" << m_parent_exobject->get_name()
+             << m_parent_exobject << pickable;
+
+    for (int i = 0; i < mesh_delegate->qt_geom_count(); i++) {
+        auto* geom = mesh_delegate->qt_geom(i);
+        m_sub_ids.emplace_back(std::make_unique<RenderSubObject>(
+            m_notifier,
+            m_parent_exobject->internal_root(),
+            m_def,
+            *geom,
+            pickable ? m_parent_exobject : nullptr));
+    }
 }
 
 // =============================================================================
@@ -182,32 +199,18 @@ void ExObject::rebuild(bool representation, bool methods) {
              << !!md.instances << !!md.tags << !!md.method_list
              << !!md.signal_list << !!md.text;
              */
-#if 0
-    if (md.parent) {
-        // qDebug() << "Reparenting";
 
-        // set
-        m_parent = dynamic_cast<ExObject*>(*md.parent);
+    //    if (info().parent) {
+    //        qDebug() << "Reparenting";
 
-        // set up the parent for the 3d scene
-        m_3d_entity->setParent(m_parent ? m_parent->entity() : m_3d_root);
+    //        // set
+    //        auto parent = dynamic_cast<ExObject*>(info().parent.get());
 
-        emit ask_set_parent(get_id(), m_parent ? m_parent->get_id() : -1);
+    //        emit m_notifier->ask_set_parent(m_root, parent->internal_root());
 
-        // qDebug() << this << "setting parent" << m_parent.get();
-    }
+    //        // qDebug() << this << "setting parent" << m_parent.get();
+    //    }
 
-    if (md.transform) {
-        m_transform = *md.transform;
-
-        auto tf = QMatrix4x4(glm::value_ptr(m_transform));
-
-
-        m_3d_transform->setMatrix(tf.transposed());
-
-        emit ask_set_tf(get_id(), tf.transposed());
-    }
-#endif
 
     if (representation) {
         VMATCH(
@@ -220,9 +223,39 @@ void ExObject::rebuild(bool representation, bool methods) {
                 m_attached_part.reset();
             },
             VCASE(nooc::EntityRenderableDefinition const& def) {
-                m_attached_part = new RenderPart(m_notifier, def, this);
+                auto* ptr = new RenderPart(m_notifier, def, this);
+
+                m_attached_part = ptr;
             });
     }
+
+
+    {
+        glm::vec3 scale, translation, skew;
+        glm::quat orientation;
+        glm::vec4 persp;
+
+        bool ok = glm::decompose(
+            info().transform, scale, orientation, translation, skew, persp);
+
+        if (!ok) {
+            qCritical() << "Unable to decompose matrix";
+            translation = glm::vec3(0);
+            scale       = glm::vec3(1);
+            orientation = glm::quat(1, glm::vec3(0));
+        }
+
+        auto qtranslate =
+            QVector3D(translation.x, translation.y, translation.z);
+
+        auto qscale = QVector3D(scale.x, scale.y, scale.z);
+
+        auto qquat = QQuaternion(
+            orientation.w, orientation.x, orientation.y, orientation.z);
+
+        emit m_notifier->ask_set_tf(m_root, qtranslate, qquat, qscale);
+    }
+
 
 #if 0
 
@@ -274,6 +307,7 @@ ExObject::ExObject(noo::EntityID           id,
 
     connect(m_attached_methods,
             &AttachedMethodListModel::wishes_to_call,
+            this,
             [this](ExMethod* ptr) {
                 auto* dialog = new MethodCallDialog(this, ptr);
 
@@ -281,14 +315,18 @@ ExObject::ExObject(noo::EntityID           id,
             });
 
     m_root = notifier->new_id();
-    m_notifier->ask_create(m_root, nullptr);
+
+    ExObject* new_parent = dynamic_cast<ExObject*>(info().parent.get());
+
+    emit m_notifier->ask_create(
+        m_root, nullptr, new_parent ? new_parent->internal_root() : -1);
 }
 
 ExObject::~ExObject() {
     qDebug() << Q_FUNC_INFO << this;
 
     if (m_notifier) {
-        m_notifier->ask_delete(m_root);
+        emit m_notifier->ask_delete(m_root);
         m_notifier->return_id(m_root);
     }
 }
@@ -323,6 +361,7 @@ void ExObject::on_complete() {
 }
 
 void ExObject::on_update(nooc::EntityUpdateData const& md) {
+    if (md.parent) { qFatal("UNABLE TO REPARENT AT THIS TIME"); }
     rebuild(md.definition.has_value(), md.methods_list.has_value());
 }
 

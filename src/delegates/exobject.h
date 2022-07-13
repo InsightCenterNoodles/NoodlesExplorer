@@ -36,12 +36,15 @@ signals:
     void ask_delete(int32_t);
     void ask_create(int32_t             new_id,
                     ExObject*           cpp_obj,
-                    int32_t             parent_id = -1,
+                    int32_t             parent_id,
                     int32_t             material  = -1,
                     QQuick3DGeometry*   mesh      = nullptr,
                     QQuick3DInstancing* instances = nullptr);
-    void ask_set_tf(int32_t, QMatrix4x4 transform);
-    void ask_set_parent(int32_t new_id, int32_t parent_id);
+    void ask_set_tf(int32_t     new_id,
+                    QVector3D   translate,
+                    QQuaternion rotation,
+                    QVector3D   scale);
+    // void ask_set_parent(int32_t object_id, int32_t parent_id);
 };
 
 // =============================================================================
@@ -89,7 +92,9 @@ private slots:
 };
 
 
-class RenderSubObject {
+class RenderSubObject : public QObject {
+    Q_OBJECT
+
     QPointer<EntityChangeNotifier> m_notifier;
 
     UniqueQPtr<QMLInstanceTable> m_table;
@@ -103,12 +108,17 @@ public:
                     ExMeshGeometry&                         geom,
                     ExObject*                               cpp_obj);
     ~RenderSubObject();
+
+private slots:
+    void rebuild() { }
 };
 
 class RenderPart : public RepresentationPart {
     Q_OBJECT
 
-    QPointer<EntityChangeNotifier> m_notifier;
+    QPointer<EntityChangeNotifier>          m_notifier;
+    nooc::EntityRenderableDefinition const& m_def;
+    ExObject*                               m_parent_exobject;
 
     QPointer<ExMesh>       m_mesh;
     std::vector<glm::mat4> m_instances;
@@ -125,8 +135,7 @@ public:
     QString info_string() const override;
 
 private slots:
-    void material_changed();
-    void mesh_changed();
+    void redo_subs();
 };
 
 // =============================================================================
