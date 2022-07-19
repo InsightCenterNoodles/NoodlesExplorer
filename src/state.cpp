@@ -120,6 +120,10 @@ bool State::start_connection(QString name, QString url) {
             this,
             &State::handle_connect);
 
+    connect(m_client_conn, &nooc::ClientConnection::initialized, []() {
+        qDebug() << "ALL SCENE READY";
+    });
+
     nooc::ClientDelegates delegates;
     delegates.client_name = name;
 

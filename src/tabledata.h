@@ -7,33 +7,6 @@
 
 #include <span>
 
-
-struct TableColumn {
-    QString                                    name;
-    std::variant<QVector<double>, QStringList> list;
-
-    size_t size() const;
-    bool   is_string() const;
-
-    std::span<double const> as_doubles() const;
-    QStringList             as_string() const;
-
-    void append(std::span<double const>);
-    void append(QStringList const&);
-    void append(QCborArray const&);
-    void append(double);
-    void append(QString);
-
-    void set(size_t row, double);
-    void set(size_t row, QCborValue);
-    void set(size_t row, QString);
-
-    void erase(size_t row);
-
-    void clear();
-};
-
-
 class SelectionsTableData : public QAbstractTableModel {
     Q_OBJECT
 
@@ -81,9 +54,10 @@ public:
 class RemoteTableData : public QAbstractTableModel {
     Q_OBJECT
 
-    QVector<TableColumn> m_columns;
+    QStringList         m_header;
+    QVector<QCborArray> m_rows;
 
-    QVector<int64_t>                    m_row_to_key_map;
+    std::unordered_map<size_t, int64_t> m_row_to_key_map;
     std::unordered_map<size_t, int64_t> m_key_to_row_map;
 
     SelectionsTableData* m_selections = nullptr;
@@ -92,22 +66,18 @@ public:
     explicit RemoteTableData(QObject* parent = nullptr);
 
 public:
-    void
-    on_table_initialize(QVector<nooc::TableDelegate::ColumnInfo> const& names,
-                        QVector<int64_t>                                keys,
-                        QVector<QCborArray> const& data_cols,
-                        QVector<noo::Selection>    selections);
-
-    void on_table_reset();
-    void on_table_updated(QVector<int64_t> keys, QCborArray columns);
+    void on_table_subscribed(nooc::TableDataInit const&);
+    void on_table_reset(nooc::TableDataInit const&);
+    void on_table_rows_updated(QVector<int64_t> keys, QCborArray rows);
     void on_table_rows_removed(QVector<int64_t> keys);
     void on_table_selection_updated(noo::Selection const&);
 
 
 public:
     QStringList column_names() const;
-    auto const& column(int i) const { return m_columns.at(i); }
-    auto        column_count() const { return m_columns.size(); }
+    auto        column_count() const { return m_header.size(); }
+
+    QVector<double> get_column(size_t) const;
 
     int64_t key_for_row(size_t i) const;
     int64_t row_for_key(size_t i) const;

@@ -73,15 +73,10 @@ void ChartSeriesPart::rebuild(ChartViewer& chart_view) {
 
     if (!source_table) return;
 
-    auto& data_a = source_table->column(a_col);
-    auto& data_b = source_table->column(b_col);
+    auto data_a = source_table->get_column(a_col);
+    auto data_b = source_table->get_column(b_col);
 
-    if (data_a.is_string() or data_b.is_string()) return;
-
-    auto span_a = data_a.as_doubles();
-    auto span_b = data_b.as_doubles();
-
-    auto common_size = std::min(span_a.size(), span_b.size());
+    auto common_size = std::min(data_a.size(), data_b.size());
 
     mins = glm::vec2(std::numeric_limits<float>::max());
     maxs = glm::vec2(std::numeric_limits<float>::lowest());
@@ -89,10 +84,10 @@ void ChartSeriesPart::rebuild(ChartViewer& chart_view) {
     QList<QPointF> points;
 
     for (size_t i = 0; i < common_size; i++) {
-        auto p = glm::vec2(span_a[i], span_b[i]);
+        auto p = glm::vec2(data_a[i], data_b[i]);
         mins   = glm::min(mins, p);
         maxs   = glm::max(maxs, p);
-        points << QPointF(span_a[i], span_b[i]);
+        points << QPointF(data_a[i], data_b[i]);
     }
 
     qDebug() << "Bound for" << name << mins.x << maxs.x << mins.y << maxs.y;
@@ -291,7 +286,7 @@ void ChartViewer::setup_root() {
     // set this up after the setupUI call, as it would be overwritten
     m_widget->setWindowTitle(m_attached_table->get_name());
 
-    connect(m_widget.data(), &QWidget::destroyed, [this](QObject*) {
+    connect(m_widget.data(), &QWidget::destroyed, this, [this](QObject*) {
         this->deleteLater();
     });
 }
@@ -341,12 +336,13 @@ void ChartViewer::setup_edit_page() {
             &ChartViewer::on_mapper_changed);
 
 
-    connect(color_well, &ColorWell::colorChanged, [data_mapper](auto) {
-        data_mapper->submit();
-    });
+    connect(color_well,
+            &ColorWell::colorChanged,
+            data_mapper,
+            [data_mapper](auto) { data_mapper->submit(); });
 
 
-    connect(m_ui_root->addSeries, &QToolButton::clicked, [this]() {
+    connect(m_ui_root->addSeries, &QToolButton::clicked, this, [this]() {
         m_series_table.add_new();
 
         m_ui_root->seriesListView->selectionModel()->setCurrentIndex(
@@ -354,7 +350,7 @@ void ChartViewer::setup_edit_page() {
             QItemSelectionModel::Select);
     });
 
-    connect(m_ui_root->delSeries, &QToolButton::clicked, [this]() {
+    connect(m_ui_root->delSeries, &QToolButton::clicked, this, [this]() {
         auto* sel_m = m_ui_root->seriesListView->selectionModel();
         auto  index = sel_m->currentIndex();
         if (!index.isValid()) return;
@@ -454,7 +450,7 @@ void ChartViewer::on_table_changed() {
 
     m_series_table.clear();
 
-    for (auto c : m_table_obj_links) {
+    for (auto const& c : m_table_obj_links) {
         disconnect(c);
     }
 

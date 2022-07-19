@@ -4,103 +4,6 @@
 
 #include <QDebug>
 
-// Everything here should be replaced in the future with some dataframe library
-
-size_t TableColumn::size() const {
-    return std::visit([](auto const& a) { return a.size(); }, list);
-}
-bool TableColumn::is_string() const {
-    return std::holds_alternative<QStringList>(list);
-}
-
-std::span<double const> TableColumn::as_doubles() const {
-    return VMATCH(
-        list,
-        VCASE(QVector<double> const& d) { return std::span<double const>(d); },
-        VCASE(QStringList const&) { return std::span<double const>(); });
-}
-
-QStringList TableColumn::as_string() const {
-    return VMATCH(
-        list,
-        VCASE(QVector<double> const&) { return QStringList(); },
-        VCASE(QStringList d) { return d; });
-}
-
-void TableColumn::append(std::span<double const> s) {
-    VMATCH(
-        list,
-        VCASE(QVector<double> & vector) {
-            vector << QVector<double>(s.begin(), s.end());
-        },
-        VCASE(QStringList & vector) {
-            for (auto d : s) {
-                vector << QString::number(d);
-            }
-        });
-}
-void TableColumn::append(QStringList const& s) {
-    VMATCH(
-        list,
-        VCASE(QVector<double> & vector) {
-            for (auto const& v : s) {
-                vector << v.toDouble();
-            }
-        },
-        VCASE(QStringList & vector) { vector << s; });
-}
-void TableColumn::append(QCborArray const& s) {
-    VMATCH(
-        list,
-        VCASE(QVector<double> & vector) {
-            for (auto v : s) {
-                vector << v.toDouble();
-            }
-        },
-        VCASE(QStringList & vector) {
-            for (auto v : s) {
-                vector << v.toString();
-            }
-        });
-}
-void TableColumn::append(double d) {
-    append(std::span(&d, 1));
-}
-void TableColumn::append(QString s) {
-    append(QStringList() << s);
-}
-
-void TableColumn::set(size_t row, double d) {
-    VMATCH(
-        list,
-        VCASE(QVector<double> & vector) { vector[row] = d; },
-        VCASE(QStringList & vector) { vector[row] = QString::number(d); });
-}
-void TableColumn::set(size_t row, QCborValue a) {
-    VMATCH(
-        list,
-        VCASE(QVector<double> & vector) { vector[row] = a.toDouble(); },
-        VCASE(QStringList & vector) { vector[row] = a.toString(); });
-}
-void TableColumn::set(size_t row, QString s) {
-    VMATCH(
-        list,
-        VCASE(QVector<double> & vector) { vector[row] = s.toDouble(); },
-        VCASE(QStringList & vector) { vector[row] = s; });
-}
-
-void TableColumn::erase(size_t row) {
-    VMATCH(
-        list, VCASE(auto& vector) { vector.remove(row); });
-}
-
-void TableColumn::clear() {
-    VMATCH(
-        list, VCASE(auto& vector) { vector.clear(); });
-}
-
-// =============================================================================
-
 void SelectionsTableData::new_selection(noo::Selection const& ref) {
     auto const location = m_selections.size();
     beginInsertRows(QModelIndex(), location, location);
@@ -245,80 +148,49 @@ RemoteTableData::RemoteTableData(QObject* parent)
     m_selections = new SelectionsTableData(this);
 }
 
-void RemoteTableData::on_table_initialize(
-    QVector<nooc::TableDelegate::ColumnInfo> const& names,
-    QVector<int64_t>                                keys,
-    QVector<QCborArray> const&                      data_cols,
-    QVector<noo::Selection>                         selections) {
+void RemoteTableData::on_table_subscribed(nooc::TableDataInit const& init) {
 
     qDebug() << Q_FUNC_INFO;
 
-    on_table_reset();
-
-    beginResetModel();
-    if (names.size() != data_cols.size()) return;
-    if (names.size() == 0) return;
-
-    for (size_t c_i = 0; c_i < names.size(); c_i++) {
-        auto& new_c = m_columns.emplace_back();
-
-        auto list = data_cols[c_i];
-
-        // probe first
-
-        if (list.size() == 0) continue;
-
-        auto first = list[0];
-
-        if (first.isInteger() or first.isDouble()) {
-            auto coerced = noo::coerce_to_real_list(list);
-
-            new_c.list = coerced;
-            new_c.name = names[c_i].name;
-            continue;
-        }
-
-        if (!first.isString()) continue;
-
-        QStringList strs(list.size());
-
-        for (int r_i = 0; r_i < list.size(); r_i++) {
-            strs[r_i] = list[r_i].toString();
-        }
-
-        new_c.list = std::move(strs);
-        new_c.name = names[c_i].name;
-    }
-
-    qDebug() << "Loaded data";
-
-    {
-        m_row_to_key_map << keys;
-
-        for (size_t ri = 0; ri < m_row_to_key_map.size(); ri++) {
-            m_key_to_row_map[m_row_to_key_map[ri]] = ri;
-        }
-    }
-
-    qDebug() << "Loaded keys" << m_row_to_key_map.size();
-
-    m_selections->set(selections);
-
-    qDebug() << "Loaded selections";
-
-    endResetModel();
+    on_table_reset(init);
 }
 
-void RemoteTableData::on_table_reset() {
+void RemoteTableData::on_table_reset(nooc::TableDataInit const& init) {
+    qDebug() << Q_FUNC_INFO;
+
     beginResetModel();
 
-    for (auto& c : m_columns) {
-        c.clear();
-    }
-
+    m_header.clear();
+    m_rows.clear();
     m_row_to_key_map.clear();
     m_key_to_row_map.clear();
-    m_selections->clear();
+
+    m_selections->deleteLater();
+    m_selections = new SelectionsTableData(this);
+
+    if (init.names.size() == 0) {
+        endResetModel();
+        return;
+    }
+
+    for (auto const& ci : init.names) {
+        m_header << ci.name;
+    }
+
+    for (int i = 0; i < std::min(init.rows.size(), init.keys.size()); i++) {
+        auto const& row   = init.rows[i];
+        auto        key   = init.keys[i];
+        auto        place = m_rows.size();
+        m_rows << row;
+        m_key_to_row_map[key]   = place;
+        m_row_to_key_map[place] = key;
+    }
+
+    qDebug() << "Loaded data" << m_rows.size();
+
+    m_selections->set(init.selections);
+
+    qDebug() << "Loaded selections";
 
     endResetModel();
 }
@@ -342,62 +214,47 @@ inline CellType get_cell_from_array(QCborValue lv, int i) {
     return get_item_single(v);
 }
 
-void RemoteTableData::on_table_updated(QVector<int64_t> keys,
-                                       QCborArray       columns) {
+void RemoteTableData::on_table_rows_updated(QVector<int64_t> keys,
+                                            QCborArray       rows) {
 
     qDebug() << Q_FUNC_INFO << keys
-             << columns.toCborValue().toDiagnosticNotation();
+             << rows.toCborValue().toDiagnosticNotation();
 
     // TODO: optimize reset
     beginResetModel();
-
-    if (columns.size() != m_columns.size()) return;
 
     // doing this split like this sucks. we have to check if all are new. if
     // they are, we can append them fast. if not, we should go line by line.
     // TODO: add fast append
 
-    auto append_row = [&](int64_t ki) {
-        qDebug() << "APPEND" << ki;
-        auto key = keys[ki];
+    auto append_row = [&](int64_t key, QCborArray row) {
+        qDebug() << "APPEND" << key << row;
+        auto place = rowCount();
 
-        auto current_row = rowCount();
+        m_row_to_key_map[place] = key;
+        m_key_to_row_map[key]   = place;
 
-        m_row_to_key_map.push_back(key);
-        m_key_to_row_map[key] = current_row;
-
-        for (int i = 0; i < columns.size(); i++) {
-            auto a    = columns[i];
-            auto cell = get_cell_from_array(a, ki);
-
-            std::visit([&](auto const& c) { m_columns[i].append(c); }, cell);
-        }
+        m_rows << row;
     };
 
-    auto update_row = [&](int64_t ki) {
-        qDebug() << "UPDATE" << ki;
-        auto key = keys[ki];
+    auto update_row = [&](int64_t key, QCborArray row) {
+        qDebug() << "UPDATE" << key << row;
 
-        auto row = m_key_to_row_map.at(key);
+        auto place = m_key_to_row_map.at(key);
 
-        for (int i = 0; i < columns.size(); i++) {
-            auto a    = columns[i];
-            auto cell = get_cell_from_array(a, ki);
-
-            std::visit([&](auto const& c) { m_columns[i].set(row, c); }, cell);
-        }
+        m_rows[place] = row;
     };
 
     for (size_t key_i = 0; key_i < keys.size(); key_i++) {
         auto key  = keys[key_i];
         auto iter = m_key_to_row_map.find(key);
         if (iter == m_key_to_row_map.end()) {
-            append_row(key_i);
+            append_row(key, rows[key_i].toArray());
             continue;
         }
 
         // update
-        update_row(key_i);
+        update_row(key, rows[key_i].toArray());
     }
 
     endResetModel();
@@ -408,30 +265,40 @@ void RemoteTableData::on_table_rows_removed(QVector<int64_t> keys) {
 
     // to delete we are finding the rows to remove, and then deleting the rows
     // from highest to lowest. this means we dont break index validity
+    // this is all garbage
+    // should be replaced with a real database thing.
 
-    std::vector<size_t> rows_to_delete;
+    std::vector<size_t> places_to_delete;
 
     for (auto k : keys) {
         if (m_key_to_row_map.count(k) != 1) continue;
 
-        rows_to_delete.push_back(m_key_to_row_map.at(k));
+        places_to_delete.push_back(m_key_to_row_map.at(k));
 
         m_key_to_row_map.erase(k);
     }
 
-    std::sort(
-        rows_to_delete.begin(), rows_to_delete.end(), std::greater<size_t>());
+    std::sort(places_to_delete.begin(),
+              places_to_delete.end(),
+              std::greater<size_t>());
 
-    for (auto row : rows_to_delete) {
-        m_row_to_key_map.erase(m_row_to_key_map.begin() + row);
-        for (auto& c : m_columns) {
-            c.erase(row);
-        }
+    std::vector<size_t> key_list(m_rows.size());
+
+    for (auto const& [r, k] : m_row_to_key_map) {
+        key_list[r] = k;
     }
 
-    for (size_t row = 0; row < m_row_to_key_map.size(); row++) {
-        auto k              = m_row_to_key_map[row];
-        m_key_to_row_map[k] = row;
+    for (auto place : places_to_delete) {
+        m_rows.erase(m_rows.begin() + place);
+        key_list.erase(key_list.begin() + place);
+    }
+
+    m_row_to_key_map.clear();
+    m_key_to_row_map.clear();
+
+    for (size_t row = 0; row < m_rows.size(); row++) {
+        m_row_to_key_map[row]           = key_list[row];
+        m_key_to_row_map[key_list[row]] = row;
     }
 
     endResetModel();
@@ -442,10 +309,14 @@ void RemoteTableData::on_table_selection_updated(noo::Selection const& sel) {
 }
 
 QStringList RemoteTableData::column_names() const {
-    QStringList ret;
+    return m_header;
+}
 
-    for (auto const& m : m_columns) {
-        ret << m.name;
+QVector<double> RemoteTableData::get_column(size_t i) const {
+    QVector<double> ret;
+
+    for (auto const& row : m_rows) {
+        ret << row.at(i).toDouble();
     }
 
     return ret;
@@ -460,18 +331,18 @@ QVariant RemoteTableData::headerData(int             section,
         return m_row_to_key_map.at(section);
     }
 
-    return m_columns.at(section).name;
+    return m_header.at(section);
 }
 
 
 int RemoteTableData::rowCount(QModelIndex const& parent) const {
     if (parent.isValid()) return 0;
-    return m_row_to_key_map.size();
+    return m_rows.size();
 }
 
 int RemoteTableData::columnCount(QModelIndex const& parent) const {
     if (parent.isValid()) return 0;
-    return m_columns.size();
+    return m_header.size();
 }
 
 int64_t RemoteTableData::key_for_row(size_t i) const {
@@ -491,15 +362,7 @@ QVariant RemoteTableData::data(QModelIndex const& index, int role) const {
 
     if (role != Qt::DisplayRole and role != Qt::EditRole) return {};
 
-    auto const& column_data = m_columns.at(index.column());
-
-    if (column_data.is_string()) {
-        auto const& item = column_data.as_string()[index.row()];
-        return item;
-    }
-
-    auto item = column_data.as_doubles()[index.row()];
-    return item;
+    return m_rows.at(index.row()).at(index.column()).toVariant();
 }
 
 
@@ -516,26 +379,18 @@ bool RemoteTableData::setData(QModelIndex const& index,
     // update so we get the current row, then we replace the new value in the
     // list, and send that along
 
-    QCborArray row;
+    auto new_value = QCborValue::fromVariant(value);
 
-    for (auto const& c : m_columns) {
-        if (c.is_string()) {
-            row.push_back(c.as_string()[index.row()]);
-        } else {
-            row.push_back(c.as_doubles()[index.row()]);
-        }
-    }
+    if (new_value.isUndefined()) return false;
 
-    bool ok          = false;
-    auto clean_value = value.toDouble(&ok);
+    QCborArray row = m_rows[index.row()];
 
-    if (ok) {
-        row[index.column()] = clean_value;
-    } else {
-        row[index.column()] = value.toString();
-    }
+    row[index.column()] = new_value;
 
     auto key = m_row_to_key_map[index.row()];
+
+    qDebug() << "Ask to update" << key << "with"
+             << row.toCborValue().toDiagnosticNotation();
 
     emit ask_update_row(key, row);
 
