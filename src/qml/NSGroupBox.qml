@@ -22,5 +22,6 @@ GroupBox {
         width: control.availableWidth
         text: control.title
         elide: Text.ElideRight
+        color: Style.dimgrey
     }
 }

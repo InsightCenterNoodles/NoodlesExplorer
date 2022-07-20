@@ -129,12 +129,13 @@ Item {
                                                     init_props)
 
             if (material >= 0) {
-                console.log("Creating new material for object",
-                            material_list[material])
-                var mat_ent = material_maker.createObject(
-                            new_ent, material_list[material])
+                let material_props = material_list[material];
+                console.log("Creating new material:",
+                            JSON.stringify(material_props))
+                var mat_ent = material_maker.createObject(new_ent,
+                                                          material_props)
 
-                new_ent.materials.push(new_ent)
+                new_ent.materials[0] = mat_ent
             }
 
             console.log(new_ent.bounds.minimum, new_ent.bounds.maximum)
@@ -161,7 +162,6 @@ Item {
             delete material_list[oid]
         }
         function onAsk_create(oid, color, metal, rough) {
-            var comp = Qt.createComponent("RenderableMaterial.qml")
 
             let init_props = {
                 "baseColor": color,

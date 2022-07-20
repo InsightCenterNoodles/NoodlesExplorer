@@ -20,15 +20,15 @@ ExMaterial::ExMaterial(noo::MaterialID           id,
 
     m_qt_mat_id = notifier->new_id();
 
-    m_notifier->ask_create(m_qt_mat_id,
-                           md.pbr_info.base_color,
-                           md.pbr_info.metallic,
-                           md.pbr_info.roughness);
+    emit m_notifier->ask_create(m_qt_mat_id,
+                                md.pbr_info.base_color,
+                                md.pbr_info.metallic,
+                                md.pbr_info.roughness);
 }
 
 ExMaterial::~ExMaterial() {
     if (m_notifier) {
-        m_notifier->ask_delete(m_qt_mat_id);
+        emit m_notifier->ask_delete(m_qt_mat_id);
         m_notifier->return_id(m_qt_mat_id);
     }
 }

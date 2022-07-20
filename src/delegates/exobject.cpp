@@ -82,10 +82,10 @@ void QMLInstanceTable::buffer_ready(QByteArray array) {
 
         auto const& m = mat_array[i];
 
-        qDebug() << "P" << convert(glm::vec3(m[0]));
-        qDebug() << "S" << convert(glm::vec3(m[3]));
-        qDebug() << "R" << convert_r(m[2]);
-        qDebug() << "C" << convert_c(m[1]);
+        //        qDebug() << "P" << convert(glm::vec3(m[0]));
+        //        qDebug() << "S" << convert(glm::vec3(m[3]));
+        //        qDebug() << "R" << convert_r(m[2]);
+        //        qDebug() << "C" << convert_c(m[1]);
 
         table_arr[i] = calculateTableEntry(convert(glm::vec3(m[0])),
                                            convert(glm::vec3(m[3])),

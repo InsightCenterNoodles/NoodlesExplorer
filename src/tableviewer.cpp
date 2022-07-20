@@ -26,7 +26,7 @@ TableViewer::TableViewer(QPointer<ExTable> t, QObject* parent)
 
     m_widget->setWindowTitle(t->get_name());
 
-    auto font = QFont(QStringList() << "Font Awesome 5 Free", 14);
+    auto font = QFont(QStringList() << "Font Awesome 6 Free", 14);
     font.setStyleName("Solid");
 
     m_ui_root->addRows->setFont(font);
@@ -108,10 +108,10 @@ void TableViewer::add_rows() {
 
     if (data.empty()) return;
 
-    qDebug() << Q_FUNC_INFO;
-    for (auto const& d : data) {
-        qDebug() << "COL" << QCborValue(d).toDiagnosticNotation();
-    }
+    //    qDebug() << Q_FUNC_INFO;
+    //    for (auto const& d : data) {
+    //        qDebug() << "COL" << QCborValue(d).toDiagnosticNotation();
+    //    }
 
     m_attached_table->request_rows_insert(std::move(data));
 }

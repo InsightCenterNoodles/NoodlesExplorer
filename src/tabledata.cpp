@@ -67,7 +67,7 @@ void SelectionsTableData::set(QVector<noo::Selection> sel_list) {
 void SelectionsTableData::on_table_selection_updated(
     noo::Selection const& ref) {
 
-    qDebug() << Q_FUNC_INFO << ref.name << ref.rows;
+    // qDebug() << Q_FUNC_INFO << ref.name << ref.rows;
 
     // is this an update?
     auto iter = m_string_map.find(ref.name);
@@ -217,8 +217,8 @@ inline CellType get_cell_from_array(QCborValue lv, int i) {
 void RemoteTableData::on_table_rows_updated(QVector<int64_t> keys,
                                             QCborArray       rows) {
 
-    qDebug() << Q_FUNC_INFO << keys
-             << rows.toCborValue().toDiagnosticNotation();
+    //    qDebug() << Q_FUNC_INFO << keys
+    //             << rows.toCborValue().toDiagnosticNotation();
 
     // TODO: optimize reset
     beginResetModel();
@@ -389,8 +389,8 @@ bool RemoteTableData::setData(QModelIndex const& index,
 
     auto key = m_row_to_key_map[index.row()];
 
-    qDebug() << "Ask to update" << key << "with"
-             << row.toCborValue().toDiagnosticNotation();
+    //    qDebug() << "Ask to update" << key << "with"
+    //             << row.toCborValue().toDiagnosticNotation();
 
     emit ask_update_row(key, row);
 

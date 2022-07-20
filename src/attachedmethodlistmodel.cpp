@@ -91,7 +91,7 @@ QHash<int, QByteArray> AttachedMethodListModel::roleNames() const {
 void AttachedMethodListModel::ask_call(int index) {
     auto p = get_method_row(index);
     if (p) {
-        qDebug() << Q_FUNC_INFO << index << rowCount() << p;
+        // qDebug() << Q_FUNC_INFO << index << rowCount() << p;
         emit wishes_to_call(p);
     }
 }
