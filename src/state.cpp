@@ -165,7 +165,7 @@ bool State::start_connection(QString name, QString url) {
         return m_method_list->add_item(id, md);
     };
     delegates.doc_maker = [this]() {
-        auto p = std::make_unique<ExDoc>();
+        auto p = std::make_unique<ExDoc>(&this->m_document_methods);
 
         m_current_doc = p.get();
 

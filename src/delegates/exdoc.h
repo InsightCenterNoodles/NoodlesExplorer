@@ -1,17 +1,17 @@
 #ifndef EXDOC_H
 #define EXDOC_H
 
-//#include "attachedmethodlistmodel.h"
+#include "attachedmethodlistmodel.h"
 
 #include <noo_client_interface.h>
 
 class ExDoc : public nooc::DocumentDelegate {
     Q_OBJECT
 
-    // AttachedMethodListModel* m_attached_methods;
+    QPointer<AttachedMethodListModel> m_attached_methods;
 
 public:
-    ExDoc();
+    ExDoc(AttachedMethodListModel*);
     ~ExDoc();
 
     void on_update(nooc::DocumentData const&) override;
