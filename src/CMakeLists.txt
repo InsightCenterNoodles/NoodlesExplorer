@@ -27,7 +27,7 @@ CPMAddPackage(
 CPMAddPackage(
     NAME noodles
     GITHUB_REPOSITORY InsightCenterNoodles/NoodlesPlusPlus
-    GIT_TAG cd77cc916f2eb1e6007c495ea0265e8ba9e835f5
+    GIT_TAG c906d4f723d920223d87bee7eb64d018aac21889
 )
 
 CPMAddPackage(

@@ -205,13 +205,11 @@ void ExMeshGeometry::update_data() {
     }
     size_t vertex_total_bytes = num_vertex * dest_vertex_stride;
 
-    size_t num_index          = 0;
-    size_t index_format_bytes = 0;
-    if (m_data->indicies) {
-        auto& ind = *m_data->indicies;
+    size_t num_index = 0;
+    if (m_data->indices) {
+        auto& ind = *m_data->indices;
 
-        index_format_bytes = format_dest_byte_size(ind.format);
-        num_index          = ind.count;
+        num_index = ind.count;
     }
 
     // allocate bytes
@@ -319,14 +317,16 @@ void ExMeshGeometry::update_data() {
         cursor += bytes_to_copy;
     }
 
+    qDebug() << "Check copy " << num_index << "indices";
+
     // copy index, if it exists
     if (num_index) {
-        QByteArray new_index_bytes = QByteArray(
-            index_format_bytes * num_index, Qt::Initialization::Uninitialized);
+        QByteArray new_index_bytes =
+            QByteArray(4 * num_index, Qt::Initialization::Uninitialized);
 
         cursor = new_index_bytes.data();
 
-        auto* view = m_data->indicies->view.get();
+        auto* view = m_data->indices->view.get();
 
         auto& view_info = view->info();
 
@@ -334,12 +334,12 @@ void ExMeshGeometry::update_data() {
 
         auto span =
             noo::safe_subspan(std::span(src_buff->data()),
-                              view_info.offset + m_data->indicies->offset,
+                              view_info.offset + m_data->indices->offset,
                               view_info.length);
 
-        size_t bytes_to_copy = format_byte_size(m_data->indicies->format);
+        size_t bytes_to_copy = format_byte_size(m_data->indices->format);
 
-        switch (m_data->indicies->format) {
+        switch (m_data->indices->format) {
         case noo::Format::U8:
             copy_attribute(
                 span, bytes_to_copy, cursor, 4, num_index, tf_index_u8);

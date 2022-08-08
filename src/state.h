@@ -13,7 +13,7 @@
 class QQmlContext;
 
 namespace nooc {
-class ClientConnection;
+class Client;
 }
 
 class TaggedNameObjectFilter;
@@ -36,7 +36,7 @@ class MaterialChangeNotifier;
 class State : public QObject {
     Q_OBJECT
 
-    QPointer<nooc::ClientConnection> m_client_conn;
+    QPointer<nooc::Client> m_client_conn;
 
     Q_PROPERTY(int connection_state READ connection_state WRITE
                    set_connection_state NOTIFY connection_state_changed)

@@ -103,24 +103,22 @@ bool State::start_connection(QString name, QString url) {
         return false;
     }
 
-    m_client_conn = new nooc::ClientConnection(this);
+    m_client_conn = new nooc::Client(this);
 
     connect(m_client_conn,
-            &nooc::ClientConnection::disconnected,
+            &nooc::Client::disconnected,
             m_client_conn,
             &QObject::deleteLater);
 
     connect(m_client_conn,
-            &nooc::ClientConnection::disconnected,
+            &nooc::Client::disconnected,
             this,
             &State::handle_disconnect);
 
-    connect(m_client_conn,
-            &nooc::ClientConnection::connected,
-            this,
-            &State::handle_connect);
+    connect(
+        m_client_conn, &nooc::Client::connected, this, &State::handle_connect);
 
-    connect(m_client_conn, &nooc::ClientConnection::initialized, []() {
+    connect(m_client_conn, &nooc::Client::initialized, []() {
         qDebug() << "ALL SCENE READY";
     });
 
