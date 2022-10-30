@@ -332,10 +332,15 @@ void ExMeshGeometry::update_data() {
 
         auto* src_buff = view->source_buffer();
 
+        auto const buffer_byte_array = src_buff->data();
+
         auto span =
-            noo::safe_subspan(std::span(src_buff->data()),
+            noo::safe_subspan(std::span(buffer_byte_array),
                               view_info.offset + m_data->indices->offset,
                               view_info.length);
+
+        qDebug() << "Copy:" << view_info.offset << m_data->indices->offset
+                 << view_info.length << span.size();
 
         size_t bytes_to_copy = format_byte_size(m_data->indices->format);
 
@@ -354,6 +359,11 @@ void ExMeshGeometry::update_data() {
             break;
         default: break;
         }
+
+        //        for (unsigned i = 0; i < 80; i++) {
+        //            qDebug() << ((unsigned*)new_index_bytes.data())[i];
+        //        }
+
         addAttribute(Attribute::Semantic::IndexSemantic,
                      0,
                      QQuick3DGeometry::Attribute::ComponentType::U32Type);
