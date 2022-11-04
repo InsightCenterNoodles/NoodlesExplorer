@@ -6,60 +6,24 @@ import QtQuick.Layouts
 import Qt.labs.qmlmodels 1.0
 import Qt.labs.settings 1.1
 
-CustomRect {
+Rectangle {
     id: title_dragger
-    radius: 5
-
-    topLeftCorner: false
-    bottomLeftCorner: false
-    topRightCorner: true
-    bottomRightCorner: false
 
     color: Style.set_alpha(Style.grey3, .75)
 
     height: 35
 
-    property bool has_mouse: window_drag_area.containsMouse
-                             || window_drag_area.pressed
-
-    MouseArea {
-        id: window_drag_area
-        anchors.fill: parent
-
-        property int dx
-        property int dy
-        onPressed: {
-            dx = mouseX
-            dy = mouseY
-        }
-
-        onPositionChanged: {
-            window.x += mouseX - dx
-            window.y += mouseY - dy
-        }
-    }
-
-    WindowControls {
-        id: collapsed_controls
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.left: parent.left
-        anchors.leftMargin: 5
-        visible: drawer.state === "hidden"
-
-        width: drawer.state === "hidden" ? 65 : 0
-    }
-
     NSRoundedButton {
         id: close_sidebar_button
         anchors.verticalCenter: parent.verticalCenter
-        anchors.left: collapsed_controls.right
+        anchors.left: parent.left
+        anchors.leftMargin: 5
 
         text: drawer.state === "hidden" ? "\uf054" : "\uf053"
 
         onClicked: {
-            console.log("HI")
             if (drawer.state)
-                drawer.state = ""
+                drawer.state = "visible"
             else
                 drawer.state = "hidden"
         }

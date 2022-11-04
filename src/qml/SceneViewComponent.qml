@@ -30,25 +30,27 @@ Item {
 
         DirectionalLight {
             visible: settings.override_lights
-            color: Qt.rgba(1.0, 1.0, 1.0, 1.0)
-            brightness: .25
-            rotation: Quaternion.lookAt(Qt.vector3d(-1,0,0), Qt.vector3d(0,0,0))
+            color: Qt.rgba(1, 1, 1.0, 1.0)
+            brightness: 5
+            rotation: Quaternion.lookAt(Qt.vector3d(1,1,1), Qt.vector3d(0,0,0))
             castsShadow: true
         }
 
         DirectionalLight {
-            visible: settings.override_lights
-            color: Qt.rgba(1.0, 1.0, 1.0, 1.0)
-            brightness: .1
-            rotation: Quaternion.lookAt(Qt.vector3d(0,0,-1), Qt.vector3d(0,0,0))
+            //visible: settings.override_lights
+            visible: false
+            color: Qt.rgba(.85, 1, .85, 1.0)
+            brightness: 3
+            rotation: Quaternion.lookAt(Qt.vector3d(0,-1,0), Qt.vector3d(0,0,0))
             //castsShadow: true
         }
 
         DirectionalLight {
-            visible: settings.override_lights
-            color: Qt.rgba(1, 1, 1, 1.0)
+            //visible: settings.override_lights
+            visible: false
+            color: Qt.rgba(.8, .8, 1, 1.0)
             brightness: 1
-            rotation: Quaternion.lookAt(Qt.vector3d(1,1,1), Qt.vector3d(0,0,0))
+            rotation: Quaternion.lookAt(Qt.vector3d(0,1,0), Qt.vector3d(0,0,0))
             //castsShadow: true
         }
 
@@ -87,6 +89,27 @@ Item {
 
             visible: false
         }
+
+        Model {
+            id: translation_item
+
+            pickable: true
+
+            source: "#Sphere"
+            scale: Qt.vector3d(.001, .001, .001)
+
+            materials: [
+                PrincipledMaterial {
+                    baseColor: Style.red
+                    metalness: 0.0
+                    roughness: 0.1
+                }
+            ]
+
+            visible: scene_3d.is_moving_thing
+
+
+        }
     }
 
     property var entity_maker: Qt.createComponent("RenderableEntity.qml")
@@ -110,11 +133,11 @@ Item {
         function onAsk_create(oid, pickable, pid, material, mesh, instances) {
             console.log("Creating", oid)
             let init_props = {
-                "pickable": !!pickable,
+                "pickable": true,
                 "hosting_object": pickable
             }
 
-            console.log("Hooking to parent", pid)
+            console.log("Hooking to parent", pid, pickable)
 
             if (mesh) {
                 init_props["geometry"] = mesh
@@ -153,6 +176,12 @@ Item {
 
             console.log("UPDATE TF", oid, e, e.sceneTransform, e.scenePosition)
         }
+
+        function onStart_move(p) {
+            console.log("Starting move, putting cursor at", p)
+            translation_item.position = p;
+            scene_3d.is_moving_thing = true;
+        }
     }
 
     Connections {
@@ -182,18 +211,76 @@ Item {
 
         camera: main_cam
 
+        property bool is_moving_thing: false
+        property bool is_dragging_moving_thing: false
+
         environment: SceneEnvironment {
             antialiasingMode: SceneEnvironment.MSAA
             clearColor: settings.clear_color
-            backgroundMode: SceneEnvironment.Color
+            //backgroundMode: SceneEnvironment.Color
+            backgroundMode: SceneEnvironment.SkyBox
+            lightProbe: Texture {
+                textureData: ProceduralSkyTextureData {
+                    sunEnergy: 10
+                }
+            }
         }
     }
 
     MouseArea {
         anchors.fill: scene_3d
         anchors.margins: 20
-        acceptedButtons: Qt.RightButton
+        acceptedButtons: Qt.AllButtons
 
+        hoverEnabled: !wasd_button.checked
+
+        onPositionChanged: function(mouse) {
+            if (scene_3d.is_dragging_moving_thing) {
+                // get and keep current depth
+                let scene_pos = scene_3d.mapFrom3DScene(translation_item.position)
+
+                let z = scene_pos.z
+
+                translation_item.position = scene_3d.mapTo3DScene(Qt.vector3d(mouse.x, mouse.y, z))
+            }
+        }
+
+        onPressed: function(mouse) {
+            console.log("Pressed", scene_3d.is_moving_thing, mouse.button)
+
+            if (scene_3d.is_moving_thing && (mouse.button & Qt.LeftButton)) {
+
+                var result_list = scene_3d.pickAll(mouse.x, mouse.y)
+
+                for (let result of result_list) {
+                    console.log("Checking", result.objectHit)
+                    //var result = scene_3d.pick(mouse.x, mouse.y)
+
+                    if (result.objectHit === translation_item) {
+                        scene_3d.is_dragging_moving_thing = true
+                        break;
+                    }
+                }
+
+            }
+
+            if (mouse.button & Qt.LeftButton) {
+                // this is
+            }
+        }
+
+        onReleased: function(mouse) {
+            if (scene_3d.is_moving_thing &&  scene_3d.is_dragging_moving_thing) {
+                scene_3d.is_dragging_moving_thing = false
+                scene_3d.is_moving_thing = false
+
+                let last_pos = root_node.mapPositionFromNode(translation_item, Qt.vector3d(0,0,0))
+
+                entity_notifier.move_completed(last_pos)
+            }
+        }
+
+        /*
         onClicked: function (mouse) {
             console.log("Click at", mouse.x, mouse.y)
             var result_list = scene_3d.pickAll(mouse.x, mouse.y)
@@ -226,6 +313,7 @@ Item {
                 console.log("No hit")
             }
         }
+        */
     }
 
     FirstPersonController {
@@ -236,6 +324,22 @@ Item {
         xInvert: true
         yInvert: false
 
-        enabled: window.allow_wasd_mouse
+        enabled: wasd_button.checked
+    }
+
+    NSRoundedButton {
+        id: wasd_button
+
+        text: "\uf072"
+
+        checkable: true
+
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+
+        Shortcut {
+            sequence: "F"
+            onActivated: wasd_button.checked = !wasd_button.checked
+        }
     }
 }

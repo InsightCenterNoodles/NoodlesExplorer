@@ -88,6 +88,13 @@ QHash<int, QByteArray> AttachedMethodListModel::roleNames() const {
     return r;
 }
 
+bool AttachedMethodListModel::has(QString name) const {
+    for (auto const& s : m_list) {
+        if (s->get_name() == name) return true;
+    }
+    return false;
+}
+
 void AttachedMethodListModel::ask_call(int index) {
     auto p = get_method_row(index);
     if (p) {

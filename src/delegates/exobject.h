@@ -25,12 +25,20 @@ class AttachedMethodListModel;
 class EntityChangeNotifier : public ChangeNotifierBase {
     Q_OBJECT
 
+    QPointer<ExObject> m_last_movable;
+
 public:
     explicit EntityChangeNotifier(QObject* parent = nullptr);
     ~EntityChangeNotifier();
 
 public slots:
     void on_pick(ExObject*) { }
+
+    void on_move_requested(ExObject*);
+
+
+    // from the QML side, when translating an object is done
+    void move_completed(QVector3D);
 
 signals:
     void ask_delete(int32_t);
@@ -45,6 +53,9 @@ signals:
                     QQuaternion rotation,
                     QVector3D   scale);
     // void ask_set_parent(int32_t object_id, int32_t parent_id);
+
+    // issued when its time to move a thing around. QML should catch this
+    void start_move(QVector3D);
 };
 
 // =============================================================================
@@ -174,6 +185,9 @@ public:
 
     void on_complete() override;
     void on_update(nooc::EntityUpdateData const&) override;
+
+public slots:
+    void start_move();
 };
 
 // =============================================================================

@@ -5,20 +5,6 @@ import QtQuick.Layouts
 import Qt.labs.qmlmodels 1.0
 
 ColumnLayout {
-    RowLayout {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-
-        //        Item {
-        //            Layout.fillWidth: true
-        //        }
-        //        NSRoundedButton {
-        //            id: pin_button
-        //            text: "\uf08d"
-        //            checkable: true
-        //        }
-    }
-
     StackLayout {
         Layout.fillHeight: true
         Layout.fillWidth: true
@@ -41,7 +27,9 @@ ColumnLayout {
             }
         }
 
-        ProgressBar {}
+        ProgressBar {
+            indeterminate: true
+        }
 
         ColumnLayout {
             Layout.fillHeight: true

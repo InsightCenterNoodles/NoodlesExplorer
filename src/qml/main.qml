@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
-//import QtQuick.Controls.Material
 import QtQuick.Layouts
+import Qt5Compat.GraphicalEffects
 
 import Qt.labs.qmlmodels 1.0
 import Qt.labs.settings 1.1
@@ -14,11 +14,10 @@ ApplicationWindow {
     title: qsTr("Noodles Viewer")
     color: "transparent"
 
-    // hacky, but needed to deal with bugs in WASDcontroller
-    property bool allow_wasd_mouse: !(title_dragger.has_mouse
-                                      || drawer.has_mouse)
+    //flags: Qt.FramelessWindowHint
 
-    flags: Qt.FramelessWindowHint
+    // for now
+    property var current_object : null
 
     Settings {
         id: settings
@@ -62,107 +61,123 @@ ApplicationWindow {
         parent: Overlay.overlay
     }
 
-    Rectangle {
-        id: window_bezel
-
-        radius: 5
-        color: settings.clear_color
-
+    SceneViewComponent {
+        id: main_content
         anchors.fill: parent
+        //anchors.margins: 5
+    }
+
+    SideDrawer {
+        id: drawer
+
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+
+        anchors.leftMargin: 0
+
+        states: State {
+            name: "hidden"
+            PropertyChanges {
+                target: drawer
+                anchors.leftMargin: -drawer.width
+                opacity: 0
+            }
+        }
+
+        transitions: Transition {
+            from: ""
+            to: "hidden"
+            reversible: true
+            ParallelAnimation {
+                NumberAnimation {
+                    properties: "anchors.leftMargin,opacity"
+                    duration: 500
+                    easing.type: Easing.InOutQuad
+                }
+            }
+        }
+    }
+
+    TitleBar {
+        id: title_dragger
+        anchors.left: drawer.right
+        anchors.leftMargin: drawer.state === "hidden" ? 0 : 1
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.topMargin: 0
+    }
+
+    ObjectInfoBox {
+        id: object_info_box
+        anchors.right: parent.right
+        anchors.top: title_dragger.bottom
         anchors.margins: 5
 
-        SceneViewComponent {
-            id: main_content
-            anchors.fill: parent
-            anchors.margins: 5
-        }
+        state: "hidden"
 
-        SideDrawer {
-            id: drawer
-
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.left: parent.left
-
-            anchors.leftMargin: 0
-
-            states: State {
-                name: "hidden"
+        states: [
+            State {
+                name: "visible"
                 PropertyChanges {
-                    target: drawer
-                    anchors.leftMargin: -drawer.width
-                    opacity: 0
+                    target: object_info_box
+                    opacity: 1
                 }
-            }
-
-            transitions: Transition {
-                from: ""
-                to: "hidden"
-                reversible: true
-                ParallelAnimation {
-                    NumberAnimation {
-                        properties: "anchors.leftMargin,opacity"
-                        duration: 500
-                        easing.type: Easing.InOutQuad
-                    }
+                PropertyChanges {
+                    target: object_info_box
+                    visible: true
                 }
-            }
-        }
+            },
 
-        TitleBar {
-            id: title_dragger
-            anchors.left: drawer.right
-            anchors.leftMargin: drawer.state === "hidden" ? 0 : 1
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.topMargin: 0
-
-            topLeftCorner: drawer.state === "hidden"
-        }
-
-        ObjectInfoBox {
-            id: object_info_box
-            anchors.right: parent.right
-            anchors.top: title_dragger.bottom
-            anchors.margins: 5
-
-            state: "hidden"
-
-            states: State {
+            State {
                 name: "hidden"
                 PropertyChanges {
                     target: object_info_box
-                    //anchors.leftMargin: -drawer.width
                     opacity: 0
                 }
+                PropertyChanges {
+                    target: object_info_box
+                    visible: false
+                }
             }
-
-            transitions: Transition {
-                from: ""
+        ]
+        transitions: [
+            Transition {
+                from: "visible"
                 to: "hidden"
                 reversible: true
-                ParallelAnimation {
+                SequentialAnimation {
                     NumberAnimation {
-                        //properties: "anchors.leftMargin,opacity"
+                        target: object_info_box
+                        properties: "opacity"
+                        duration: 500
+                        easing.type: Easing.InOutQuad
+                    }
+                    NumberAnimation {
+                        target: object_info_box
+                        properties: "visible"
+                        duration: 0
+                    }
+                }
+            },
+            Transition {
+                from: "hidden"
+                to: "visible"
+                reversible: true
+                SequentialAnimation {
+                    NumberAnimation {
+                        target: object_info_box
+                        properties: "visible"
+                        duration: 0
+                    }
+                    NumberAnimation {
+                        target: object_info_box
                         properties: "opacity"
                         duration: 500
                         easing.type: Easing.InOutQuad
                     }
                 }
             }
-        }
-    }
-
-    MouseArea {
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-
-        width: 16
-        height: width
-
-        onPressed: {
-            let resize = window.startSystemResize(Qt.RightEdge | Qt.BottomEdge)
-            console.log(resize)
-        }
+        ]
     }
 }
