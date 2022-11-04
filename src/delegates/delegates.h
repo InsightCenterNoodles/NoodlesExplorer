@@ -1,7 +1,9 @@
 #ifndef DELEGATES_H
 #define DELEGATES_H
 
+#include <QObject>
 #include <QPointer>
+#include <QStringList>
 
 #include <span>
 #include <vector>

@@ -16,13 +16,7 @@ Item {
         return optimal_drawer_size
     }
 
-    CustomRect {
-
-        topLeftCorner: true
-        topRightCorner: false
-        bottomLeftCorner: true
-        bottomRightCorner: false
-
+    Rectangle {
         anchors.fill: parent
         anchors.margins: 0
 
@@ -51,10 +45,6 @@ Item {
             anchors.leftMargin: 5
 
             height: 35
-
-            WindowControls {
-                id: window_controls
-            }
 
             NSRoundedButton {
                 id: start_conn_button

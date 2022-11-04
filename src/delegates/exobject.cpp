@@ -20,6 +20,58 @@ EntityChangeNotifier::~EntityChangeNotifier() {
     qDebug() << "Destroying entity notifier";
 }
 
+static glm::mat4 find_local_to_world_transform(ExObject* e) {
+    glm::mat4 local_to_world(1);
+    if (!e) return local_to_world;
+    while (e) {
+        auto const& tf = e->info().transform;
+        qDebug() << "MATRIX:";
+        qDebug() << tf[0].x << tf[1].x << tf[2].x << tf[3].x;
+        qDebug() << tf[0].y << tf[1].y << tf[2].y << tf[3].y;
+        qDebug() << tf[0].z << tf[1].z << tf[2].z << tf[3].z;
+        qDebug() << tf[0].w << tf[1].w << tf[2].w << tf[3].w;
+
+        local_to_world = e->info().transform * local_to_world;
+
+        e = static_cast<ExObject*>(e->info().parent.get());
+    }
+    return local_to_world;
+}
+
+static QVector3D find_world_coord(ExObject* e) {
+    if (!e) return QVector3D(0, 0, 0);
+    glm::mat4 local_to_world = find_local_to_world_transform(e);
+
+    auto v = local_to_world * glm::vec4(0, 0, 0, 1);
+
+    return { v.x / v.w, v.y / v.w, v.z / v.w };
+}
+
+void EntityChangeNotifier::on_move_requested(ExObject* e) {
+    m_last_movable = e;
+    if (m_last_movable) emit start_move(find_world_coord(e));
+}
+
+void EntityChangeNotifier::move_completed(QVector3D p) {
+    if (!m_last_movable) return;
+
+    qDebug() << "Move done" << p;
+
+    // pos is in global space. we can only do local!
+
+    auto current_world =
+        glm::inverse(find_local_to_world_transform(m_last_movable));
+
+    glm::vec4 pos = current_world * glm::vec4(p.x(), p.y(), p.z(), 1);
+
+    pos /= pos.w;
+
+    auto* request = m_last_movable->attached_methods().new_call_by_name(
+        noo::names::mthd_set_position);
+
+    request->call(glm::vec3(pos));
+}
+
 // =============================================================================
 
 RepresentationPart::RepresentationPart(QObject* p) : QObject(p) { }
@@ -82,10 +134,10 @@ void QMLInstanceTable::buffer_ready(QByteArray array) {
 
         auto const& m = mat_array[i];
 
-        qDebug() << "P" << convert(glm::vec3(m[0]));
-        qDebug() << "S" << convert(glm::vec3(m[3]));
-        qDebug() << "R" << convert_r(m[2]);
-        qDebug() << "C" << convert_c(m[1]);
+        //        qDebug() << "P" << convert(glm::vec3(m[0]));
+        //        qDebug() << "S" << convert(glm::vec3(m[3]));
+        //        qDebug() << "R" << convert_r(m[2]);
+        //        qDebug() << "C" << convert_c(m[1]);
 
         table_arr[i] = calculateTableEntry(convert(glm::vec3(m[0])),
                                            convert(glm::vec3(m[3])),
@@ -107,7 +159,7 @@ RenderSubObject::RenderSubObject(EntityChangeNotifier* n,
                                  ExObject* cpp_obj)
     : m_notifier(n) {
 
-    qDebug() << Q_FUNC_INFO;
+    qDebug() << Q_FUNC_INFO << parent_id << cpp_obj;
 
     m_id = n->new_id();
 
@@ -170,12 +222,8 @@ void RenderPart::redo_subs() {
 
     connect(mesh_delegate, &ExMesh::ready, this, &RenderPart::redo_subs);
 
-
-    bool pickable =
-        !(m_parent_exobject->info().tags.contains(noo::names::tag_user_hidden));
-
     qDebug() << "redoing render subs" << m_parent_exobject->get_name()
-             << m_parent_exobject << pickable;
+             << m_parent_exobject;
 
     for (int i = 0; i < mesh_delegate->qt_geom_count(); i++) {
         auto* geom = mesh_delegate->qt_geom(i);
@@ -184,7 +232,7 @@ void RenderPart::redo_subs() {
             m_parent_exobject->internal_root(),
             m_def,
             *geom,
-            pickable ? m_parent_exobject : nullptr));
+            m_parent_exobject));
     }
 }
 
@@ -239,7 +287,12 @@ void ExObject::rebuild(bool representation, bool methods) {
             info().transform, scale, orientation, translation, skew, persp);
 
         if (!ok) {
+            auto tf = info().transform;
             qCritical() << "Unable to decompose matrix";
+            qCritical() << tf[0].x << tf[0].y << tf[0].z << tf[0].w;
+            qCritical() << tf[1].x << tf[1].y << tf[1].z << tf[1].w;
+            qCritical() << tf[2].x << tf[2].y << tf[2].z << tf[2].w;
+            qCritical() << tf[3].x << tf[3].y << tf[3].z << tf[3].w;
             translation = glm::vec3(0);
             scale       = glm::vec3(1);
             orientation = glm::quat(1, glm::vec3(0));
@@ -290,8 +343,8 @@ void ExObject::rebuild(bool representation, bool methods) {
 
 QStringList ExObject::header() {
     // be careful about changing these. consider the filter below.
-    return { "ID",     "Name", "Parent", "Representation",
-             "Lights", "Tags", "Methods" };
+    return { "ID",   "Name",    "Parent",  "Representation", "Lights",
+             "Tags", "Methods", "Pointer", "Movable" };
 }
 
 ExObject::ExObject(noo::EntityID           id,
@@ -342,6 +395,8 @@ QString ExObject::get_name() const {
 }
 
 QVariant ExObject::get_column(int c) const {
+    auto find_sig = [&](QString n) { return this->m_attached_methods->has(n); };
+
     switch (c) {
     case 0: return get_id();
     case 1: return get_name().isEmpty() ? id().to_qstring() : get_name();
@@ -352,6 +407,11 @@ QVariant ExObject::get_column(int c) const {
 
     case 5: return info().tags;
     case 6: return QVariant::fromValue(m_attached_methods);
+    case 7: return QVariant::fromValue(this);
+    case 8:
+        return find_sig(noo::names::mthd_set_position) or
+               find_sig(noo::names::mthd_set_rotation) or
+               find_sig(noo::names::mthd_set_scale);
     }
     return {};
 }
@@ -363,6 +423,12 @@ void ExObject::on_complete() {
 void ExObject::on_update(nooc::EntityUpdateData const& md) {
     if (md.parent) { qFatal("UNABLE TO REPARENT AT THIS TIME"); }
     rebuild(md.definition.has_value(), md.methods_list.has_value());
+}
+
+void ExObject::start_move() {
+    qDebug() << Q_FUNC_INFO;
+
+    if (m_notifier) m_notifier->on_move_requested(this);
 }
 
 // Qt3DCore::QEntity* ExObject::entity() {
@@ -455,7 +521,7 @@ void TaggedNameObjectFilter::set_filter(QString const& new_filter) {
 
     auto parts = m_filter.split(":");
 
-    for (auto part : parts) {
+    for (auto const& part : parts) {
         if (part.startsWith("#")) {
             m_tags << part.mid(1);
         } else {

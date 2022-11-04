@@ -41,6 +41,8 @@ public:
 
     QHash<int, QByteArray> roleNames() const override;
 
+    bool has(QString name) const;
+
 public slots:
     void ask_call(int index);
 

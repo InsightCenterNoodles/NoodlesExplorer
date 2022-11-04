@@ -37,13 +37,9 @@ public:
     bool is_subscribed() const { return m_subscribed; }
 
 public:
-    void on_table_initialize(QVector<ColumnInfo> const& names,
-                             QVector<int64_t>           keys,
-                             QVector<QCborArray> const& data_cols,
-                             QVector<noo::Selection>    selections) override;
-
-    void on_table_reset() override;
-    void on_table_updated(QVector<int64_t> keys, QCborArray columns) override;
+    void on_table_subscribed(nooc::TableDataInit const&) override;
+    void on_table_reset(nooc::TableDataInit const&) override;
+    void on_table_rows_updated(QVector<int64_t> keys, QCborArray rows) override;
     void on_table_rows_removed(QVector<int64_t> keys) override;
     void on_table_selection_updated(noo::Selection const&) override;
 

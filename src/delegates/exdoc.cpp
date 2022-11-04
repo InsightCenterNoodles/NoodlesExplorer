@@ -2,7 +2,7 @@
 
 #include "delegates.h"
 
-ExDoc::ExDoc() {
+ExDoc::ExDoc(AttachedMethodListModel* p) : m_attached_methods(p) {
     // m_attached_methods = new AttachedMethodListModel(this);
 
     //    connect(m_attached_methods,
@@ -15,8 +15,11 @@ ExDoc::ExDoc() {
 }
 ExDoc::~ExDoc() = default;
 
-void ExDoc::on_update(nooc::DocumentData const& /*data*/) {
-    // m_attached_methods->set(data.method_list);
+void ExDoc::on_update(nooc::DocumentData const& data) {
+    qDebug() << "Updating document methods";
+    if (data.methods_list) {
+        m_attached_methods->set(data.methods_list.value());
+    }
 }
 void ExDoc::on_clear() { }
 

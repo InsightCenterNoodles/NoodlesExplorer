@@ -48,30 +48,26 @@ QAbstractTableModel* ExTable::selections_model() const {
     return nullptr;
 }
 
-void ExTable::on_table_initialize(QVector<ColumnInfo> const& names,
-                                  QVector<int64_t>           keys,
-                                  QVector<QCborArray> const& data_cols,
-                                  QVector<noo::Selection>    selections) {
+void ExTable::on_table_subscribed(nooc::TableDataInit const& init) {
 
     QStringList all_cols;
-    for (auto const& info : names) {
+    for (auto const& info : init.names) {
         all_cols << info.name;
     }
 
     qDebug() << Q_FUNC_INFO << all_cols;
 
-
-    if (names.size() != data_cols.size()) return;
-    if (names.size() == 0) return;
+    if (init.names.size() == 0) return;
 
     m_data = std::make_unique<RemoteTableData>();
 
-    m_data->on_table_initialize(names, keys, data_cols, selections);
+    m_data->on_table_subscribed(init);
 
     m_subscribed = true;
 
     connect(m_data.get(),
             &RemoteTableData::ask_update_row,
+            this,
             [this](int64_t key, QCborArray& l) {
                 this->request_row_update(key, std::move(l));
             });
@@ -79,14 +75,14 @@ void ExTable::on_table_initialize(QVector<ColumnInfo> const& names,
     emit fetch_new_remote_table_data();
 }
 
-void ExTable::on_table_reset() {
+void ExTable::on_table_reset(nooc::TableDataInit const& init) {
     qDebug() << Q_FUNC_INFO;
-    if (m_data) m_data->on_table_reset();
+    if (m_data) m_data->on_table_reset(init);
 }
 
-void ExTable::on_table_updated(QVector<int64_t> keys, QCborArray columns) {
+void ExTable::on_table_rows_updated(QVector<int64_t> keys, QCborArray rows) {
     qDebug() << Q_FUNC_INFO;
-    if (m_data) m_data->on_table_updated(keys, columns);
+    if (m_data) m_data->on_table_rows_updated(keys, rows);
 }
 
 void ExTable::on_table_rows_removed(QVector<int64_t> keys) {

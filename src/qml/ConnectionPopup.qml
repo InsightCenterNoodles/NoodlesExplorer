@@ -3,13 +3,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Item {
-    //NSPopOver {
     id: root
 
-    //x: Math.round((parent.width - width) / 2)
-    //y: Math.round((parent.height - height) / 2)
-
-    //width: parent.width * .75
     ColumnLayout {
         anchors.fill: parent
 
@@ -66,10 +61,8 @@ Item {
 
                     console.log(username_box.text, hostname_box.text)
 
-                    if (app_state.start_connection(username_box.text,
-                                                   hostname_box.text)) {
-                        root.close()
-                    }
+                    app_state.start_connection(username_box.text,
+                                               hostname_box.text)
 
                     settings.last_user = username_box.text
                     settings.last_server = hostname_box.text

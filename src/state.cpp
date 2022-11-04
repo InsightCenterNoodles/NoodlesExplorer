@@ -103,22 +103,24 @@ bool State::start_connection(QString name, QString url) {
         return false;
     }
 
-    m_client_conn = new nooc::ClientConnection(this);
+    m_client_conn = new nooc::Client(this);
 
     connect(m_client_conn,
-            &nooc::ClientConnection::disconnected,
+            &nooc::Client::disconnected,
             m_client_conn,
             &QObject::deleteLater);
 
     connect(m_client_conn,
-            &nooc::ClientConnection::disconnected,
+            &nooc::Client::disconnected,
             this,
             &State::handle_disconnect);
 
-    connect(m_client_conn,
-            &nooc::ClientConnection::connected,
-            this,
-            &State::handle_connect);
+    connect(
+        m_client_conn, &nooc::Client::connected, this, &State::handle_connect);
+
+    connect(m_client_conn, &nooc::Client::initialized, []() {
+        qDebug() << "ALL SCENE READY";
+    });
 
     nooc::ClientDelegates delegates;
     delegates.client_name = name;
@@ -161,7 +163,7 @@ bool State::start_connection(QString name, QString url) {
         return m_method_list->add_item(id, md);
     };
     delegates.doc_maker = [this]() {
-        auto p = std::make_unique<ExDoc>();
+        auto p = std::make_unique<ExDoc>(&this->m_document_methods);
 
         m_current_doc = p.get();
 

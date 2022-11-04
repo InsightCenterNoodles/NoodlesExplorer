@@ -23,6 +23,8 @@ Item {
     readonly property color yellow: rgb(255, 214, 10)
     readonly property color green: rgb(48, 209, 88)
 
+    readonly property color dimgrey: rgb(180,180,180)
+
     readonly property color grey: rgb(142, 142, 147)
     readonly property color grey2: rgb(99, 99, 102)
     readonly property color grey3: rgb(72, 72, 74)

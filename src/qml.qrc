@@ -18,7 +18,6 @@
         <file>qml/SideDrawer.qml</file>
         <file>qml/Style.qml</file>
         <file>qml/NSRoundedButton.qml</file>
-        <file>qml/WindowControls.qml</file>
         <file>qml/NSGroupBox.qml</file>
         <file>qml/NSTextField.qml</file>
         <file>fa_solid_6.otf</file>
