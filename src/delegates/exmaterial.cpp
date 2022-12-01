@@ -1,5 +1,7 @@
 #include "exmaterial.h"
 
+#include "extexture.h"
+
 #include <QEntity>
 
 MaterialChangeNotifier::MaterialChangeNotifier(QObject* parent)
@@ -19,11 +21,6 @@ ExMaterial::ExMaterial(noo::MaterialID           id,
     : nooc::MaterialDelegate(id, md), m_notifier(notifier) {
 
     m_qt_mat_id = notifier->new_id();
-
-    emit m_notifier->ask_create(m_qt_mat_id,
-                                md.pbr_info.base_color,
-                                md.pbr_info.metallic,
-                                md.pbr_info.roughness);
 }
 
 ExMaterial::~ExMaterial() {
@@ -48,13 +45,28 @@ static QString ptr_to_id(std::optional<nooc::TextureRef> const& c) {
     return ptr_to_id(c->texture);
 }
 
-static auto get_pbr(nooc::PBRInfo const& md) {
+static auto get_pbr(std::optional<nooc::PBRInfo> const& md) {
+
+    QColor  base_color = Qt::white;
+    QString base_color_tex;
+    float   metallic  = 0;
+    float   roughness = 1;
+    QString rough_tex;
+
+    if (md) {
+        base_color     = md->base_color;
+        base_color_tex = ptr_to_id(md->base_color_texture);
+        metallic       = md->metallic;
+        roughness      = md->roughness;
+        rough_tex      = ptr_to_id(md->metal_rough_texture);
+    }
+
     return QString("%1 %2 %3 %4 %5")
-        .arg(md.base_color.name())
-        .arg(ptr_to_id(md.base_color_texture))
-        .arg(md.metallic)
-        .arg(md.roughness)
-        .arg(ptr_to_id(md.metal_rough_texture));
+        .arg(base_color.name())
+        .arg(base_color_tex)
+        .arg(metallic)
+        .arg(roughness)
+        .arg(rough_tex);
 }
 
 static QString get_light(nooc::MaterialInit const& d) {
@@ -105,3 +117,36 @@ void ExMaterial::on_update(nooc::MaterialUpdate const& md) {
 // QInstancedMetalRoughMaterial* ExMaterial::get_3d_material() {
 //     return m_3d_entity;
 // }
+
+void ExMaterial::on_complete() {
+    if (m_notifier and m_qt_mat_id >= 0) {
+        emit m_notifier->ask_delete(m_qt_mat_id);
+        m_notifier->return_id(m_qt_mat_id);
+    }
+
+    QColor base_color = Qt::white;
+    float  metallic   = 0;
+    float  roughness  = 1;
+
+    int32_t tex_id = -1;
+
+    if (info().pbr_info) {
+        base_color = info().pbr_info->base_color;
+        metallic   = info().pbr_info->metallic;
+        roughness  = info().pbr_info->roughness;
+    }
+
+    if (info().pbr_info->base_color_texture) {
+        auto* p = dynamic_cast<ExTexture*>(
+            info().pbr_info->base_color_texture->texture.get());
+
+        if (p) { tex_id = p->qt_tex_id(); }
+    }
+
+    emit m_notifier->ask_create(m_qt_mat_id,
+                                base_color,
+                                tex_id,
+                                metallic,
+                                roughness,
+                                info().double_sided);
+}

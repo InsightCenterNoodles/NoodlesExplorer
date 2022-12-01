@@ -11,6 +11,8 @@ Item {
 
     property var material_list: ({})
 
+    property var texture_list: ({})
+
     Node {
         id: root_node
 
@@ -114,6 +116,7 @@ Item {
 
     property var entity_maker: Qt.createComponent("RenderableEntity.qml")
     property var material_maker: Qt.createComponent("RenderableMaterial.qml")
+    property var texture_maker: Qt.createComponent("RenderableTexture.qml")
 
     function seek_parent(pid) {
         if (pid >= 0) {
@@ -153,8 +156,8 @@ Item {
 
             if (material >= 0) {
                 let material_props = material_list[material];
-                console.log("Creating new material:",
-                            JSON.stringify(material_props))
+                //console.log("Creating new material:",
+                //            JSON.stringify(material_props))
                 var mat_ent = material_maker.createObject(new_ent,
                                                           material_props)
 
@@ -188,16 +191,53 @@ Item {
         target: material_notifier
 
         function onAsk_delete(oid) {
+            console.log("Deleting QML material", oid)
             delete material_list[oid]
         }
-        function onAsk_create(oid, color, metal, rough) {
+        function onAsk_create(oid, color, color_tex_id, metal, rough, double_sided) {
+            console.log("Creating QML material", oid)
 
             let init_props = {
                 "baseColor": color,
                 "metalness": metal,
-                "roughness": rough
+                "roughness": rough,
             }
+
+            //console.log(PrincipledMaterial.BackFaceCulling, PrincipledMaterial.NoCulling)
+
+            init_props["cullMode"] = double_sided ? PrincipledMaterial.NoCulling  : RenderableMaterial.BackFaceCulling
+
+            //console.log(init_props["cullMode"])
+            console.log("Contents", JSON.stringify(init_props), double_sided)
+
+            if (color_tex_id >= 0) {
+                init_props["baseColorMap"] = texture_list[color_tex_id]
+            }
+
             material_list[oid] = init_props
+        }
+    }
+
+    Connections {
+        target: texture_notifier
+
+        function onAsk_delete(oid) {
+            console.log("Deleting QML texture", oid)
+            delete texture_list[oid]
+        }
+        function onAsk_create(oid, data, extra_opts) {
+            console.log("Creating QML texture", oid)
+
+            console.log(JSON.stringify(extra_opts))
+
+            extra_opts["textureData"] = data
+
+            extra_opts["minFilter"] = extra_opts["minFilter"] ? Texture.Linear : Texture.Nearest;
+            extra_opts["magFilter"] = extra_opts["magFilter"] ? Texture.Linear : Texture.Nearest;
+
+
+
+            texture_list[oid] = texture_maker.createObject(root_node, extra_opts)
         }
     }
 

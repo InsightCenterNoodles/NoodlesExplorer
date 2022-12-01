@@ -29,5 +29,8 @@
         <file>qml/CustomRect.qml</file>
         <file>qml/TitleBar.qml</file>
         <file>qml/ObjectInfoBox.qml</file>
+        <file>qml/Console.qml</file>
+        <file>qml/jsconsole.js</file>
+        <file>qml/RenderableTexture.qml</file>
     </qresource>
 </RCC>

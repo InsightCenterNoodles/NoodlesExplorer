@@ -63,11 +63,38 @@ Item {
                 onClicked: app_state.disconnect()
             }
 
+//            NSRoundedButton {
+//                text: "\uf188"
+
+//                onClicked: {
+//                    app_state.exec_debug()
+//                }
+//            }
+
             NSRoundedButton {
-                text: "\uf188"
+                text: "\uf05a"
+
+                onToggled: object_info_box.state = checked ? "" : "hidden"
+
+                checkable: true
+            }
+
+            NSRoundedButton {
+                text: "\uf2c2"
 
                 onClicked: {
-                    app_state.exec_debug()
+                    inspector_popup.open()
+                }
+            }
+
+            NSRoundedButton {
+
+                text: "\uf1de"
+
+                onClicked: settings_pop.open()
+
+                SettingsPopup {
+                    id: settings_pop
                 }
             }
         }

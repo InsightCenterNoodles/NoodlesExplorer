@@ -15,8 +15,12 @@ public:
 
 signals:
     void ask_delete(int32_t);
-    void
-    ask_create(int32_t new_id, QColor base_color, float metal, float rough);
+    void ask_create(int32_t new_id,
+                    QColor  base_color,
+                    int32_t base_texture,
+                    float   metal,
+                    float   rough,
+                    int     cull_mode);
 };
 
 class ExMaterial : public nooc::MaterialDelegate {
@@ -42,6 +46,8 @@ public:
     void on_update(nooc::MaterialUpdate const&) override;
 
     int32_t qt_mat_id() const { return m_qt_mat_id; }
+
+    void on_complete() override;
 };
 
 #endif // EXMATERIAL_H

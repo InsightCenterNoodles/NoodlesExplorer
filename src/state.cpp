@@ -46,6 +46,7 @@ State::State(QObject* parent) : QObject(parent) {
 
     m_ent_notifier = new EntityChangeNotifier(this);
     m_mat_notifier = new MaterialChangeNotifier(this);
+    m_tex_notifier = new TextureChangeNotifier(this);
 
     m_object_filter = new TaggedNameObjectFilter(this);
 
@@ -86,6 +87,7 @@ void State::link(QQmlContext* c) {
 
     c->setContextProperty("entity_notifier", m_ent_notifier);
     c->setContextProperty("material_notifier", m_mat_notifier);
+    c->setContextProperty("texture_notifier", m_tex_notifier);
 
     c->setContextProperty("document_methods", &m_document_methods);
 }
@@ -127,7 +129,7 @@ bool State::start_connection(QString name, QString url) {
 
     delegates.tex_maker = [this](noo::TextureID           id,
                                  nooc::TextureInit const& md) {
-        return m_texture_list->add_item(id, md);
+        return m_texture_list->add_item(id, md, m_tex_notifier);
     };
     delegates.buffer_maker = [this](noo::BufferID           id,
                                     nooc::BufferInit const& md) {

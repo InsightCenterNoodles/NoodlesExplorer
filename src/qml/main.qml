@@ -11,7 +11,7 @@ ApplicationWindow {
     width: 800
     height: 600
     visible: true
-    title: qsTr("Noodles Viewer")
+    title: qsTr("Noodles Explorer")
     color: "transparent"
 
     //flags: Qt.FramelessWindowHint
@@ -99,19 +99,21 @@ ApplicationWindow {
         }
     }
 
-    TitleBar {
-        id: title_dragger
-        anchors.left: drawer.right
-        anchors.leftMargin: drawer.state === "hidden" ? 0 : 1
+    Console {
+        id: main_console
+        visible: false
+
         anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.topMargin: 0
+        anchors.left: drawer.right
+        anchors.bottom: parent.bottom
+
+        height: 200
     }
 
     ObjectInfoBox {
         id: object_info_box
         anchors.right: parent.right
-        anchors.top: title_dragger.bottom
+        anchors.top: parent.top
         anchors.margins: 5
 
         state: "hidden"

@@ -144,7 +144,7 @@ Popup {
 
                     model: texture_list
 
-                    relWidths: [1, 5, 5, 5]
+                    relWidths: [1, 5, 5, 5, 5, 1]
                 }
             }
 
