@@ -33,9 +33,11 @@ Item {
         DirectionalLight {
             visible: settings.override_lights
             color: Qt.rgba(1, 1, 1.0, 1.0)
-            brightness: 5
+            brightness: 3
             rotation: Quaternion.lookAt(Qt.vector3d(1,1,1), Qt.vector3d(0,0,0))
             castsShadow: true
+            shadowFactor: 100
+            shadowMapQuality: Light.ShadowMapQualityHigh
         }
 
         DirectionalLight {
