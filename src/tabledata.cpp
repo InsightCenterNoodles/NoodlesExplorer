@@ -328,7 +328,7 @@ QVariant RemoteTableData::headerData(int             section,
     if (role != Qt::DisplayRole) return {};
 
     if (orientation == Qt::Orientation::Vertical) {
-        return m_row_to_key_map.at(section);
+        return QVariant::fromValue(m_row_to_key_map.at(section));
     }
 
     return m_header.at(section);
@@ -402,3 +402,4 @@ Qt::ItemFlags RemoteTableData::flags(QModelIndex const& index) const {
 
     return Qt::ItemIsEditable | Qt::ItemIsSelectable | Qt::ItemIsEnabled;
 }
+
