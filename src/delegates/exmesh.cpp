@@ -237,7 +237,8 @@ void ExMeshGeometry::update_data() {
 
         auto& view_info = attrib.view->info();
 
-        auto src_span = noo::safe_subspan(std::span(src_buff->data()),
+        auto const buffer_byte_array = src_buff->data();
+        auto src_span = noo::safe_subspan(std::span(buffer_byte_array),
                                           view_info.offset + attrib.offset,
                                           view_info.length);
 
@@ -577,3 +578,4 @@ void ExMesh::on_complete() {
 
 //    return ret;
 //}
+
