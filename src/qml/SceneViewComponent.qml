@@ -133,10 +133,10 @@ Item {
         function onAsk_delete(oid) {
             entity_list[oid].destroy()
             delete entity_list[oid]
-            console.log("Deleting", oid)
+            console.log("Deleting entity", oid)
         }
         function onAsk_create(oid, pickable, pid, material, mesh, instances) {
-            console.log("Creating", oid)
+            console.log("Creating entity", oid)
             let init_props = {
                 "pickable": true,
                 "hosting_object": pickable
@@ -145,6 +145,7 @@ Item {
             console.log("Hooking to parent", pid, pickable)
 
             if (mesh) {
+                console.log("Entity:", oid, "geom", mesh)
                 init_props["geometry"] = mesh
             }
 
@@ -157,19 +158,14 @@ Item {
                                                     init_props)
 
             if (material >= 0) {
-                let material_props = material_list[material];
-                //console.log("Creating new material:",
-                //            JSON.stringify(material_props))
-                var mat_ent = material_maker.createObject(new_ent,
-                                                          material_props)
-
-                new_ent.materials[0] = mat_ent
+                console.log("Entity:", oid, "material", material)
+                new_ent.materials[0] = material_list[material];
             }
 
             console.log(new_ent.bounds.minimum, new_ent.bounds.maximum)
 
             entity_list[oid] = new_ent
-            console.log(oid, pid, material, mesh, instances)
+            console.log("Completed entity",oid, pid, material, mesh, instances)
             //onAsk_set_parent(oid, pid)
         }
         function onAsk_set_tf(oid, translate, quat, scale) {
@@ -213,10 +209,28 @@ Item {
             console.log("Contents", JSON.stringify(init_props), double_sided)
 
             if (color_tex_id >= 0) {
+                console.log("Material has texture")
                 init_props["baseColorMap"] = texture_list[color_tex_id]
             }
 
-            material_list[oid] = init_props
+            material_list[oid] = material_maker.createObject(root_node, init_props)
+        }
+        function onAsk_update(oid, color, color_tex_id, metal, rough, double_sided) {
+            console.log("Updating QML material", oid)
+
+            let mat = material_list[oid]
+
+            mat.baseColor = color
+            mat.metalness = metal
+            mat.roughness = rough
+
+            mat.cullMode = double_sided ? PrincipledMaterial.NoCulling  :
+                                          RenderableMaterial.BackFaceCulling
+
+            if (color_tex_id >= 0) {
+                console.log("Material has texture")
+                mat.baseColorMap = texture_list[color_tex_id]
+            }
         }
     }
 

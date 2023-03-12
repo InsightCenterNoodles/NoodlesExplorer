@@ -21,6 +21,13 @@ signals:
                     float   metal,
                     float   rough,
                     int     cull_mode);
+
+    void ask_update(int32_t new_id,
+                    QColor  base_color,
+                    int32_t base_texture,
+                    float   metal,
+                    float   rough,
+                    int     cull_mode);
 };
 
 class ExMaterial : public nooc::MaterialDelegate {
@@ -28,6 +35,8 @@ class ExMaterial : public nooc::MaterialDelegate {
 
     QPointer<MaterialChangeNotifier> m_notifier;
     int32_t                          m_qt_mat_id = -1;
+
+    void internal_update();
 
 public:
     static QStringList header();

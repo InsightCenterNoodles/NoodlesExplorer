@@ -15,12 +15,52 @@ QStringList ExMaterial::header() {
     return { "ID", "Name", "PBR", "Light", "Misc" };
 }
 
+void ExMaterial::internal_update() {
+    QColor base_color = Qt::white;
+    float  metallic   = 0;
+    float  roughness  = 1;
+
+    int32_t tex_id = -1;
+
+    if (info().pbr_info) {
+        base_color = info().pbr_info->base_color;
+        metallic   = info().pbr_info->metallic;
+        roughness  = info().pbr_info->roughness;
+    }
+
+    if (info().pbr_info->base_color_texture) {
+        auto* p = dynamic_cast<ExTexture*>(
+            info().pbr_info->base_color_texture->texture.get());
+
+        if (p and p->is_data_ready()) { tex_id = p->qt_tex_id(); }
+    }
+
+    if (m_qt_mat_id < 0) {
+        m_qt_mat_id = m_notifier->new_id();
+
+        emit m_notifier->ask_create(m_qt_mat_id,
+                                    base_color,
+                                    tex_id,
+                                    metallic,
+                                    roughness,
+                                    info().double_sided);
+
+    } else {
+        emit m_notifier->ask_update(m_qt_mat_id,
+                                    base_color,
+                                    tex_id,
+                                    metallic,
+                                    roughness,
+                                    info().double_sided);
+    }
+}
+
 ExMaterial::ExMaterial(noo::MaterialID           id,
                        nooc::MaterialInit const& md,
                        MaterialChangeNotifier*   notifier)
     : nooc::MaterialDelegate(id, md), m_notifier(notifier) {
 
-    m_qt_mat_id = notifier->new_id();
+    internal_update();
 }
 
 ExMaterial::~ExMaterial() {
@@ -108,6 +148,8 @@ void ExMaterial::on_update(nooc::MaterialUpdate const& md) {
     //    m_2d_material->setDiffuse(c);
     //    // m_2d_material->setMetalness(md.metallic);
     //    m_2d_material->setShininess(1.0 - md.roughness.value_or(0));
+
+    internal_update();
 }
 
 // Qt3DExtras::QPhongMaterial* ExMaterial::get_2d_material() {
@@ -119,34 +161,36 @@ void ExMaterial::on_update(nooc::MaterialUpdate const& md) {
 // }
 
 void ExMaterial::on_complete() {
-    if (m_notifier and m_qt_mat_id >= 0) {
-        emit m_notifier->ask_delete(m_qt_mat_id);
-        m_notifier->return_id(m_qt_mat_id);
-    }
+    qDebug() << "Material is complete";
 
-    QColor base_color = Qt::white;
-    float  metallic   = 0;
-    float  roughness  = 1;
+    if (!m_notifier or m_qt_mat_id < 0) return;
+    /*
 
-    int32_t tex_id = -1;
+        QColor base_color = Qt::white;
+        float  metallic   = 0;
+        float  roughness  = 1;
 
-    if (info().pbr_info) {
-        base_color = info().pbr_info->base_color;
-        metallic   = info().pbr_info->metallic;
-        roughness  = info().pbr_info->roughness;
-    }
+        int32_t tex_id = -1;
 
-    if (info().pbr_info->base_color_texture) {
-        auto* p = dynamic_cast<ExTexture*>(
-            info().pbr_info->base_color_texture->texture.get());
+        if (info().pbr_info) {
+            base_color = info().pbr_info->base_color;
+            metallic   = info().pbr_info->metallic;
+            roughness  = info().pbr_info->roughness;
+        }
 
-        if (p) { tex_id = p->qt_tex_id(); }
-    }
+        if (info().pbr_info->base_color_texture) {
+            auto* p = dynamic_cast<ExTexture*>(
+                info().pbr_info->base_color_texture->texture.get());
 
-    emit m_notifier->ask_create(m_qt_mat_id,
-                                base_color,
-                                tex_id,
-                                metallic,
-                                roughness,
-                                info().double_sided);
+            if (p) { tex_id = p->qt_tex_id(); }
+        }
+
+        emit m_notifier->ask_create(m_qt_mat_id,
+                                    base_color,
+                                    tex_id,
+                                    metallic,
+                                    roughness,
+                                    info().double_sided);
+                                    (*/
+    internal_update();
 }

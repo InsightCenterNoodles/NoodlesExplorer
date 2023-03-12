@@ -26,7 +26,7 @@ ExTexture::ExTexture(noo::TextureID           id,
 
 ExTexture::~ExTexture() {
     if (m_notifier and m_qt_tex_id >= 0) {
-        m_notifier->ask_delete(m_qt_tex_id);
+        emit m_notifier->ask_delete(m_qt_tex_id);
         m_notifier->return_id(m_qt_tex_id);
     }
 }
@@ -62,6 +62,7 @@ QVariant ExTexture::get_column(int c) const {
 }
 
 void ExTexture::image_ready(QImage img) {
+    qDebug() << Q_FUNC_INFO << img;
     m_texture_image = img;
 
     qDebug() << m_texture_image;
@@ -72,8 +73,8 @@ void ExTexture::image_ready(QImage img) {
 
     // m_texture_image.mirror(true, true);
 
-    QImageWriter writer("dump.png", "png");
-    writer.write(m_texture_image);
+    // QImageWriter writer("dump.png", "png");
+    // writer.write(m_texture_image);
 
     if (!m_texture_data) { m_texture_data = new QQuick3DTextureData(); }
 
