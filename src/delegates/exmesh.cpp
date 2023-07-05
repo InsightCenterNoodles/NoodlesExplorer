@@ -54,14 +54,14 @@ void compute_min_max(QVector3D&            min_p,
     for (size_t i = 0; i < vertex_count; i++) {
         assert(source_ptr < (src.data() + src.size()));
 
-        glm::vec4 dest;
+        glm::vec3 dest;
 
         transformer(source_ptr, (char*)&dest);
 
         source_ptr += src_stride;
 
-        lmin = glm::min(lmin, glm::vec3(dest));
-        lmax = glm::max(lmax, glm::vec3(dest));
+        lmin = glm::min(lmin, dest);
+        lmax = glm::max(lmax, dest);
     }
 
     min_p = QVector3D(lmin.x, lmin.y, lmin.z);
@@ -229,37 +229,44 @@ void ExMeshGeometry::update_data() {
 
     QVector3D min_p, max_p;
 
-    for (auto const& attrib : m_data->attributes) {
+    for (auto const& source_attribute : m_data->attributes) {
 
-        qDebug() << "Copying attribute" << (int)attrib.semantic;
+        qDebug() << "Copying attribute" << (int)source_attribute.semantic;
+        qDebug() << "Attribute stride" << source_attribute.stride;
 
-        auto* src_buff = attrib.view->source_buffer();
+        uint64_t source_stride = std::max<uint64_t>(
+            source_attribute.stride, format_byte_size(source_attribute.format));
 
-        auto& view_info = attrib.view->info();
+        auto* src_buff = source_attribute.view->source_buffer();
+
+        auto& view_info = source_attribute.view->info();
 
         auto const buffer_byte_array = src_buff->data();
-        auto       src_span = noo::safe_subspan(std::span(buffer_byte_array),
-                                          view_info.offset + attrib.offset,
-                                          view_info.length);
+        auto       src_span =
+            noo::safe_subspan(std::span(buffer_byte_array),
+                              view_info.offset + source_attribute.offset,
+                              view_info.length);
 
-        size_t bytes_to_copy = format_dest_byte_size(attrib.format);
+        size_t bytes_to_copy = format_dest_byte_size(source_attribute.format);
 
-        switch (attrib.semantic) {
+        switch (source_attribute.semantic) {
         case noo::AttributeSemantic::POSITION:
             copy_attribute(src_span,
-                           attrib.stride,
+                           source_stride,
                            cursor,
                            dest_vertex_stride,
                            num_vertex,
                            tf_position);
 
             compute_min_max(
-                min_p, max_p, src_span, attrib.stride, num_vertex, tf_position);
+                min_p, max_p, src_span, source_stride, num_vertex, tf_position);
+
+            qDebug() << "Min max" << min_p << max_p << num_vertex;
 
             break;
         case noo::AttributeSemantic::NORMAL:
             copy_attribute(src_span,
-                           attrib.stride,
+                           source_stride,
                            cursor,
                            dest_vertex_stride,
                            num_vertex,
@@ -267,24 +274,24 @@ void ExMeshGeometry::update_data() {
             break;
         case noo::AttributeSemantic::TANGENT:
             copy_attribute(src_span,
-                           attrib.stride,
+                           source_stride,
                            cursor,
                            dest_vertex_stride,
                            num_vertex,
                            tf_position);
             break;
         case noo::AttributeSemantic::TEXTURE:
-            if (attrib.format == noo::Format::VEC2) {
+            if (source_attribute.format == noo::Format::VEC2) {
                 copy_attribute(src_span,
-                               attrib.stride,
+                               source_stride,
                                cursor,
                                dest_vertex_stride,
                                num_vertex,
                                tf_texture_vec2);
-            } else if (attrib.format == noo::Format::U16VEC2 and
-                       attrib.normalized) {
+            } else if (source_attribute.format == noo::Format::U16VEC2 and
+                       source_attribute.normalized) {
                 copy_attribute(src_span,
-                               attrib.stride,
+                               source_stride,
                                cursor,
                                dest_vertex_stride,
                                num_vertex,
@@ -292,17 +299,17 @@ void ExMeshGeometry::update_data() {
             }
             break;
         case noo::AttributeSemantic::COLOR:
-            if (attrib.format == noo::Format::VEC4) {
+            if (source_attribute.format == noo::Format::VEC4) {
                 copy_attribute(src_span,
-                               attrib.stride,
+                               source_stride,
                                cursor,
                                dest_vertex_stride,
                                num_vertex,
                                tf_color_vec4);
-            } else if (attrib.format == noo::Format::U8VEC4 and
-                       attrib.normalized) {
+            } else if (source_attribute.format == noo::Format::U8VEC4 and
+                       source_attribute.normalized) {
                 copy_attribute(src_span,
-                               attrib.stride,
+                               source_stride,
                                cursor,
                                dest_vertex_stride,
                                num_vertex,
@@ -311,7 +318,7 @@ void ExMeshGeometry::update_data() {
             break;
         }
 
-        addAttribute(convert_attrib(attrib.semantic),
+        addAttribute(convert_attrib(source_attribute.semantic),
                      cursor - new_bytes.data(),
                      QQuick3DGeometry::Attribute::ComponentType::F32Type);
 
